@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL to C# — The Complete Data Access Guide | LINQ · Entity Framework · Dapper</title>
+<meta name="description" content="Master data access in C# by learning to think in both SQL and OOP. Every concept shown side-by-side: raw SQL first, then LINQ, Entity Framework, and Dapper equivalents. Bridge the gap between relational databases and object-oriented programming.">
+<meta name="keywords" content="LINQ, Entity Framework, Dapper, C#, SQL, ORM, data access, relational database, OOP, .NET, SQL Server, database programming, EF Core, micro-ORM, query optimization">
+<meta name="author" content="yousafzainasir9">
+<link rel="canonical" href="https://yousafzainasir9.github.io/sql-to-csharp/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SQL to C# — The Complete Data Access Guide">
+<meta property="og:description" content="Master data access in C# by learning to think in both SQL and OOP. Every concept shown side-by-side: raw SQL first, then the C# equivalent.">
+<meta property="og:url" content="https://yousafzainasir9.github.io/sql-to-csharp/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SQL to C# — The Complete Data Access Guide">
+<meta name="twitter:description" content="Bridge the gap between relational databases and object-oriented programming. LINQ, Entity Framework, and Dapper — explained from both sides.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Book",
+  "name": "SQL to C# — The Complete Data Access Guide",
+  "description": "Master data access in C# by learning to think in both SQL and OOP. Covers LINQ, Entity Framework, and Dapper with side-by-side SQL comparisons.",
+  "author": {
+    "@type": "Person",
+    "name": "yousafzainasir9",
+    "url": "https://github.com/yousafzainasir9"
+  },
+  "url": "https://yousafzainasir9.github.io/sql-to-csharp/",
+  "datePublished": "2026-03-31",
+  "inLanguage": "en",
+  "genre": "Programming",
+  "keywords": "LINQ, Entity Framework, Dapper, C#, SQL, ORM, data access"
+}
+</script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --red: #9b2020;
+  --red-l: #fdf0f0;
+  --red-b: #efb8b8;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── HERO ── */
+.hero {
+  padding: 72px 0 52px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.eyebrow-line {
+  width: 28px;
+  height: 2px;
+  background: var(--acc);
+}
+
+.eyebrow-text {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.hero h1 {
+  font-size: clamp(38px, 5.5vw, 62px);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1.08;
+  margin-bottom: 20px;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--acc);
+}
+
+.hero-sub {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.78;
+  max-width: 640px;
+  margin-bottom: 36px;
+}
+
+.hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.badge-linq { background: var(--blue-l); color: var(--blue); border: 1px solid var(--blue-b); }
+.badge-ef { background: var(--green-l); color: var(--green); border: 1px solid var(--green-b); }
+.badge-dapper { background: var(--acc-l); color: var(--acc); border: 1px solid var(--acc-b); }
+
+/* ── STATS ── */
+.stats {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--white);
+  overflow: hidden;
+}
+
+.stat {
+  flex: 1;
+  padding: 14px 26px;
+  text-align: center;
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--rule);
+}
+
+.stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  display: block;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink4);
+  letter-spacing: .06em;
+}
+
+/* ── SECTIONS ── */
+.section {
+  padding-top: 72px;
+}
+
+.sec-tag {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.sec-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink4);
+  font-weight: 500;
+}
+
+.sec-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  margin-bottom: 10px;
+}
+
+.section .lead {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  color: var(--ink2);
+  line-height: 1.78;
+  max-width: 760px;
+  margin-bottom: 32px;
+}
+
+/* ── APPROACH BOX ── */
+.approach-box {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 20px;
+}
+
+.approach-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.approach-box p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.dual-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.col-card {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.col-card.sql-side {
+  background: #1c1a17;
+  color: #e8e4db;
+  border-color: #2a2824;
+}
+
+.col-card.sql-side .col-label { color: var(--acc-b); }
+.col-card.sql-side code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #d4d0c8;
+  display: block;
+  white-space: pre-wrap;
+}
+
+.col-card.csharp-side {
+  background: var(--blue-l);
+  border-color: var(--blue-b);
+}
+
+.col-card.csharp-side .col-label { color: var(--blue); }
+.col-card.csharp-side code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink);
+  display: block;
+  white-space: pre-wrap;
+}
+
+.col-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* ── STUDY PATH ── */
+.study-path {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.phase { margin-bottom: 24px; }
+.phase:last-child { margin-bottom: 0; }
+
+.phase-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--acc);
+  margin-bottom: 10px;
+}
+
+.phase-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.phase-item {
+  font-size: 13px;
+  background: var(--bg);
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--ink2);
+  border: 1px solid var(--rule);
+}
+
+/* ── CARD GRID ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: transform .25s, box-shadow .25s;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.08);
+}
+
+.card:nth-child(4n+1)::before { background: var(--acc); }
+.card:nth-child(4n+2)::before { background: var(--green); }
+.card:nth-child(4n+3)::before { background: var(--blue); }
+.card:nth-child(4n+4)::before { background: var(--amber); }
+
+.card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink4);
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -.01em;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.65;
+  flex: 1;
+}
+
+.card-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--ink3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: .06em;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.tag-sql { background: #1c1a17; color: #d4d0c8; }
+.tag-linq { background: var(--blue-l); color: var(--blue); }
+.tag-ef { background: var(--green-l); color: var(--green); }
+.tag-dapper { background: var(--acc-l); color: var(--acc); }
+.tag-pattern { background: var(--amber-l); color: var(--amber); }
+
+/* ── QUICKSTART ── */
+.qs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.qs-card {
+  border: 2px solid var(--rule);
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  transition: transform .25s, box-shadow .25s;
+}
+
+.qs-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.08);
+}
+
+.qs-card.green { border-color: var(--green); background: linear-gradient(to bottom, var(--green-l), var(--white)); }
+.qs-card.blue { border-color: var(--blue); background: linear-gradient(to bottom, var(--blue-l), var(--white)); }
+.qs-card.orange { border-color: var(--acc); background: linear-gradient(to bottom, var(--acc-l), var(--white)); }
+
+.qs-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.qs-card p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+
+.qs-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 700;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.qs-card.green .qs-btn { background: var(--green); }
+.qs-card.blue .qs-btn { background: var(--blue); }
+.qs-card.orange .qs-btn { background: var(--acc); }
+
+/* ── COMPARISON TABLE ── */
+.comparison-wrap {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.comparison-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.comparison-wrap th {
+  background: var(--acc-l);
+  color: var(--acc);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 700;
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 2px solid var(--acc-b);
+}
+
+.comparison-wrap td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink2);
+  line-height: 1.5;
+}
+
+.comparison-wrap tr:nth-child(even) td { background: var(--bg); }
+.comparison-wrap tr:last-child td { border-bottom: none; }
+
+.comparison-wrap td:first-child {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── FEATURES GRID ── */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.feature-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.feature-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.65;
+}
+
+/* ── CTA BANNER ── */
+.cta-banner {
+  background: var(--acc);
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  color: var(--white);
+}
+
+.cta-banner h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+
+.cta-banner p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  opacity: .9;
+  max-width: 540px;
+  margin: 0 auto 24px;
+  line-height: 1.7;
+}
+
+.cta-btn {
+  display: inline-block;
+  background: var(--white);
+  color: var(--acc);
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .2s;
+}
+
+.cta-btn:hover { transform: translateY(-2px); }
+
+/* ── FOOTER ── */
+footer {
+  margin-top: 100px;
+  padding: 40px 0;
+  border-top: 1px solid var(--rule);
+  background: var(--bg2);
+}
+
+.footer-inner {
+  text-align: center;
+}
+
+.footer-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink3);
+  margin-bottom: 4px;
+}
+
+.footer-desc {
+  font-size: 12px;
+  color: var(--ink4);
+  margin-bottom: 8px;
+}
+
+.footer-tag {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink4);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .card-grid,
+  .qs-grid,
+  .features-grid { grid-template-columns: 1fr; }
+
+  .stats { flex-wrap: wrap; }
+  .stat {
+    flex: 1 1 50%;
+    border-left: none !important;
+    border-bottom: 1px solid var(--rule);
+  }
+  .stat:nth-child(odd) { border-right: 1px solid var(--rule); }
+
+  .dual-cols { grid-template-columns: 1fr; }
+
+  .nav-links { display: none; }
+
+  .hero h1 { font-size: 34px; }
+
+  .hero-badges { gap: 6px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="wrap nav-inner">
+    <a href="#" class="nav-brand">
+      SQL to C# <span class="nav-pill">Complete Guide</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#approach">Approach</a></li>
+      <li><a href="#path">Study Path</a></li>
+      <li><a href="#chapters">Chapters</a></li>
+      <li><a href="#compare">Compare</a></li>
+      <li><a href="#start">Start</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">
+      <span class="eyebrow-line"></span>
+      <span class="eyebrow-text">Think in SQL. Write in C#.</span>
+    </div>
+    <h1>SQL to <em>C#</em></h1>
+    <p class="hero-sub">
+      The missing book that teaches data access from both sides. Every concept explained first as a relational database problem, then translated into LINQ, Entity Framework, and Dapper. Stop memorizing syntax — start understanding the mental model behind every query.
+    </p>
+    <div class="hero-badges">
+      <span class="hero-badge badge-linq">LINQ</span>
+      <span class="hero-badge badge-ef">Entity Framework Core</span>
+      <span class="hero-badge badge-dapper">Dapper</span>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">33</span>
+        <span class="stat-label">Chapters</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">250+</span>
+        <span class="stat-label">SQL ↔ C# Examples</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">C#</span>
+        <span class="stat-label">+ Raw SQL Side-by-Side</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Tools Compared</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── 01: THE APPROACH ── -->
+<section class="section" id="approach">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">01</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>The Dual-Thinking Approach</h2>
+    <p class="lead">
+      Most books teach ORMs in isolation. You learn <code>.Include()</code> without understanding what JOIN it generates. You write LINQ without knowing the execution plan. This book fixes that — every concept starts in SQL, then maps to C#.
+    </p>
+
+    <div class="approach-box">
+      <h3>How Every Chapter Works</h3>
+      <p>Each topic follows the same pattern: understand the problem in relational terms first, see the raw SQL, then learn the equivalent in LINQ, Entity Framework, and Dapper. You'll always know what's happening at the database level.</p>
+      <div class="dual-cols">
+        <div class="col-card sql-side">
+          <span class="col-label">SQL — The Relational Way</span>
+          <code>SELECT o.Id, c.Name, o.Total
+FROM Orders o
+INNER JOIN Customers c
+  ON o.CustomerId = c.Id
+WHERE o.Total > 500
+ORDER BY o.Total DESC;</code>
+        </div>
+        <div class="col-card csharp-side">
+          <span class="col-label">C# + LINQ — The OOP Way</span>
+          <code>var bigOrders = context.Orders
+  .Include(o => o.Customer)
+  .Where(o => o.Total > 500)
+  .OrderByDescending(o => o.Total)
+  .Select(o => new {
+    o.Id, o.Customer.Name, o.Total
+  });</code>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 02: WHAT MAKES THIS DIFFERENT ── -->
+<section class="section" id="different">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">02</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>What Makes This Book Different</h2>
+    <p class="lead">
+      Existing books fall into two camps: database books that ignore C#, and C# books that treat SQL as an afterthought. This is the bridge between both worlds.
+    </p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F500;</div>
+        <h3>Dual Mental Model</h3>
+        <p>Every concept taught from both the relational and object-oriented perspective. Understand tables as classes, rows as objects, foreign keys as navigation properties.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F50D;</div>
+        <h3>SQL Generated Exposed</h3>
+        <p>See the actual SQL that LINQ and EF Core produce. Learn to predict query plans and spot N+1 problems before they hit production.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x2696;</div>
+        <h3>Three Tools Compared</h3>
+        <p>The same problem solved with raw SQL, LINQ, Entity Framework, and Dapper — so you always pick the right tool for the job.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F9E0;</div>
+        <h3>Progressive Complexity</h3>
+        <p>Start from SELECT vs .Select() and build up to CQRS, Repository patterns, and performance tuning. Every chapter builds on the last.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x26A1;</div>
+        <h3>Performance from Day One</h3>
+        <p>Don't just learn to query — learn to query efficiently. Index awareness, query plan reading, and benchmark comparisons throughout.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x1F3D7;</div>
+        <h3>Real Architecture Patterns</h3>
+        <p>Repository, Unit of Work, CQRS — not as abstract theory but as concrete C# implementations with real database interactions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 03: STUDY PATH ── -->
+<section class="section" id="path">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">03</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>Recommended Study Path</h2>
+    <p class="lead">
+      Follow these phases to build a solid mental model. Phase 1 maps SQL to C# concepts. Phase 2 deepens LINQ fluency. Phase 3 masters ORMs. Phase 4 tackles architecture. Phase 5 covers production concerns. Phase 6 brings it all together.
+    </p>
+    <div class="study-path">
+      <div class="phase">
+        <div class="phase-label">Phase 1: The Two Worlds — SQL Meets OOP</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 1: Tables vs Classes</span>
+          <span class="phase-item">Ch 2: Rows vs Objects</span>
+          <span class="phase-item">Ch 3: Foreign Keys vs References</span>
+          <span class="phase-item">Ch 4: Relationships — Schema vs Graph</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 2: LINQ — Thinking in Both Languages</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 5: SELECT → .Select()</span>
+          <span class="phase-item">Ch 6: WHERE → .Where()</span>
+          <span class="phase-item">Ch 7: GROUP BY → .GroupBy()</span>
+          <span class="phase-item">Ch 8: ORDER BY → .OrderBy()</span>
+          <span class="phase-item">Ch 9: JOINs → .Join() & Navigation</span>
+          <span class="phase-item">Ch 10: Subqueries → Nested LINQ</span>
+          <span class="phase-item">Ch 11: Window Functions → LINQ Equivalents</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 3: Entity Framework Core — The Full ORM</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 12: DbContext — Your Database in Code</span>
+          <span class="phase-item">Ch 13: Migrations — Schema as Code</span>
+          <span class="phase-item">Ch 14: Loading Strategies</span>
+          <span class="phase-item">Ch 15: Change Tracking</span>
+          <span class="phase-item">Ch 16: Raw SQL in EF</span>
+          <span class="phase-item">Ch 17: EF Performance</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 4: Dapper — The Thin Layer</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 18: Connection & Queries</span>
+          <span class="phase-item">Ch 19: Object Mapping</span>
+          <span class="phase-item">Ch 20: Multi-Mapping Joins</span>
+          <span class="phase-item">Ch 21: Stored Procedures</span>
+          <span class="phase-item">Ch 22: Bulk Operations</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 5: Architecture & Real-World Patterns</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 23: Repository Pattern</span>
+          <span class="phase-item">Ch 24: Unit of Work</span>
+          <span class="phase-item">Ch 25: CQRS with EF + Dapper</span>
+          <span class="phase-item">Ch 26: Choosing the Right Tool</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-label">Phase 6: Advanced Topics & Production Readiness</div>
+        <div class="phase-items">
+          <span class="phase-item">Ch 27: Database Indexing</span>
+          <span class="phase-item">Ch 28: Transactions & Concurrency</span>
+          <span class="phase-item">Ch 29: Testing Data Access</span>
+          <span class="phase-item">Ch 30: SQL Injection Prevention</span>
+          <span class="phase-item">Ch 31: JSON Columns</span>
+          <span class="phase-item">Ch 32: SQL ↔ LINQ Cheat Sheet</span>
+          <span class="phase-item">Ch 33: Real-World Project</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 04: ALL CHAPTERS ── -->
+<section class="section" id="chapters">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">04</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>All 33 Chapters</h2>
+    <p class="lead">
+      Every chapter pairs the SQL concept with its C# counterpart. Click any chapter to dive in.
+    </p>
+    <div class="card-grid">
+
+      <!-- Part 1: The Two Worlds -->
+      <a class="card" href="ch01-tables-vs-classes.html">
+        <span class="card-num">Chapter 01</span>
+        <span class="card-title">Tables vs Classes</span>
+        <span class="card-desc">How a database table maps to a C# class. Schema definition vs class properties. Column types vs CLR types. The fundamental parallel.</span>
+        <span class="card-footer">
+          <span>8 comparisons</span>
+          <span class="card-tag tag-sql">SQL ↔ C#</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch02-rows-vs-objects.html">
+        <span class="card-num">Chapter 02</span>
+        <span class="card-title">Rows vs Objects</span>
+        <span class="card-desc">A row is an instance. INSERT is construction. UPDATE is mutation. DELETE is disposal. See CRUD through both lenses.</span>
+        <span class="card-footer">
+          <span>10 comparisons</span>
+          <span class="card-tag tag-sql">SQL ↔ C#</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch03-foreign-keys-vs-references.html">
+        <span class="card-num">Chapter 03</span>
+        <span class="card-title">Foreign Keys vs References</span>
+        <span class="card-desc">How relational integrity maps to object references and navigation properties. Cascade rules vs object lifecycle management.</span>
+        <span class="card-footer">
+          <span>7 comparisons</span>
+          <span class="card-tag tag-sql">SQL ↔ C#</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch04-relationships.html">
+        <span class="card-num">Chapter 04</span>
+        <span class="card-title">Relationships: Schema vs Object Graph</span>
+        <span class="card-desc">One-to-One, One-to-Many, Many-to-Many — from junction tables and foreign keys to collections and navigation properties.</span>
+        <span class="card-footer">
+          <span>12 comparisons</span>
+          <span class="card-tag tag-sql">SQL ↔ C#</span>
+        </span>
+      </a>
+
+      <!-- Part 2: LINQ -->
+      <a class="card" href="ch05-select-projections.html">
+        <span class="card-num">Chapter 05</span>
+        <span class="card-title">SELECT → .Select()</span>
+        <span class="card-desc">Projections in SQL vs LINQ. Column selection, aliases, computed columns, and anonymous types. What the database actually returns.</span>
+        <span class="card-footer">
+          <span>9 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch06-where-filtering.html">
+        <span class="card-num">Chapter 06</span>
+        <span class="card-title">WHERE → .Where()</span>
+        <span class="card-desc">Filtering rows vs filtering objects. AND/OR logic, IN clauses, BETWEEN, NULL handling, and how predicates translate to SQL.</span>
+        <span class="card-footer">
+          <span>14 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch07-groupby-aggregation.html">
+        <span class="card-num">Chapter 07</span>
+        <span class="card-title">GROUP BY → .GroupBy()</span>
+        <span class="card-desc">Aggregation in SQL vs LINQ. COUNT, SUM, AVG, HAVING — and why LINQ's GroupBy returns something completely different than you'd expect.</span>
+        <span class="card-footer">
+          <span>11 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch08-orderby-sorting.html">
+        <span class="card-num">Chapter 08</span>
+        <span class="card-title">ORDER BY → .OrderBy()</span>
+        <span class="card-desc">Sorting, multi-column ordering, ThenBy, custom comparers, and how sort operations affect query performance on both sides.</span>
+        <span class="card-footer">
+          <span>8 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch09-joins.html">
+        <span class="card-num">Chapter 09</span>
+        <span class="card-title">JOINs → .Join() & Navigation</span>
+        <span class="card-desc">INNER, LEFT, CROSS joins in SQL vs LINQ's Join method, GroupJoin, and EF's navigation-based approach. The biggest mental model shift.</span>
+        <span class="card-footer">
+          <span>16 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch10-subqueries.html">
+        <span class="card-num">Chapter 10</span>
+        <span class="card-title">Subqueries → Nested LINQ</span>
+        <span class="card-desc">Correlated subqueries, EXISTS, IN with subquery, scalar subqueries — and their LINQ counterparts using Any(), Contains(), and nested expressions.</span>
+        <span class="card-footer">
+          <span>10 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch11-window-functions.html">
+        <span class="card-num">Chapter 11</span>
+        <span class="card-title">Window Functions → LINQ Equivalents</span>
+        <span class="card-desc">ROW_NUMBER, RANK, LAG, LEAD, running totals — the SQL features that have no direct LINQ equivalent, and how to work around them.</span>
+        <span class="card-footer">
+          <span>9 examples</span>
+          <span class="card-tag tag-linq">LINQ</span>
+        </span>
+      </a>
+
+      <!-- Part 3: Entity Framework -->
+      <a class="card" href="ch12-dbcontext.html">
+        <span class="card-num">Chapter 12</span>
+        <span class="card-title">DbContext — Your Database in Code</span>
+        <span class="card-desc">What DbContext really represents. Connection management, DbSet as tables, OnModelCreating as schema definition. The conceptual mapping.</span>
+        <span class="card-footer">
+          <span>8 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch13-migrations.html">
+        <span class="card-num">Chapter 13</span>
+        <span class="card-title">Migrations — Schema as Code</span>
+        <span class="card-desc">ALTER TABLE vs Add-Migration. How EF tracks schema changes, generates SQL, and keeps your database and code in sync.</span>
+        <span class="card-footer">
+          <span>7 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch14-loading-strategies.html">
+        <span class="card-num">Chapter 14</span>
+        <span class="card-title">Loading Strategies</span>
+        <span class="card-desc">Eager, Lazy, and Explicit loading. What SQL each generates. When LEFT JOIN beats multiple queries. The Include() vs Select() debate.</span>
+        <span class="card-footer">
+          <span>12 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch15-change-tracking.html">
+        <span class="card-num">Chapter 15</span>
+        <span class="card-title">Change Tracking — How EF Thinks</span>
+        <span class="card-desc">No SQL equivalent — this is pure ORM magic. How EF detects changes, builds UPDATE statements, and manages object state behind the scenes.</span>
+        <span class="card-footer">
+          <span>9 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch16-raw-sql-in-ef.html">
+        <span class="card-num">Chapter 16</span>
+        <span class="card-title">Raw SQL in EF Core</span>
+        <span class="card-desc">When the ORM isn't enough. FromSqlRaw, ExecuteSqlRaw, SQL interpolation, mixing LINQ with raw SQL, and knowing when to drop down.</span>
+        <span class="card-footer">
+          <span>8 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch17-ef-performance.html">
+        <span class="card-num">Chapter 17</span>
+        <span class="card-title">EF Performance — N+1 and Beyond</span>
+        <span class="card-desc">The N+1 problem visualized. AsNoTracking, split queries, compiled queries, batch operations, and reading the SQL that EF generates.</span>
+        <span class="card-footer">
+          <span>14 topics</span>
+          <span class="card-tag tag-ef">EF Core</span>
+        </span>
+      </a>
+
+      <!-- Part 4: Dapper -->
+      <a class="card" href="ch18-dapper-connection.html">
+        <span class="card-num">Chapter 18</span>
+        <span class="card-title">Connection & Queries with Dapper</span>
+        <span class="card-desc">Back to basics — SqlConnection, Query&lt;T&gt;, Execute. How Dapper sits just one step above raw ADO.NET and why that's powerful.</span>
+        <span class="card-footer">
+          <span>8 topics</span>
+          <span class="card-tag tag-dapper">Dapper</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch19-object-mapping.html">
+        <span class="card-num">Chapter 19</span>
+        <span class="card-title">Object Mapping — SQL to C# Objects</span>
+        <span class="card-desc">How Dapper maps result sets to classes. Column-to-property matching, custom type handlers, and multi-result-set mapping.</span>
+        <span class="card-footer">
+          <span>9 topics</span>
+          <span class="card-tag tag-dapper">Dapper</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch20-multi-mapping.html">
+        <span class="card-num">Chapter 20</span>
+        <span class="card-title">Multi-Mapping Complex Joins</span>
+        <span class="card-desc">Joining tables and mapping results into nested object graphs. splitOn explained, one-to-many mapping patterns, and when to use multiple queries instead.</span>
+        <span class="card-footer">
+          <span>10 topics</span>
+          <span class="card-tag tag-dapper">Dapper</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch21-stored-procedures.html">
+        <span class="card-num">Chapter 21</span>
+        <span class="card-title">Stored Procedures with Dapper</span>
+        <span class="card-desc">Calling procs, passing parameters, handling output parameters and return values. When stored procedures beat inline SQL.</span>
+        <span class="card-footer">
+          <span>7 topics</span>
+          <span class="card-tag tag-dapper">Dapper</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch22-bulk-operations.html">
+        <span class="card-num">Chapter 22</span>
+        <span class="card-title">Bulk Operations</span>
+        <span class="card-desc">INSERT 10,000 rows efficiently. SqlBulkCopy, table-valued parameters, Dapper Plus patterns — compared to EF's SaveChanges on collections.</span>
+        <span class="card-footer">
+          <span>8 topics</span>
+          <span class="card-tag tag-dapper">Dapper</span>
+        </span>
+      </a>
+
+      <!-- Part 5: Architecture -->
+      <a class="card" href="ch23-repository-pattern.html">
+        <span class="card-num">Chapter 23</span>
+        <span class="card-title">Repository Pattern</span>
+        <span class="card-desc">Abstracting data access. Generic vs specific repositories. Repository with EF vs Dapper. When it helps and when it's just indirection.</span>
+        <span class="card-footer">
+          <span>9 topics</span>
+          <span class="card-tag tag-pattern">Architecture</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch24-unit-of-work.html">
+        <span class="card-num">Chapter 24</span>
+        <span class="card-title">Unit of Work</span>
+        <span class="card-desc">Transaction management across repositories. DbContext as a built-in Unit of Work. Implementing UoW with Dapper and TransactionScope.</span>
+        <span class="card-footer">
+          <span>7 topics</span>
+          <span class="card-tag tag-pattern">Architecture</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch25-cqrs.html">
+        <span class="card-num">Chapter 25</span>
+        <span class="card-title">CQRS — EF for Writes, Dapper for Reads</span>
+        <span class="card-desc">The pragmatic hybrid: use EF's change tracking for commands and Dapper's speed for queries. Real implementation with MediatR.</span>
+        <span class="card-footer">
+          <span>11 topics</span>
+          <span class="card-tag tag-pattern">Architecture</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch26-choosing-the-right-tool.html">
+        <span class="card-num">Chapter 26</span>
+        <span class="card-title">Choosing the Right Tool</span>
+        <span class="card-desc">Decision framework: when to use raw SQL, LINQ, EF Core, or Dapper. Benchmarks, trade-offs, team considerations, and real-world scenarios.</span>
+        <span class="card-footer">
+          <span>6 topics</span>
+          <span class="card-tag tag-pattern">Architecture</span>
+        </span>
+      </a>
+
+      <!-- Part 6: Advanced Topics & Production Readiness -->
+      <a class="card" href="ch27-indexing.html">
+        <span class="card-num">Chapter 27</span>
+        <span class="card-title">Database Indexing</span>
+        <span class="card-desc">B-Tree indexes, composite indexes, covering indexes. CREATE INDEX in SQL vs HasIndex() in EF. Reading execution plans to find slow queries.</span>
+        <span class="card-footer">
+          <span>10 topics</span>
+          <span class="card-tag tag-sql">Performance</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch28-transactions.html">
+        <span class="card-num">Chapter 28</span>
+        <span class="card-title">Transactions & Concurrency</span>
+        <span class="card-desc">ACID properties, isolation levels, optimistic concurrency, deadlock prevention. BEGIN TRAN in SQL vs BeginTransactionAsync in EF and Dapper.</span>
+        <span class="card-footer">
+          <span>12 topics</span>
+          <span class="card-tag tag-sql">SQL ↔ C#</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch29-testing.html">
+        <span class="card-num">Chapter 29</span>
+        <span class="card-title">Testing Data Access Code</span>
+        <span class="card-desc">In-memory databases, SQLite for tests, TestContainers for real SQL Server. Unit testing EF repositories and Dapper queries.</span>
+        <span class="card-footer">
+          <span>9 topics</span>
+          <span class="card-tag tag-pattern">Testing</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch30-security.html">
+        <span class="card-num">Chapter 30</span>
+        <span class="card-title">SQL Injection Prevention</span>
+        <span class="card-desc">How SQL injection works, parameterized queries as the universal fix. The dangerous difference between FromSqlRaw and FromSqlInterpolated.</span>
+        <span class="card-footer">
+          <span>8 topics</span>
+          <span class="card-tag tag-sql">Security</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch31-json-columns.html">
+        <span class="card-num">Chapter 31</span>
+        <span class="card-title">Working with JSON Columns</span>
+        <span class="card-desc">JSON_VALUE in SQL Server, jsonb in PostgreSQL. EF Core's ToJson() mapping, Dapper custom type handlers. When JSON beats relational tables.</span>
+        <span class="card-footer">
+          <span>10 topics</span>
+          <span class="card-tag tag-ef">Modern Patterns</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch32-cheat-sheet.html">
+        <span class="card-num">Chapter 32</span>
+        <span class="card-title">SQL ↔ LINQ Cheat Sheet</span>
+        <span class="card-desc">Quick reference tables: every SQL clause mapped to LINQ, EF, and Dapper. Type mappings, Fluent API reference, and common patterns at a glance.</span>
+        <span class="card-footer">
+          <span>6 reference tables</span>
+          <span class="card-tag tag-linq">Reference</span>
+        </span>
+      </a>
+
+      <a class="card" href="ch33-real-world-project.html">
+        <span class="card-num">Chapter 33</span>
+        <span class="card-title">Real-World E-Commerce Project</span>
+        <span class="card-desc">Complete walkthrough: Clean Architecture API with EF Core for writes, Dapper for reads. Repository, UoW, CQRS — all patterns applied to one project.</span>
+        <span class="card-footer">
+          <span>Full project</span>
+          <span class="card-tag tag-pattern">Capstone</span>
+        </span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── 05: TOOL COMPARISON ── -->
+<section class="section" id="compare">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">05</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>LINQ vs Entity Framework vs Dapper</h2>
+    <p class="lead">
+      Each tool sits at a different level of abstraction. Understanding where each one lives helps you pick the right one for every situation.
+    </p>
+    <div class="comparison-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>LINQ to Objects</th>
+            <th>EF Core</th>
+            <th>Dapper</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Abstraction Level</td>
+            <td>Language feature</td>
+            <td>Full ORM</td>
+            <td>Micro-ORM</td>
+          </tr>
+          <tr>
+            <td>SQL Knowledge Needed</td>
+            <td>Minimal</td>
+            <td>Moderate</td>
+            <td>Essential</td>
+          </tr>
+          <tr>
+            <td>Performance</td>
+            <td>In-memory only</td>
+            <td>Good (with tuning)</td>
+            <td>Near raw ADO.NET</td>
+          </tr>
+          <tr>
+            <td>Change Tracking</td>
+            <td>None</td>
+            <td>Built-in</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>Migrations</td>
+            <td>N/A</td>
+            <td>Built-in</td>
+            <td>Manual / FluentMigrator</td>
+          </tr>
+          <tr>
+            <td>Complex Queries</td>
+            <td>Full C# power</td>
+            <td>Limited by translation</td>
+            <td>Full SQL power</td>
+          </tr>
+          <tr>
+            <td>Learning Curve</td>
+            <td>Low</td>
+            <td>High</td>
+            <td>Low (if you know SQL)</td>
+          </tr>
+          <tr>
+            <td>Best For</td>
+            <td>In-memory collections</td>
+            <td>CRUD-heavy apps</td>
+            <td>Read-heavy / reports</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── 06: QUICK START ── -->
+<section class="section" id="start">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">06</span>
+      <span class="sec-rule"></span>
+    </div>
+    <h2>Where Should You Start?</h2>
+    <p class="lead">
+      Pick a path based on your current experience. No matter where you start, the SQL side-by-side approach ensures you always understand what's happening under the hood.
+    </p>
+    <div class="qs-grid">
+      <a class="qs-card green" href="ch01-tables-vs-classes.html">
+        <h3>New to Data Access?</h3>
+        <p>Start from the beginning. Learn how tables map to classes, how SQL queries translate to C# code, and build a strong dual-thinking foundation.</p>
+        <span class="qs-btn">Begin with Chapter 1 &rarr;</span>
+      </a>
+      <a class="qs-card blue" href="ch05-select-projections.html">
+        <h3>Know SQL, Learning C#?</h3>
+        <p>Skip straight to LINQ. You already think in SQL — now see how every clause you know has a C# equivalent. The fastest path to productivity.</p>
+        <span class="qs-btn">Jump to LINQ (Ch 5) &rarr;</span>
+      </a>
+      <a class="qs-card orange" href="ch23-repository-pattern.html">
+        <h3>Experienced Developer?</h3>
+        <p>Go to the architecture chapters. Learn Repository, Unit of Work, and CQRS patterns with real EF + Dapper implementations.</p>
+        <span class="qs-btn">Architecture (Ch 23) &rarr;</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── 07: CTA ── -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-tag">
+      <span class="sec-num">07</span>
+      <span class="sec-rule"></span>
+    </div>
+    <div class="cta-banner">
+      <h2>Stop Guessing What Your ORM Does</h2>
+      <p>Every line of LINQ produces SQL. Every EF operation hits the database. When you understand both sides, you write better code — and debug it faster.</p>
+      <a class="cta-btn" href="ch01-tables-vs-classes.html">Start Reading Free &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="wrap footer-inner">
+    <p class="footer-title">SQL to C# — The Complete Data Access Guide</p>
+    <p class="footer-desc">Covering LINQ, Entity Framework Core, and Dapper with side-by-side SQL comparisons for every concept.</p>
+    <p class="footer-tag">Think in SQL. Write in C#. Master both.</p>
+  </div>
+</footer>
+
+</body>
+</html>

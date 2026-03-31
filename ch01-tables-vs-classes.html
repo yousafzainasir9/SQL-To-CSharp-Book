@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chapter 01: Tables vs Classes — The Fundamental Parallel. Understanding the relationship between SQL tables and C# classes.">
+    <title>Chapter 01: Tables vs Classes — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3;
+            --bg2: #f0ede6;
+            --bg3: #e8e4db;
+            --white: #ffffff;
+            --ink: #1c1a17;
+            --ink2: #3d3a34;
+            --ink3: #6b6760;
+            --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e;
+            --acc-l: #fdf3eb;
+            --acc-b: #f5c99a;
+            --green: #1d6b45;
+            --green-l: #edf8f2;
+            --green-b: #9fd9bc;
+            --blue: #1a4f8a;
+            --blue-l: #edf2fb;
+            --blue-b: #afc8ef;
+            --amber: #7a5200;
+            --amber-l: #fdf8ec;
+            --amber-b: #e8d08a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            font-family: 'Source Serif 4', serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            height: 54px;
+            background: rgba(248, 247, 243, 0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--rule);
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 1000;
+        }
+
+        nav .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            margin-right: auto;
+        }
+
+        nav .nav-brand-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--acc);
+        }
+
+        nav .nav-pill {
+            background-color: var(--acc-l);
+            color: var(--acc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        nav .nav-link {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            color: var(--ink);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        nav .nav-link:hover {
+            color: var(--acc);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 60px 2rem;
+        }
+
+        /* Chapter Header */
+        .chapter-header {
+            margin-bottom: 50px;
+        }
+
+        .chapter-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--ink4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.2;
+            color: var(--ink);
+        }
+
+        .chapter-intro {
+            font-family: 'Source Serif 4', serif;
+            font-size: 18px;
+            color: var(--ink2);
+            line-height: 1.8;
+            margin-bottom: 32px;
+            max-width: 800px;
+        }
+
+        /* In This Chapter Box */
+        .in-this-chapter {
+            background-color: var(--white);
+            border: 1px solid var(--rule);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 60px;
+        }
+
+        .in-this-chapter h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--ink);
+        }
+
+        .in-this-chapter ol {
+            list-style: none;
+            counter-reset: item-counter;
+            padding-left: 0;
+        }
+
+        .in-this-chapter li {
+            counter-increment: item-counter;
+            margin-bottom: 12px;
+            padding-left: 32px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .in-this-chapter li::before {
+            content: counter(item-counter);
+            position: absolute;
+            left: 0;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            color: var(--acc);
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Section Headers */
+        .section {
+            margin-bottom: 80px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .sec-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--ink4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .sec-rule {
+            flex: 1;
+            height: 1px;
+            background-color: var(--rule);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 28px;
+            color: var(--ink);
+        }
+
+        .section-prose {
+            font-family: 'Source Serif 4', serif;
+            font-size: 16px;
+            color: var(--ink2);
+            line-height: 1.8;
+            margin-bottom: 28px;
+        }
+
+        .section-prose p {
+            margin-bottom: 16px;
+        }
+
+        .section-prose p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Code Comparison */
+        .code-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .code-block {
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .sql-block {
+            background-color: #1c1a17;
+            color: #d4d0c8;
+            border: none;
+        }
+
+        .csharp-block {
+            background-color: var(--blue-l);
+            border: 1px solid var(--blue-b);
+            color: var(--ink);
+        }
+
+        .code-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* Insight Box */
+        .insight {
+            background-color: var(--acc-l);
+            border-left: 4px solid var(--acc);
+            padding: 20px 24px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 28px;
+            font-family: 'Source Serif 4', serif;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--ink2);
+        }
+
+        /* Type Mapping Table */
+        .type-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 28px;
+            background-color: var(--white);
+            border: 1px solid var(--rule);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .type-table thead {
+            background-color: var(--bg2);
+        }
+
+        .type-table th {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--rule);
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        .type-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--bg3);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--ink2);
+        }
+
+        .type-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .type-table tr:hover {
+            background-color: var(--bg);
+        }
+
+        .sql-type {
+            color: var(--amber);
+            font-weight: 500;
+        }
+
+        .csharp-type {
+            color: var(--blue);
+            font-weight: 500;
+        }
+
+        /* Full Width Code Block */
+        .code-full-width {
+            margin-bottom: 28px;
+        }
+
+        .code-full-width .code-label {
+            margin-bottom: 12px;
+        }
+
+        .code-full-width .code-block {
+            width: 100%;
+        }
+
+        /* Constraint Mapping Table */
+        .constraint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 28px;
+            background-color: var(--white);
+            border: 1px solid var(--rule);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .constraint-table thead {
+            background-color: var(--bg2);
+        }
+
+        .constraint-table th {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--rule);
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        .constraint-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--bg3);
+            font-family: 'Source Serif 4', serif;
+            font-size: 14px;
+            color: var(--ink2);
+        }
+
+        .constraint-table code {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .constraint-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .constraint-table tr:hover {
+            background-color: var(--bg);
+        }
+
+        /* Key Takeaways */
+        .key-takeaways {
+            background-color: var(--green-l);
+            border-left: 4px solid var(--green);
+            padding: 32px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 60px;
+        }
+
+        .key-takeaways h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--ink);
+        }
+
+        .key-takeaways ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .key-takeaways li {
+            margin-bottom: 12px;
+            padding-left: 28px;
+            position: relative;
+            font-family: 'Source Serif 4', serif;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--ink2);
+        }
+
+        .key-takeaways li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Chapter Navigation */
+        .chapter-nav {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+
+        .nav-item {
+            background-color: var(--white);
+            border: 1px solid var(--rule);
+            border-radius: 12px;
+            padding: 24px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            border-color: var(--acc);
+            box-shadow: 0 4px 12px rgba(201, 107, 30, 0.1);
+        }
+
+        .nav-item.prev {
+            text-align: right;
+        }
+
+        .nav-item-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--ink4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .nav-item-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .nav-item:hover .nav-item-title {
+            color: var(--acc);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--bg2);
+            border-top: 1px solid var(--rule);
+            padding: 40px 2rem;
+            text-align: center;
+            color: var(--ink3);
+            font-size: 14px;
+            margin-top: 60px;
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .code-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .chapter-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-item.prev {
+                text-align: left;
+            }
+
+            .code-block {
+                font-size: 12px;
+            }
+
+            .section-prose {
+                font-size: 15px;
+            }
+
+            main {
+                padding: 40px 1.5rem;
+            }
+
+            nav {
+                padding: 0 1.5rem;
+            }
+        }
+
+        /* Utility */
+        .text-muted {
+            color: var(--ink3);
+        }
+
+        .mt-large {
+            margin-top: 40px;
+        }
+
+        .mb-large {
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 01</span>
+        </a>
+        <a href="index.html" class="nav-link">← All Chapters</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Chapter Header -->
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 01</div>
+            <h1>Tables vs Classes — The Fundamental Parallel</h1>
+            <p class="chapter-intro">Every SQL table has a parallel structure in object-oriented programming. Understanding this fundamental relationship is the key to building effective data access layers. This chapter explores how relational database concepts map to C# classes, and why both perspectives matter when working with modern data access frameworks like Entity Framework Core.</p>
+        </div>
+
+        <!-- In This Chapter -->
+        <div class="in-this-chapter">
+            <h3>In This Chapter</h3>
+            <ol>
+                <li>The Relational Model vs Object-Oriented Model — foundational concepts and mental models</li>
+                <li>Columns Are Properties — understanding type mapping between SQL and C#</li>
+                <li>Constraints → Validation — translating database integrity rules to application code</li>
+                <li>Identity Columns → Auto-Generated Keys — strategies for primary key generation</li>
+                <li>Schema Definition vs Class Configuration — seeing the complete picture with a realistic example</li>
+                <li>Data Annotations vs Fluent API — two approaches to entity configuration in EF Core</li>
+                <li>Indexes: SQL CREATE INDEX vs EF HasIndex — optimizing queries and understanding trade-offs</li>
+            </ol>
+        </div>
+
+        <!-- SECTION 01 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">01</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>The Relational Model vs Object-Oriented Model</h2>
+
+            <div class="section-prose">
+                <p>To understand why tables map to classes, we need to step back and examine two fundamentally different ways of thinking about data.</p>
+
+                <p>In 1970, Edgar Codd published a groundbreaking paper introducing the <strong>relational model</strong>. This model treats data as mathematical relations — sets of tuples. A table is a relation, each row is a tuple, and each column is an attribute. The relational model is declarative and set-based: you describe WHAT you want, and the database figures out HOW to retrieve it. SQL queries operate on entire sets of rows at once. A SELECT statement that returns 1000 rows is conceptually the same as one that returns one row — you're describing a set.</p>
+
+                <p>Object-oriented programming (OOP), which emerged in the 1960s and 80s, treats data differently. In OOP, data is organized into objects that combine state (properties) and behavior (methods). A class is a blueprint; an object is an instance of that class. Thinking in OOP is imperative: you describe HOW to retrieve and manipulate data by calling methods on objects. You iterate through collections, call methods, and mutate state.</p>
+
+                <p>This fundamental tension is at the heart of the "impedance mismatch" problem. Relational thinking is SET-based and declarative. OOP thinking is OBJECT-based and imperative. Yet in modern applications, we must bridge both worlds: we have relational databases (SQL Server, PostgreSQL, MySQL) and object-oriented code (C#, Java, Python).</p>
+
+                <p>This book teaches you how to navigate both mental models effectively. You'll learn to think in sets when writing SQL queries, and in objects when writing C# code. More importantly, you'll understand when each model is appropriate and how to translate between them using modern tools like Entity Framework Core.</p>
+            </div>
+
+            <div class="insight">
+                <strong>Key Insight:</strong> Understanding both mental models is essential to effective data access. SQL thinks in sets of rows. C# thinks in collections of objects. They solve the same problems differently. The better you understand both perspectives, the better your code will be.
+            </div>
+        </section>
+
+        <!-- SECTION 02 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">02</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Columns Are Properties: The Type Mapping</h2>
+
+            <div class="section-prose">
+                <p>Every SQL column has a data type. Every C# property has a CLR (Common Language Runtime) type. The mapping between them is the foundation of all ORM (Object-Relational Mapping) work. Entity Framework Core handles most of this mapping automatically, but understanding it is crucial for diagnosing issues and making good design choices.</p>
+
+                <p>Let's start with a concrete example. Below, we define a Customers table in SQL, and then the corresponding Customer class in C#.</p>
+            </div>
+
+            <!-- Code Comparison: SQL vs C# -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Customers (
+    Id INT NOT NULL PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL,
+    Email NVARCHAR(255) NOT NULL,
+    Age INT NULL,
+    Balance DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+    ProfilePhoto VARBINARY(MAX) NULL,
+    ExternalId UNIQUEIDENTIFIER NULL
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Customer {
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public int? Age { get; set; }
+    public decimal Balance { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
+    public byte[]? ProfilePhoto { get; set; }
+    public Guid? ExternalId { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>Notice the careful mapping: <code>INT</code> columns become <code>int</code> properties. <code>NVARCHAR</code> becomes <code>string</code>. But there's a critical pattern here: look at the <code>Age</code> column in SQL — it's <code>INT NULL</code>, meaning it can contain NULL. In C#, this maps to <code>int?</code> (nullable int). The question mark is not arbitrary; it signals that the value can be absent.</p>
+
+                <p>Similarly, <code>Name</code> in SQL is <code>NOT NULL</code>, so in C# it's a non-nullable <code>string</code>. Modern C# with nullable reference types (C# 8.0+) enforces this distinction: a <code>string</code> property cannot be null, while a <code>string?</code> property can be.</p>
+            </div>
+
+            <!-- Type Mapping Table -->
+            <div class="code-full-width">
+                <div class="code-label">SQL to C# Type Mapping Reference</div>
+                <table class="type-table">
+                    <thead>
+                        <tr>
+                            <th>SQL Data Type</th>
+                            <th>C# CLR Type</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="sql-type">INT</span></td>
+                            <td><span class="csharp-type">int</span></td>
+                            <td>32-bit signed integer</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">BIGINT</span></td>
+                            <td><span class="csharp-type">long</span></td>
+                            <td>64-bit signed integer; use for large numbers or Unix timestamps</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">SMALLINT</span></td>
+                            <td><span class="csharp-type">short</span></td>
+                            <td>16-bit signed integer; rarely used</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">TINYINT</span></td>
+                            <td><span class="csharp-type">byte</span></td>
+                            <td>8-bit unsigned integer; 0–255</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">BIT</span></td>
+                            <td><span class="csharp-type">bool</span></td>
+                            <td>Boolean true/false; stored as 0 or 1</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">NVARCHAR(n)</span></td>
+                            <td><span class="csharp-type">string</span></td>
+                            <td>Unicode text; n is max length (in characters). EF doesn't enforce n directly.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">NVARCHAR(MAX)</span></td>
+                            <td><span class="csharp-type">string</span></td>
+                            <td>Unlimited Unicode text; use sparingly for large documents</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">CHAR(n)</span></td>
+                            <td><span class="csharp-type">string</span></td>
+                            <td>Fixed-length text; padded with spaces. Use NVARCHAR instead.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">DATETIME2</span></td>
+                            <td><span class="csharp-type">DateTime</span></td>
+                            <td>Preferred over DATETIME; 100-nanosecond precision</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">DATE</span></td>
+                            <td><span class="csharp-type">DateOnly</span></td>
+                            <td>Date without time; requires .NET 6+</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">TIME</span></td>
+                            <td><span class="csharp-type">TimeOnly</span></td>
+                            <td>Time without date; requires .NET 6+</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">DATETIMEOFFSET</span></td>
+                            <td><span class="csharp-type">DateTimeOffset</span></td>
+                            <td>DateTime with timezone offset; use for globally distributed systems</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">DECIMAL(p,s)</span></td>
+                            <td><span class="csharp-type">decimal</span></td>
+                            <td>Fixed-point decimal; p=precision, s=scale. Essential for money.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">FLOAT</span></td>
+                            <td><span class="csharp-type">double</span></td>
+                            <td>64-bit floating-point; approximate. Don't use for money.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">REAL</span></td>
+                            <td><span class="csharp-type">float</span></td>
+                            <td>32-bit floating-point; rarely used. Avoid.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">MONEY</span></td>
+                            <td><span class="csharp-type">decimal</span></td>
+                            <td>Fixed to 4 decimal places; use DECIMAL(10,2) instead for flexibility</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">UNIQUEIDENTIFIER</span></td>
+                            <td><span class="csharp-type">Guid</span></td>
+                            <td>UUID/GUID; 128-bit unique identifier. Useful for distributed keys.</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">VARBINARY(MAX)</span></td>
+                            <td><span class="csharp-type">byte[]</span></td>
+                            <td>Binary data (images, files, etc.); consider storing file paths instead</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">XML</span></td>
+                            <td><span class="csharp-type">string</span></td>
+                            <td>XML as text; use JSON or structured data instead</td>
+                        </tr>
+                        <tr>
+                            <td><span class="sql-type">NTEXT</span></td>
+                            <td><span class="csharp-type">string</span></td>
+                            <td>Deprecated; use NVARCHAR(MAX) instead</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-prose">
+                <p>The pattern to notice: SQL nullable columns (marked with NULL) map to C# nullable types (marked with ?). Non-nullable SQL columns map to non-nullable C# types. This alignment between database nullability and C# nullability is how the two type systems prevent mismatches.</p>
+
+                <p>Entity Framework Core knows these mappings by convention. When you define a DbContext and use fluent API or data annotations, EF generates the correct SQL schema. It also handles the reverse: when you load data from the database, EF converts SQL types to C# types automatically.</p>
+            </div>
+
+            <div class="insight">
+                <strong>Type Mapping Insight:</strong> Notice the NULL pattern: SQL nullable columns map to C# nullable types (int? for INT NULL). Non-nullable SQL columns map to non-nullable C# types. This is how the two type systems align. When EF Core generates SQL migrations, it respects this mapping in both directions. Breaking this pattern introduces bugs.
+            </div>
+        </section>
+
+        <!-- SECTION 03 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">03</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Constraints → Validation</h2>
+
+            <div class="section-prose">
+                <p>SQL constraints enforce data integrity at the DATABASE level. They are the last line of defense: if bad data somehow gets past your application code, the database rejects it. C# validation attributes (Data Annotations) and fluent API configuration enforce rules at the APPLICATION level, providing user-friendly error messages.</p>
+
+                <p>The key insight: use BOTH. Database constraints protect you from race conditions, rogue API clients, and direct SQL updates. Application validation provides fast feedback to users and prevents unnecessary database round trips.</p>
+
+                <p>Here's how common SQL constraints map to C# equivalents:</p>
+            </div>
+
+            <!-- Constraint Mapping Table -->
+            <div class="code-full-width">
+                <div class="code-label">SQL Constraints → C# Validation</div>
+                <table class="constraint-table">
+                    <thead>
+                        <tr>
+                            <th>SQL Constraint</th>
+                            <th>C# Data Annotations</th>
+                            <th>C# Fluent API</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>NOT NULL</code></td>
+                            <td><code>[Required]</code></td>
+                            <td><code>.IsRequired()</code></td>
+                            <td>Value cannot be null or empty</td>
+                        </tr>
+                        <tr>
+                            <td><code>PRIMARY KEY</code></td>
+                            <td><code>[Key]</code></td>
+                            <td><code>.HasKey()</code></td>
+                            <td>Uniquely identifies each row; no duplicates or nulls</td>
+                        </tr>
+                        <tr>
+                            <td><code>UNIQUE</code></td>
+                            <td>(No annotation)</td>
+                            <td><code>.HasIndex().IsUnique()</code></td>
+                            <td>Column values must be unique across all rows</td>
+                        </tr>
+                        <tr>
+                            <td><code>FOREIGN KEY</code></td>
+                            <td><code>[ForeignKey("NavProp")]</code></td>
+                            <td><code>.HasForeignKey()</code></td>
+                            <td>References primary key in another table</td>
+                        </tr>
+                        <tr>
+                            <td><code>CHECK (Age &gt;= 0 AND Age &lt;= 150)</code></td>
+                            <td><code>[Range(0, 150)]</code></td>
+                            <td><code>.HasCheckConstraint("name", "condition")</code></td>
+                            <td>Value must satisfy a condition</td>
+                        </tr>
+                        <tr>
+                            <td><code>DEFAULT 0</code></td>
+                            <td>(No annotation)</td>
+                            <td><code>.HasDefaultValue(0)</code></td>
+                            <td>Use this value if no value provided on INSERT</td>
+                        </tr>
+                        <tr>
+                            <td><code>MAXLENGTH</code> (column width)</td>
+                            <td><code>[MaxLength(255)]</code></td>
+                            <td><code>.HasMaxLength(255)</code></td>
+                            <td>String values cannot exceed specified length</td>
+                        </tr>
+                        <tr>
+                            <td>Custom validation</td>
+                            <td><code>[EmailAddress]</code>, <code>[Range]</code>, <code>[RegularExpression]</code></td>
+                            <td><code>.HasCheckConstraint()</code> (SQL-only)</td>
+                            <td>Domain-specific validation (email format, date range, etc.)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-prose">
+                <p>Let's see a practical example. Suppose we need to enforce that users must be between 0 and 150 years old, and email must be provided:</p>
+            </div>
+
+            <!-- Code Example: Validation -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Users (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Email NVARCHAR(255) NOT NULL UNIQUE,
+    Age INT NULL CHECK (Age >= 0 AND Age <= 150),
+    Name NVARCHAR(100) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# with Data Annotations</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class User {
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [EmailAddress]
+    [MaxLength(255)]
+    public string Email { get; set; } = string.Empty;
+
+    [Range(0, 150)]
+    public int? Age { get; set; }
+
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>And the same configuration using Fluent API:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C# with Fluent API Configuration</div>
+                <div class="code-block csharp-block">
+                    <pre>modelBuilder.Entity&lt;User&gt;(entity =>
+{
+    entity.HasKey(u => u.Id);
+
+    entity.Property(u => u.Email)
+        .IsRequired()
+        .HasMaxLength(255);
+
+    entity.Property(u => u.Age)
+        .IsRequired(false);
+
+    entity.HasCheckConstraint("CK_User_Age", "[Age] >= 0 AND [Age] <= 150");
+
+    entity.Property(u => u.Name)
+        .IsRequired()
+        .HasMaxLength(100);
+
+    entity.Property(u => u.CreatedAt)
+        .HasDefaultValueSql("GETDATE()");
+
+    entity.HasIndex(u => u.Email).IsUnique();
+});</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Constraint Strategy Insight:</strong> Database constraints catch bugs that slip through application validation. Think of scenarios like: a race condition between two simultaneous requests, a rogue API client bypassing your code, or a direct SQL update from an admin script. Constraints protect you when application code can't. Use database constraints as your safety net and application validation for user-friendly feedback.
+            </div>
+        </section>
+
+        <!-- SECTION 04 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">04</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Identity Columns → Auto-Generated Keys</h2>
+
+            <div class="section-prose">
+                <p>Almost every table needs a primary key — a column (or set of columns) that uniquely identifies each row. The simplest approach is an auto-incrementing integer, which SQL Server provides via the <code>IDENTITY</code> keyword. When you insert a row without specifying a value for an IDENTITY column, SQL Server automatically assigns the next integer.</p>
+
+                <p>Entity Framework Core detects IDENTITY columns by convention. If you name a property <code>Id</code> or <code>{EntityName}Id</code> (like <code>CustomerId</code>), EF assumes it's an auto-generated key. You don't need annotations or fluent API configuration in most cases.</p>
+
+                <p>However, there are scenarios where IDENTITY isn't appropriate. Consider a globally distributed system where you can't rely on a central database to assign IDs. GUIDs (Globally Unique Identifiers) solve this: each application instance can generate a unique ID locally, without coordinating with the database.</p>
+            </div>
+
+            <!-- Code Comparison: IDENTITY vs GUID -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL: IDENTITY (Auto-increment)</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Orders (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerId INT NOT NULL,
+    OrderDate DATETIME2 NOT NULL,
+    Total DECIMAL(10, 2) NOT NULL
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: IDENTITY (Convention)</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Order {
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal Total { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>For the IDENTITY approach, that's all you need. EF Core infers the key from the naming convention. If you prefer to be explicit:</p>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">C#: IDENTITY (Explicit with [Key])</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Order {
+    [Key]
+    public int Id { get; set; }
+
+    public int CustomerId { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal Total { get; set; }
+}</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: IDENTITY (Fluent API)</div>
+                    <div class="code-block csharp-block">
+                        <pre>modelBuilder.Entity&lt;Order&gt;(entity =>
+{
+    entity.HasKey(o => o.Id);
+
+    entity.Property(o => o.Id)
+        .ValueGeneratedOnAdd();
+});</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>Now, let's look at alternatives. GUIDs are useful when you need to generate IDs without database coordination:</p>
+            </div>
+
+            <!-- Code Comparison: GUID Keys -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL: GUID with NEWSEQUENTIALID()</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Products (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWSEQUENTIALID(),
+    Name NVARCHAR(100) NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: GUID Keys</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Product {
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>When using GUIDs, you can either generate them on the client side (via <code>Guid.NewGuid()</code>) or let SQL Server generate them. NEWSEQUENTIALID() generates sequential GUIDs, which are better for index performance than random GUIDs.</p>
+
+                <p>In Entity Framework Core, you configure this in OnModelCreating:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#: Fluent API for GUID Generation</div>
+                <div class="code-block csharp-block">
+                    <pre>// Client-side GUID generation
+modelBuilder.Entity&lt;Product&gt;(entity =>
+{
+    entity.Property(p => p.Id)
+        .ValueGeneratedOnAdd()
+        .HasDefaultValueSql("NEWSEQUENTIALID()");
+});
+
+// Or generate on client before insert
+public class Product {
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+}</pre>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>There's a third approach: the Hi-Lo algorithm. This hybrid strategy uses the database to allocate RANGES of IDs, then generates IDs on the application side. This is efficient and works in distributed scenarios:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#: Hi-Lo Algorithm for Efficient ID Generation</div>
+                <div class="code-block csharp-block">
+                    <pre>modelBuilder.Entity&lt;Order&gt;(entity =>
+{
+    entity.Property(o => o.Id)
+        .ValueGeneratedOnAdd()
+        .UseHiLo("order_hi_lo_sequence");
+});
+
+// The database creates a SEQUENCE behind the scenes:
+// CREATE SEQUENCE order_hi_lo_sequence START WITH 1 INCREMENT BY 10;</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Key Generation Insight:</strong> IDENTITY is the simplest choice for single-database applications where IDs are generated sequentially. GUIDs are better for distributed systems where you need to generate IDs in multiple places. The Hi-Lo algorithm combines the benefits of both — it's database-efficient (allocates IDs in batches) while still allowing application-side generation. Choose IDENTITY unless you have a specific reason to use something else.
+            </div>
+        </section>
+
+        <!-- SECTION 05 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">05</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Schema Definition vs Class Configuration (Complete Example)</h2>
+
+            <div class="section-prose">
+                <p>Now let's put it all together with a realistic example. We'll define a Products table with a full schema including primary key, foreign key, constraints, indexes, and defaults. Then we'll show the exact same schema configured in Entity Framework Core.</p>
+
+                <p>This is the complete picture: how SQL DDL (Data Definition Language) maps to C# entity configuration. Notice how every SQL constraint, index, and default has a parallel in the C# code.</p>
+            </div>
+
+            <!-- Full SQL Schema -->
+            <div class="code-full-width">
+                <div class="code-label">SQL: Complete Products Table with All Constraints</div>
+                <div class="code-block sql-block">
+                    <pre>CREATE TABLE Categories (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL UNIQUE,
+    Description NVARCHAR(500) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+
+CREATE TABLE Products (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(MAX) NULL,
+    CategoryId INT NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL CHECK (Price > 0),
+    Stock INT NOT NULL CHECK (Stock >= 0) DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    Sku NVARCHAR(50) NOT NULL UNIQUE,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Products_Categories
+        FOREIGN KEY (CategoryId) REFERENCES Categories(Id) ON DELETE CASCADE
+);
+
+-- Indexes for query performance
+CREATE INDEX IX_Products_CategoryId ON Products(CategoryId);
+CREATE INDEX IX_Products_Sku ON Products(Sku);
+CREATE INDEX IX_Products_IsActive ON Products(IsActive);
+CREATE INDEX IX_Products_CreatedAt ON Products(CreatedAt);
+CREATE UNIQUE INDEX IX_Products_SkuUnique ON Products(Sku);</pre>
+                </div>
+            </div>
+
+            <!-- Corresponding C# Entities -->
+            <div class="code-full-width">
+                <div class="code-label">C#: Entity Classes</div>
+                <div class="code-block csharp-block">
+                    <pre>public class Category {
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string? Description { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    // Navigation property
+    public ICollection&lt;Product&gt; Products { get; set; } = new List&lt;Product&gt;();
+}
+
+public class Product {
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    [Required]
+    public int CategoryId { get; set; }
+
+    [Required]
+    [Range(0.01, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [Required]
+    [Range(0, int.MaxValue)]
+    public int Stock { get; set; }
+
+    [Required]
+    public bool IsActive { get; set; } = true;
+
+    [Required]
+    [MaxLength(50)]
+    public string Sku { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    // Navigation property
+    public Category? Category { get; set; }
+}</pre>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>And here's the Fluent API configuration in OnModelCreating that defines all constraints, indexes, and relationships:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#: Fluent API Configuration in DbContext</div>
+                <div class="code-block csharp-block">
+                    <pre>protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    // Configure Category entity
+    modelBuilder.Entity&lt;Category&gt;(entity =>
+    {
+        entity.HasKey(c => c.Id);
+
+        entity.Property(c => c.Id)
+            .ValueGeneratedOnAdd();
+
+        entity.Property(c => c.Name)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        entity.Property(c => c.Description)
+            .HasMaxLength(500);
+
+        entity.Property(c => c.CreatedAt)
+            .HasDefaultValueSql("GETDATE()");
+
+        entity.HasIndex(c => c.Name)
+            .IsUnique();
+
+        // One-to-many relationship
+        entity.HasMany(c => c.Products)
+            .WithOne(p => p.Category)
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    // Configure Product entity
+    modelBuilder.Entity&lt;Product&gt;(entity =>
+    {
+        entity.HasKey(p => p.Id);
+
+        entity.Property(p => p.Id)
+            .ValueGeneratedOnAdd();
+
+        entity.Property(p => p.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        entity.Property(p => p.Description);
+
+        entity.Property(p => p.CategoryId)
+            .IsRequired();
+
+        entity.Property(p => p.Price)
+            .IsRequired()
+            .HasPrecision(10, 2);
+
+        entity.HasCheckConstraint("CK_Product_Price", "[Price] > 0");
+
+        entity.Property(p => p.Stock)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        entity.HasCheckConstraint("CK_Product_Stock", "[Stock] >= 0");
+
+        entity.Property(p => p.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        entity.Property(p => p.Sku)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        entity.Property(p => p.CreatedAt)
+            .HasDefaultValueSql("GETDATE()");
+
+        entity.Property(p => p.UpdatedAt)
+            .HasDefaultValueSql("GETDATE()");
+
+        // Indexes
+        entity.HasIndex(p => p.CategoryId)
+            .HasName("IX_Products_CategoryId");
+
+        entity.HasIndex(p => p.Sku)
+            .HasName("IX_Products_Sku");
+
+        entity.HasIndex(p => p.IsActive)
+            .HasName("IX_Products_IsActive");
+
+        entity.HasIndex(p => p.CreatedAt)
+            .HasName("IX_Products_CreatedAt");
+
+        entity.HasIndex(p => p.Sku)
+            .IsUnique()
+            .HasName("IX_Products_SkuUnique");
+
+        // Foreign key relationship (can also be configured from Category side)
+        entity.HasOne(p => p.Category)
+            .WithMany(c => c.Products)
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
+}</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Complete Schema Insight:</strong> This example shows the full mapping: every SQL column becomes a C# property with the same type and nullability. Every SQL constraint (NOT NULL, PRIMARY KEY, UNIQUE, CHECK, FOREIGN KEY) gets a C# equivalent via attributes or fluent API. Indexes are configured via HasIndex(). When you run migrations, EF generates the exact SQL DDL shown above from this C# configuration. This is the power of Entity Framework Core — one source of truth in C#, one generated schema in SQL.
+            </div>
+        </section>
+
+        <!-- SECTION 06 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">06</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Data Annotations vs Fluent API</h2>
+
+            <div class="section-prose">
+                <p>Entity Framework Core supports two ways to configure entities: Data Annotations and Fluent API. Both accomplish the same goal — telling EF how your classes map to database tables — but they differ in style, power, and maintainability.</p>
+
+                <p><strong>Data Annotations</strong> are attributes you place directly on C# class properties. They're concise and keep configuration close to the property they describe. However, they're limited: some advanced features (like table splitting, shadow properties, and composite keys) aren't supported by annotations.</p>
+
+                <p><strong>Fluent API</strong> is code you write in OnModelCreating that configures entities programmatically. It's more verbose but far more powerful. Every annotation has a fluent equivalent, and fluent API can do things annotations can't.</p>
+
+                <p>Let's compare the same entity configured both ways:</p>
+            </div>
+
+            <!-- Code Comparison: Annotations vs Fluent -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Data Annotations</div>
+                    <div class="code-block csharp-block">
+                        <pre>using System.ComponentModel.DataAnnotations;
+
+public class User {
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(100)]
+    public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [MaxLength(50)]
+    public string Username { get; set; } = string.Empty;
+
+    [MaxLength(500)]
+    public string? Bio { get; set; }
+
+    [Range(18, 120)]
+    public int? Age { get; set; }
+
+    [EmailAddress]
+    public string? SecondaryEmail { get; set; }
+}</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Fluent API</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class User {
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string? Bio { get; set; }
+    public int? Age { get; set; }
+    public string? SecondaryEmail { get; set; }
+}
+
+// In OnModelCreating:
+modelBuilder.Entity&lt;User&gt;(entity =>
+{
+    entity.HasKey(u => u.Id);
+
+    entity.Property(u => u.Email)
+        .IsRequired()
+        .HasMaxLength(100);
+
+    entity.Property(u => u.Username)
+        .IsRequired()
+        .HasMaxLength(50);
+
+    entity.Property(u => u.Bio)
+        .HasMaxLength(500);
+
+    entity.Property(u => u.Age)
+        .IsRequired(false);
+
+    entity.HasCheckConstraint("CK_User_Age", "[Age] >= 18 AND [Age] <= 120");
+
+    entity.Property(u => u.SecondaryEmail);
+});</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p><strong>Pros and Cons:</strong></p>
+
+                <p><strong>Data Annotations Pros:</strong> Configuration lives close to properties; minimal boilerplate for simple cases; immediately visible at a glance. <strong>Data Annotations Cons:</strong> Can't express complex relationships or advanced features; can make classes harder to read if too many attributes; limited to what the annotation library supports.</p>
+
+                <p><strong>Fluent API Pros:</strong> Extremely powerful — can express any EF Core configuration; keeps entity classes clean and focused on domain logic; more readable for complex scenarios; separates infrastructure concerns from domain model. <strong>Fluent API Cons:</strong> More verbose; configuration is separate from the properties it describes; requires understanding the fluent API.</p>
+            </div>
+
+            <div class="section-prose">
+                <p>In practice, many teams use a hybrid approach: Data Annotations for simple, common rules (Required, MaxLength, Range) and Fluent API in OnModelCreating for complex configurations. Here's an example:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#: Hybrid Approach (Annotations + Fluent API)</div>
+                <div class="code-block csharp-block">
+                    <pre>// Entity class with simple annotations
+public class BlogPost {
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(500)]
+    public string Title { get; set; } = string.Empty;
+
+    public string? Content { get; set; }
+
+    [Required]
+    public int AuthorId { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    // Navigation properties (no annotations)
+    public Author? Author { get; set; }
+    public ICollection&lt;Comment&gt; Comments { get; set; } = new List&lt;Comment&gt;();
+    public ICollection&lt;Tag&gt; Tags { get; set; } = new List&lt;Tag&gt;();
+}
+
+// Complex configuration in OnModelCreating
+modelBuilder.Entity&lt;BlogPost&gt;(entity =>
+{
+    // Basic properties are handled by annotations above
+
+    // Complex configurations go here
+    entity.HasOne(p => p.Author)
+        .WithMany(a => a.BlogPosts)
+        .HasForeignKey(p => p.AuthorId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    // Many-to-many relationship (can't be done with annotations)
+    entity.HasMany(p => p.Tags)
+        .WithMany(t => t.BlogPosts)
+        .UsingEntity("BlogPostTags");
+
+    // Indexes for performance
+    entity.HasIndex(p => p.CreatedAt)
+        .HasName("IX_BlogPost_CreatedAt");
+
+    entity.HasIndex(p => p.AuthorId)
+        .HasName("IX_BlogPost_AuthorId");
+
+    // Default values
+    entity.Property(p => p.CreatedAt)
+        .HasDefaultValueSql("GETDATE()");
+});</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Configuration Pattern Insight:</strong> Data Annotations work well for straightforward scenarios and provide documentation at the property level. Fluent API becomes essential for complex relationships, many-to-many mappings, and advanced features. The best approach is to use annotations for basic constraints and fluent API in OnModelCreating for relationship configuration. This keeps your entity classes readable while putting sophisticated logic where it belongs: in your DbContext configuration.
+            </div>
+        </section>
+
+        <!-- SECTION 07 -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">07</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Indexes: SQL CREATE INDEX vs EF HasIndex</h2>
+
+            <div class="section-prose">
+                <p>Indexes are a critical performance tool in databases. An index on a column allows the database to quickly find rows without scanning the entire table. However, indexes come with a cost: every INSERT, UPDATE, and DELETE must maintain every index on that table. Over-indexing can actually slow down writes more than it speeds up reads.</p>
+
+                <p>The general rule: index columns that appear frequently in WHERE clauses, JOIN conditions, and ORDER BY clauses. Don't index every column. Focus on the query patterns you actually see in your application.</p>
+
+                <p>Let's look at how to create indexes in SQL and how to configure them in Entity Framework Core:</p>
+            </div>
+
+            <!-- Code Comparison: Simple Index -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL: Simple Index</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE INDEX IX_Products_Category
+    ON Products(Category);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: Simple Index with Fluent API</div>
+                    <div class="code-block csharp-block">
+                        <pre>modelBuilder.Entity&lt;Product&gt;(entity =>
+{
+    entity.HasIndex(p => p.Category)
+        .HasName("IX_Products_Category");
+});</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Comparison: Unique Index -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL: Unique Index (Constraint)</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE UNIQUE INDEX IX_Users_Email
+    ON Users(Email);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: Unique Index with Fluent API</div>
+                    <div class="code-block csharp-block">
+                        <pre>modelBuilder.Entity&lt;User&gt;(entity =>
+{
+    entity.HasIndex(u => u.Email)
+        .IsUnique()
+        .HasName("IX_Users_Email");
+});</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Comparison: Composite Index -->
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL: Composite Index</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE INDEX IX_Orders_Composite
+    ON Orders(CustomerId, OrderDate)
+    INCLUDE (Total);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#: Composite Index with Fluent API</div>
+                    <div class="code-block csharp-block">
+                        <pre>modelBuilder.Entity&lt;Order&gt;(entity =>
+{
+    // Note: INCLUDE is not directly supported
+    // by fluent API; it requires EF migration SQL
+    entity.HasIndex(o => new {
+        o.CustomerId,
+        o.OrderDate
+    })
+    .HasName("IX_Orders_Composite");
+});</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p>Here's a more complete example showing how to define multiple indexes on an entity:</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#: Complete Index Configuration</div>
+                <div class="code-block csharp-block">
+                    <pre>modelBuilder.Entity&lt;Order&gt;(entity =>
+{
+    entity.HasKey(o => o.Id);
+
+    // Single-column index for foreign key lookups
+    entity.HasIndex(o => o.CustomerId)
+        .HasName("IX_Orders_CustomerId");
+
+    // Single-column index for date range queries
+    entity.HasIndex(o => o.OrderDate)
+        .HasName("IX_Orders_OrderDate");
+
+    // Composite index for queries filtering by customer and date
+    entity.HasIndex(o => new { o.CustomerId, o.OrderDate })
+        .HasName("IX_Orders_Customer_Date");
+
+    // Unique index ensures no duplicate orders
+    entity.HasIndex(o => o.OrderNumber)
+        .IsUnique()
+        .HasName("IX_Orders_OrderNumber_Unique");
+
+    // Index for status filtering
+    entity.HasIndex(o => o.Status)
+        .HasName("IX_Orders_Status");
+
+    // Properties
+    entity.Property(o => o.Id).ValueGeneratedOnAdd();
+    entity.Property(o => o.CustomerId).IsRequired();
+    entity.Property(o => o.OrderDate).HasDefaultValueSql("GETDATE()");
+    entity.Property(o => o.OrderNumber).IsRequired().HasMaxLength(50);
+    entity.Property(o => o.Status).IsRequired().HasMaxLength(20);
+    entity.Property(o => o.Total).HasPrecision(10, 2);
+});</pre>
+                </div>
+            </div>
+
+            <div class="section-prose">
+                <p><strong>When to Index:</strong> Index a column if you frequently query by that column (WHERE Status = 'Active'), join on it (JOIN Orders ON Orders.CustomerId = Customers.Id), or sort by it (ORDER BY OrderDate DESC). Common candidates include foreign keys, status fields, and date columns.</p>
+
+                <p><strong>When NOT to Index:</strong> Don't index boolean columns if they have poor selectivity (like IsDeleted where 99% of rows are false). Don't index columns that are rarely used in queries. Don't index small tables (less than 1000 rows) — a full table scan is faster than index lookup overhead. Every index has maintenance cost on writes.</p>
+
+                <p><strong>Covering Indexes (INCLUDE):</strong> In SQL, you can create a "covering index" that includes non-key columns, allowing the database to satisfy entire queries from the index without touching the main table. EF Core doesn't expose INCLUDE directly in fluent API, so you need to write raw SQL migrations if you want covering indexes.</p>
+            </div>
+
+            <div class="insight">
+                <strong>Index Strategy Insight:</strong> Indexes speed up reads but slow down writes. Every INSERT, UPDATE, and DELETE must maintain every index on a table. The key is to index strategically: focus on the columns in your WHERE clauses, JOIN conditions, and ORDER BY operations. Monitor query performance and only add indexes when you see problems. A database with too many indexes is as bad as one with too few.
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>SQL tables and C# classes solve the same problem differently: tables use set-based relational thinking; classes use object-oriented imperative thinking.</li>
+                <li>Every SQL column maps to a C# property with a corresponding CLR type. Nullable SQL columns map to nullable C# types (e.g., int? for INT NULL).</li>
+                <li>SQL constraints enforce data integrity at the database level; C# validation attributes enforce rules at the application level. Use both.</li>
+                <li>Identity columns (IDENTITY) are the simplest primary key strategy for single-database systems. GUIDs are better for distributed systems. Hi-Lo is a good hybrid.</li>
+                <li>Entity Framework Core automatically detects conventions (like Id property names) but also supports explicit configuration via Data Annotations or Fluent API.</li>
+                <li>Data Annotations are concise for simple configurations; Fluent API is more powerful for complex relationships and advanced features. Many teams use a hybrid approach.</li>
+                <li>Indexes accelerate reads but add overhead to writes. Index strategically on columns that appear in WHERE, JOIN, and ORDER BY clauses. Monitor performance to avoid over-indexing.</li>
+                <li>The goal is a single source of truth: your C# code. Entity Framework Core generates the SQL schema from your configuration via migrations.</li>
+            </ul>
+        </div>
+
+        <!-- Chapter Navigation -->
+        <div class="chapter-nav">
+            <a href="index.html" class="nav-item prev">
+                <span class="nav-item-label">Previous</span>
+                <span class="nav-item-title">Table of Contents</span>
+            </a>
+            <a href="ch02-rows-vs-objects.html" class="nav-item next">
+                <span class="nav-item-label">Next</span>
+                <span class="nav-item-title">Chapter 02: Rows vs Objects</span>
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>SQL to C# — A Practical Guide to Entity Framework Core</p>
+        <p>Chapter 01: Tables vs Classes — The Fundamental Parallel</p>
+        <p>© 2024 - 2026. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 23: Repository Pattern — Abstracting Data Access | SQL to C#</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f3;
+      --bg2: #f0ede6;
+      --bg3: #e8e4db;
+      --white: #fff;
+      --ink: #1c1a17;
+      --ink2: #3d3a34;
+      --ink3: #6b6760;
+      --ink4: #a8a49e;
+      --rule: #dedad3;
+      --acc: #c96b1e;
+      --acc-l: #fdf3eb;
+      --acc-b: #f5c99a;
+      --green: #1d6b45;
+      --green-l: #edf8f2;
+      --green-b: #9fd9bc;
+      --blue: #1a4f8a;
+      --blue-l: #edf2fb;
+      --blue-b: #afc8ef;
+      --amber: #7a5200;
+      --amber-l: #fdf8ec;
+      --amber-b: #e8d08a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Source Serif 4', serif;
+      background-color: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    /* Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      height: 54px;
+      background-color: var(--white);
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .nav-brand {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--acc);
+    }
+
+    .nav-chapter {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background-color: var(--acc-l);
+      color: var(--acc);
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      text-decoration: none;
+    }
+
+    /* Main container */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      color: var(--ink);
+    }
+
+    .chapter-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--acc);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .chapter-subtitle {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.1rem;
+      color: var(--ink3);
+      font-weight: 300;
+      margin-bottom: 2rem;
+    }
+
+    /* In This Chapter */
+    .in-this-chapter {
+      background-color: var(--blue-l);
+      border-left: 4px solid var(--blue);
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+      border-radius: 4px;
+    }
+
+    .in-this-chapter h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 1rem;
+    }
+
+    .in-this-chapter ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .in-this-chapter li {
+      margin-bottom: 0.6rem;
+      font-size: 0.95rem;
+      color: var(--ink2);
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .in-this-chapter li:before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+    }
+
+    /* Section styling */
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .section-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--acc);
+      line-height: 1;
+      min-width: 3rem;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* Prose */
+    .prose {
+      margin-bottom: 1.5rem;
+      color: var(--ink2);
+      line-height: 1.8;
+    }
+
+    .prose p {
+      margin-bottom: 1rem;
+    }
+
+    .prose strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .prose em {
+      color: var(--ink3);
+      font-style: italic;
+    }
+
+    /* Code comparison */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .comparison-block {
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .comparison-label {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sql-block {
+      background-color: var(--ink);
+    }
+
+    .sql-block .comparison-label {
+      background-color: var(--ink2);
+      color: var(--white);
+    }
+
+    .csharp-block {
+      background-color: var(--blue-l);
+    }
+
+    .csharp-block .comparison-label {
+      background-color: var(--blue);
+      color: var(--white);
+    }
+
+    .code-content {
+      background-color: var(--ink);
+      color: #e8e8e8;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 120px;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .csharp-block .code-content {
+      background-color: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--blue-b);
+    }
+
+    /* Syntax highlighting for code */
+    .kw { color: #569cd6; }
+    .str { color: #ce9178; }
+    .comment { color: #6a9955; }
+    .type { color: #4ec9b0; }
+    .attr { color: #9cdcfe; }
+    .num { color: #b5cea8; }
+
+    .csharp-block .kw { color: var(--blue); }
+    .csharp-block .str { color: #a85e2a; }
+    .csharp-block .comment { color: #555; }
+    .csharp-block .type { color: #0066cc; }
+
+    /* Insight box */
+    .insight {
+      background-color: var(--acc-l);
+      border-left: 4px solid var(--acc);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+    }
+
+    .insight-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--acc);
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .insight-text {
+      color: var(--ink2);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .insight-text strong {
+      color: var(--ink);
+    }
+
+    /* Key Takeaways */
+    .key-takeaways {
+      background-color: var(--green-l);
+      border-left: 4px solid var(--green);
+      padding: 2rem;
+      margin: 3rem 0;
+      border-radius: 4px;
+    }
+
+    .key-takeaways h3 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 1.5rem;
+      font-size: 1.2rem;
+    }
+
+    .key-takeaways ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .key-takeaways li {
+      margin-bottom: 0.8rem;
+      padding-left: 1.5rem;
+      position: relative;
+      color: var(--ink2);
+      line-height: 1.7;
+    }
+
+    .key-takeaways li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* Navigation buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .nav-button {
+      font-family: 'Outfit', sans-serif;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+    }
+
+    .nav-button:hover {
+      background-color: var(--bg2);
+      border-color: var(--ink3);
+    }
+
+    .nav-button.prev { text-align: left; }
+    .nav-button.next { text-align: right; }
+
+    /* Footer */
+    footer {
+      background-color: var(--bg2);
+      padding: 2rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--ink3);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    footer a {
+      color: var(--acc);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Code block for single column */
+    .code-block {
+      background-color: var(--white);
+      border: 1px solid var(--blue-b);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .code-block .comparison-label {
+      background-color: var(--blue);
+      color: var(--white);
+    }
+
+    .code-block .code-content {
+      background-color: var(--white);
+      color: var(--ink);
+      min-height: 150px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      main { padding: 1.5rem 1rem; }
+      h1 { font-size: 1.8rem; }
+      .comparison { grid-template-columns: 1fr; }
+      nav { padding: 0 1rem; }
+      .section-title { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <span class="nav-brand">SQL to C#</span>
+    <a href="#" class="nav-chapter">Chapter 23</a>
+  </nav>
+
+  <main>
+    <header>
+      <div class="chapter-number">Chapter 23</div>
+      <h1>Repository Pattern</h1>
+      <p class="chapter-subtitle">Abstracting Data Access</p>
+    </header>
+
+    <div class="in-this-chapter">
+      <h3>In This Chapter</h3>
+      <ul>
+        <li>Understanding the Repository pattern as a data access abstraction layer</li>
+        <li>Martin Fowler's original definition and modern evolution</li>
+        <li>SQL views and stored procedures as database-level repositories</li>
+        <li>Implementing generic repositories with both EF Core and Dapper</li>
+        <li>Why specific repositories express business intent better than generic ones</li>
+        <li>Repository with the Specification pattern for complex queries</li>
+        <li>Pagination, filtering, and sorting in repository methods</li>
+        <li>Testing strategies: mocking, in-memory implementations, and async patterns</li>
+        <li>Recognizing and avoiding the repository anti-pattern</li>
+        <li>Positioning repositories in Clean Architecture layers</li>
+        <li>Deep dive: abstraction costs and when NOT to use repositories</li>
+        <li>Real-world scenarios where the Repository pattern shines</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">01</div>
+        <h2 class="section-title">What is the Repository Pattern?</h2>
+      </div>
+      <div class="prose">
+        <p>The <strong>Repository pattern</strong> is an abstraction layer that sits between your business logic and your data access logic. Think of it as a "data service" that encapsulates how you fetch, store, update, and delete data. Instead of your application directly querying the database, it asks the repository "give me the customer with ID 5" or "save this order," and the repository handles the details.</p>
+        <p>In SQL terms, this is analogous to creating <strong>Views</strong> or <strong>Stored Procedures</strong>. A view hides the complexity of joins and filters; a repository hides the complexity of database queries. Both are abstractions that make the underlying data access details invisible to the consumer.</p>
+        <p><strong>Martin Fowler's Definition:</strong> In his seminal book <em>Patterns of Enterprise Application Architecture</em>, Fowler described the Repository pattern as "mediating between the domain and mapping layers, acting like an in-memory collection of entities." The key idea: repositories should feel like collections you're operating on, not like database access code. You shouldn't think about SQL or EF Core—you should think about domain objects.</p>
+      </div>
+      <div class="insight">
+        <div class="insight-title">The Core Idea</div>
+        <div class="insight-text">A repository is a contract (interface) that says "I can do these data operations." The actual implementation details—whether you use EF Core, Dapper, raw SQL, or even in-memory lists—are hidden from the caller. This means you can swap implementations without breaking your business logic.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">02</div>
+        <h2 class="section-title">SQL Views and Stored Procedures as Repositories</h2>
+      </div>
+      <div class="prose">
+        <p>Before diving into C# repositories, let's understand the concept at the database level. In SQL, the same abstraction principle exists: you define views and stored procedures to hide query complexity.</p>
+        <p>A database view is like a repository's "query method"—it encapsulates complex joins and filters:</p>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">SQL - Complex Query (Raw)</div>
+          <div class="code-content"><span class="kw">SELECT</span> c.Id,
+       c.Name,
+       c.Email,
+       COUNT(o.Id) <span class="kw">AS</span> OrderCount,
+       SUM(o.Total) <span class="kw">AS</span> TotalSpent
+<span class="kw">FROM</span> Customers c
+<span class="kw">LEFT JOIN</span> Orders o <span class="kw">ON</span> c.Id = o.CustomerId
+<span class="kw">WHERE</span> c.IsActive = <span class="num">1</span>
+<span class="kw">GROUP BY</span> c.Id, c.Name, c.Email
+<span class="kw">ORDER BY</span> TotalSpent <span class="kw">DESC</span>;</pre></div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">SQL - Same Logic Encapsulated as View</div>
+          <div class="code-content"><span class="kw">CREATE VIEW</span> vw_ActiveCustomerStats <span class="kw">AS</span>
+<span class="kw">SELECT</span> c.Id,
+       c.Name,
+       c.Email,
+       COUNT(o.Id) <span class="kw">AS</span> OrderCount,
+       SUM(o.Total) <span class="kw">AS</span> TotalSpent
+<span class="kw">FROM</span> Customers c
+<span class="kw">LEFT JOIN</span> Orders o <span class="kw">ON</span> c.Id = o.CustomerId
+<span class="kw">WHERE</span> c.IsActive = <span class="num">1</span>
+<span class="kw">GROUP BY</span> c.Id, c.Name, c.Email;
+
+<span class="comment">-- Now any consumer uses the abstraction:</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> vw_ActiveCustomerStats
+<span class="kw">ORDER BY</span> TotalSpent <span class="kw">DESC</span>;</pre></div>
+        </div>
+      </div>
+
+      <div class="prose">
+        <p>The same principle applies in C#. A repository method "GetActiveCustomersWithStats()" is the OOP equivalent of the view. Both hide complexity and present a simpler interface.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Database vs. Application Repositories</div>
+        <div class="insight-text">SQL repositories (views/stored procedures) operate at the database level and return data. C# repositories operate at the application level and return domain objects. The concepts are identical: both abstract away complexity. In legacy systems with mature SQL code, you might use stored procedures directly from C#. In modern systems, C# repositories wrap EF Core or Dapper.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">03</div>
+        <h2 class="section-title">Generic Repository with EF Core</h2>
+      </div>
+      <div class="prose">
+        <p>A <strong>generic repository</strong> is a single repository class that works with any entity type. It provides standard CRUD operations (Create, Read, Update, Delete) that apply to all entities. Let's start with the interface:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Generic Repository Interface</div>
+        <div class="code-content"><pre><span class="kw">public interface</span> <span class="type">IRepository</span>&lt;<span class="type">T</span>&gt; <span class="kw">where</span> <span class="type">T</span> : <span class="kw">class</span>
+{
+    <span class="comment">// Read operations</span>
+    <span class="kw">Task</span>&lt;<span class="type">T</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id);
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">GetAllAsync</span>();
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">FindAsync</span>(
+        <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">bool</span>&gt;&gt; predicate);
+
+    <span class="comment">// Write operations</span>
+    <span class="kw">Task</span> <span class="attr">AddAsync</span>(<span class="type">T</span> entity);
+    <span class="kw">Task</span> <span class="attr">AddRangeAsync</span>(<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt; entities);
+    <span class="kw">void</span> <span class="attr">Update</span>(<span class="type">T</span> entity);
+    <span class="kw">void</span> <span class="attr">Delete</span>(<span class="type">T</span> entity);
+    <span class="kw">void</span> <span class="attr">DeleteRange</span>(<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt; entities);
+
+    <span class="comment">// Persistence</span>
+    <span class="kw">Task</span>&lt;<span class="kw">int</span>&gt; <span class="attr">SaveChangesAsync</span>();
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Now, here's the EF Core implementation using DbContext:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - EF Core Generic Repository Implementation</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">Repository</span>&lt;<span class="type">T</span>&gt; : <span class="type">IRepository</span>&lt;<span class="type">T</span>&gt;
+    <span class="kw">where</span> <span class="type">T</span> : <span class="kw">class</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+    <span class="kw">private readonly</span> <span class="type">DbSet</span>&lt;<span class="type">T</span>&gt; _dbSet;
+
+    <span class="kw">public</span> <span class="type">Repository</span>(<span class="type">DbContext</span> context)
+    {
+        _context = context;
+        _dbSet = context.Set&lt;<span class="type">T</span>&gt;();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">T</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">return await</span> _dbSet.FindAsync(id);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">GetAllAsync</span>()
+    {
+        <span class="kw">return await</span> _dbSet.ToListAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">FindAsync</span>(
+        <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">bool</span>&gt;&gt; predicate)
+    {
+        <span class="kw">return await</span> _dbSet.Where(predicate).ToListAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">AddAsync</span>(<span class="type">T</span> entity)
+    {
+        <span class="kw">await</span> _dbSet.AddAsync(entity);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">AddRangeAsync</span>(<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt; entities)
+    {
+        <span class="kw">await</span> _dbSet.AddRangeAsync(entities);
+    }
+
+    <span class="kw">public void</span> <span class="attr">Update</span>(<span class="type">T</span> entity)
+    {
+        _dbSet.Update(entity);
+    }
+
+    <span class="kw">public void</span> <span class="attr">Delete</span>(<span class="type">T</span> entity)
+    {
+        _dbSet.Remove(entity);
+    }
+
+    <span class="kw">public void</span> <span class="attr">DeleteRange</span>(<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt; entities)
+    {
+        _dbSet.RemoveRange(entities);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">int</span>&gt; <span class="attr">SaveChangesAsync</span>()
+    {
+        <span class="kw">return await</span> _context.SaveChangesAsync();
+    }
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Usage is straightforward. You inject the generic repository and use it with any entity:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Using Generic Repository</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="type">IRepository</span>&lt;<span class="type">Order</span>&gt; _orderRepo;
+
+    <span class="kw">public</span> <span class="type">OrderService</span>(<span class="type">IRepository</span>&lt;<span class="type">Order</span>&gt; orderRepo)
+    {
+        _orderRepo = orderRepo;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">PlaceOrderAsync</span>(<span class="type">Order</span> order)
+    {
+        <span class="kw">await</span> _orderRepo.AddAsync(order);
+        <span class="kw">await</span> _orderRepo.SaveChangesAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Order</span>?&gt; <span class="attr">GetOrderAsync</span>(<span class="kw">int</span> orderId)
+    {
+        <span class="kw">return await</span> _orderRepo.GetByIdAsync(orderId);
+    }
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Dependency Injection Setup</div>
+        <div class="insight-text">In your DI container (Startup.cs or Program.cs), register the generic repository like this: <code>services.AddScoped(typeof(IRepository&lt;&gt;), typeof(Repository&lt;&gt;));</code> This allows you to inject <code>IRepository&lt;Customer&gt;</code>, <code>IRepository&lt;Order&gt;</code>, etc., automatically.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">04</div>
+        <h2 class="section-title">Generic Repository with Dapper</h2>
+      </div>
+      <div class="prose">
+        <p>The same interface works with Dapper, but the implementation is quite different because Dapper requires explicit SQL queries. This shows the power of the repository pattern—the interface is identical, but the implementation changes:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Dapper Generic Repository Implementation</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">DapperRepository</span>&lt;<span class="type">T</span>&gt; : <span class="type">IRepository</span>&lt;<span class="type">T</span>&gt;
+    <span class="kw">where</span> <span class="type">T</span> : <span class="kw">class</span>
+{
+    <span class="kw">private readonly</span> <span class="type">IDbConnection</span> _connection;
+    <span class="kw">private readonly</span> <span class="kw">string</span> _tableName;
+
+    <span class="kw">public</span> <span class="type">DapperRepository</span>(<span class="type">IDbConnection</span> connection)
+    {
+        _connection = connection;
+        <span class="comment">// Assumes table name matches entity name</span>
+        _tableName = <span class="kw">typeof</span>(<span class="type">T</span>).Name + <span class="str">"s"</span>;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">T</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> sql = <span class="str">$"SELECT * FROM {_tableName} WHERE Id = @Id"</span>;
+        <span class="kw">return await</span> _connection.QueryFirstOrDefaultAsync&lt;<span class="type">T</span>&gt;(
+            sql,
+            <span class="kw">new</span> { Id = id }
+        );
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">GetAllAsync</span>()
+    {
+        <span class="kw">var</span> sql = <span class="str">$"SELECT * FROM {_tableName}"</span>;
+        <span class="kw">return await</span> _connection.QueryAsync&lt;<span class="type">T</span>&gt;(sql);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">AddAsync</span>(<span class="type">T</span> entity)
+    {
+        <span class="kw">var</span> insertSql = <span class="str">@"INSERT INTO "</span> + _tableName +
+            <span class="str">" (Name, Email) VALUES (@Name, @Email)"</span>;
+        <span class="kw">await</span> _connection.ExecuteAsync(insertSql, entity);
+    }
+
+    <span class="kw">public void</span> <span class="attr">Update</span>(<span class="type">T</span> entity)
+    {
+        <span class="kw">var</span> updateSql = <span class="str">@"UPDATE "</span> + _tableName +
+            <span class="str">" SET Name = @Name WHERE Id = @Id"</span>;
+        _connection.Execute(updateSql, entity);
+    }
+
+    <span class="kw">public void</span> <span class="attr">Delete</span>(<span class="type">T</span> entity)
+    {
+        <span class="kw">var</span> deleteSql = <span class="str">$"DELETE FROM {_tableName} WHERE Id = @Id"</span>;
+        _connection.Execute(deleteSql, entity);
+    }
+
+    <span class="comment">// Other methods omitted for brevity</span>
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Notice how Dapper's implementation is more verbose because we need explicit SQL. With EF Core, the framework generated the SQL for us. This is a key difference: <strong>EF Core abstracts SQL away, but you lose control</strong>. <strong>Dapper lets you write SQL explicitly, so you gain control but write more code</strong>.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">05</div>
+        <h2 class="section-title">Specific Repositories (Better Approach)</h2>
+      </div>
+      <div class="prose">
+        <p>While generic repositories seem elegant, they often hide important business logic. A <strong>specific repository</strong> is designed for a single entity type and includes domain-specific methods that express business intent. Consider:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Specific Customer Repository Interface</div>
+        <div class="code-content"><pre><span class="kw">public interface</span> <span class="type">ICustomerRepository</span>
+{
+    <span class="comment">// Generic CRUD</span>
+    <span class="kw">Task</span>&lt;<span class="type">Customer</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id);
+    <span class="kw">Task</span> <span class="attr">AddAsync</span>(<span class="type">Customer</span> customer);
+    <span class="kw">Task</span> <span class="attr">SaveAsync</span>();
+
+    <span class="comment">// Domain-specific queries</span>
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetActiveCustomersAsync</span>();
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetByCity</span>(<span class="kw">string</span> city);
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetTopSpendersAsync</span>(<span class="kw">int</span> count);
+    <span class="kw">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="attr">IsEmailUnique</span>(<span class="kw">string</span> email);
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Notice how the method names tell a story: "GetActiveCustomers" immediately tells a developer what business rule is being applied. Here's the EF Core implementation:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Specific Customer Repository with EF Core</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">CustomerRepository</span> : <span class="type">ICustomerRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+
+    <span class="kw">public</span> <span class="type">CustomerRepository</span>(<span class="type">DbContext</span> context)
+    {
+        _context = context;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Customer</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">return await</span> _context.Customers.FindAsync(id);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetActiveCustomersAsync</span>()
+    {
+        <span class="kw">return await</span> _context.Customers
+            .Where(c =&gt; c.IsActive && c.LastOrderDate &gt; DateTime.Now.AddMonths(-6))
+            .OrderByDescending(c =&gt; c.LastOrderDate)
+            .ToListAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetByCity</span>(<span class="kw">string</span> city)
+    {
+        <span class="kw">return await</span> _context.Customers
+            .Where(c =&gt; c.Address.City == city)
+            .OrderBy(c =&gt; c.Name)
+            .ToListAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt; <span class="attr">GetTopSpendersAsync</span>(<span class="kw">int</span> count)
+    {
+        <span class="kw">return await</span> _context.Customers
+            .Include(c =&gt; c.Orders)
+            .OrderByDescending(c =&gt; c.Orders.Sum(o =&gt; o.Total))
+            .Take(count)
+            .ToListAsync();
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="attr">IsEmailUnique</span>(<span class="kw">string</span> email)
+    {
+        <span class="kw">return await</span> _context.Customers
+            .AnyAsync(c =&gt; c.Email == email) == <span class="kw">false</span>;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">AddAsync</span>(<span class="type">Customer</span> customer)
+    {
+        <span class="kw">await</span> _context.Customers.AddAsync(customer);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">SaveAsync</span>()
+    {
+        <span class="kw">await</span> _context.SaveChangesAsync();
+    }
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Why Specific Repositories Win</div>
+        <div class="insight-text">Specific repositories act as a <strong>ubiquitous language</strong> between your code and your business domain. When a developer reads "GetTopSpenders()", they immediately understand the business rule being applied. With a generic repository and LINQ scattered throughout your code, that intent is buried in query details. Specific repositories also make testing easier—you can mock the interface with domain-specific test data.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">06</div>
+        <h2 class="section-title">Repository with Pagination, Filtering, and Sorting</h2>
+      </div>
+      <div class="prose">
+        <p>Real applications need to handle pagination (splitting results into pages), filtering (applying criteria), and sorting (ordering results). Let's extend the repository pattern to support these:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Repository with Pagination and Filtering</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">PaginationParams</span>
+{
+    <span class="kw">public int</span> PageNumber { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="num">1</span>;
+    <span class="kw">public int</span> PageSize { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="num">10</span>;
+    <span class="kw">public string</span> SortBy { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">"Id"</span>;
+    <span class="kw">public bool</span> Ascending { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">true</span>;
+}
+
+<span class="kw">public class</span> <span class="type">PagedResult</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">T</span>&gt; Items { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span> TotalCount { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span> PageNumber { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span> PageSize { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span> TotalPages =&gt;
+        (<span class="type">TotalCount</span> + <span class="type">PageSize</span> - <span class="num">1</span>) / <span class="type">PageSize</span>;
+}
+
+<span class="kw">public interface</span> <span class="type">ICustomerRepository</span>
+{
+    <span class="kw">Task</span>&lt;<span class="type">PagedResult</span>&lt;<span class="type">Customer</span>&gt;&gt;
+        <span class="attr">GetCustomersPagedAsync</span>(
+            <span class="type">PaginationParams</span> pagination,
+            <span class="kw">string</span> searchTerm = <span class="str">""</span>,
+            <span class="type">CustomerFilter</span> filter = <span class="kw">null</span>);
+}
+
+<span class="kw">public class</span> <span class="type">CustomerRepository</span> : <span class="type">ICustomerRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">PagedResult</span>&lt;<span class="type">Customer</span>&gt;&gt;
+        <span class="attr">GetCustomersPagedAsync</span>(
+            <span class="type">PaginationParams</span> pagination,
+            <span class="kw">string</span> searchTerm = <span class="str">""</span>,
+            <span class="type">CustomerFilter</span> filter = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> query = _context.Customers.AsQueryable();
+
+        <span class="comment">// Apply filters</span>
+        <span class="kw">if</span> (!<span class="kw">string</span>.IsNullOrEmpty(searchTerm))
+            query = query.Where(c =&gt;
+                c.Name.Contains(searchTerm) || c.Email.Contains(searchTerm));
+
+        <span class="kw">if</span> (filter?.IsActive.HasValue == <span class="kw">true</span>)
+            query = query.Where(c =&gt; c.IsActive == filter.IsActive.Value);
+
+        <span class="comment">// Total count before pagination</span>
+        <span class="kw">var</span> totalCount = <span class="kw">await</span> query.CountAsync();
+
+        <span class="comment">// Apply sorting</span>
+        query = pagination.Ascending
+            ? query.OrderBy(c =&gt; <span class="type">EF</span>.Property&lt;<span class="kw">object</span>&gt;(c, pagination.SortBy))
+            : query.OrderByDescending(c =&gt;
+                <span class="type">EF</span>.Property&lt;<span class="kw">object</span>&gt;(c, pagination.SortBy));
+
+        <span class="comment">// Apply pagination</span>
+        <span class="kw">var</span> items = <span class="kw">await</span> query
+            .Skip((pagination.PageNumber - <span class="num">1</span>) * pagination.PageSize)
+            .Take(pagination.PageSize)
+            .ToListAsync();
+
+        <span class="kw">return new</span> <span class="type">PagedResult</span>&lt;<span class="type">Customer</span>&gt;
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pagination.PageNumber,
+            PageSize = pagination.PageSize
+        };
+    }
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Now let's compare the LINQ query syntax version:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - LINQ Query Syntax Alternative</div>
+        <div class="code-content"><pre><span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">PagedResult</span>&lt;<span class="type">Customer</span>&gt;&gt;
+    <span class="attr">GetCustomersPagedAsync</span>(
+        <span class="type">PaginationParams</span> pagination,
+        <span class="kw">string</span> searchTerm = <span class="str">""</span>,
+        <span class="type">CustomerFilter</span> filter = <span class="kw">null</span>)
+{
+    <span class="comment">// Query syntax version</span>
+    <span class="kw">var</span> query = <span class="kw">from</span> c <span class="kw">in</span> _context.Customers
+                 <span class="kw">where</span> (<span class="kw">string</span>.IsNullOrEmpty(searchTerm) ||
+                        c.Name.Contains(searchTerm) ||
+                        c.Email.Contains(searchTerm))
+                 <span class="kw">where</span> (filter?.IsActive == <span class="kw">null</span> ||
+                        c.IsActive == filter.IsActive.Value)
+                 <span class="kw">orderby</span> c.Name <span class="kw">ascending</span>
+                 <span class="kw">select</span> c;
+
+    <span class="kw">var</span> totalCount = <span class="kw">await</span> query.CountAsync();
+
+    <span class="kw">var</span> items = <span class="kw">await</span> query
+        .Skip((pagination.PageNumber - <span class="num">1</span>) * pagination.PageSize)
+        .Take(pagination.PageSize)
+        .ToListAsync();
+
+    <span class="kw">return new</span> <span class="type">PagedResult</span>&lt;<span class="type">Customer</span>&gt; { ... };
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Query Syntax vs Method Syntax</div>
+        <div class="insight-text">Both LINQ syntaxes produce identical SQL. Use query syntax when you have multiple where clauses and joins—it's often more readable. Use method syntax for simple queries or when combining complex operations. Both work seamlessly with repositories.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">07</div>
+        <h2 class="section-title">Repository with the Specification Pattern</h2>
+      </div>
+      <div class="prose">
+        <p>For complex filtering logic, the <strong>Specification pattern</strong> pairs beautifully with repositories. A specification encapsulates a query predicate and related data (includes, ordering) in a reusable object:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Specification Pattern</div>
+        <div class="code-content"><pre><span class="kw">public abstract class</span> <span class="type">Specification</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">bool</span>&gt;&gt; Criteria { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">object</span>&gt;&gt;&gt;
+        Includes { <span class="kw">get</span>; } = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">object</span>&gt;&gt;&gt;();
+    <span class="kw">public</span> <span class="type">Expression</span>&lt;<span class="type">Func</span>&lt;<span class="type">T</span>, <span class="kw">object</span>&gt;&gt; OrderBy { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="comment">// Concrete specification for active customers</span>
+<span class="kw">public class</span> <span class="type">ActiveCustomersSpec</span> : <span class="type">Specification</span>&lt;<span class="type">Customer</span>&gt;
+{
+    <span class="kw">public</span> <span class="type">ActiveCustomersSpec</span>(<span class="kw">string</span> city = <span class="kw">null</span>)
+    {
+        Criteria = c =&gt; c.IsActive;
+
+        <span class="kw">if</span> (!<span class="kw">string</span>.IsNullOrEmpty(city))
+            Criteria = c =&gt; c.IsActive && c.Address.City == city;
+
+        Includes.Add(c =&gt; c.Orders);
+        OrderBy = c =&gt; c.Name;
+    }
+}
+
+<span class="comment">// Repository accepts specs</span>
+<span class="kw">public interface</span> <span class="type">ISpecificationRepository</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="kw">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt;
+        <span class="attr">GetAsync</span>(<span class="type">Specification</span>&lt;<span class="type">T</span>&gt; spec);
+}
+
+<span class="kw">public class</span> <span class="type">SpecificationRepository</span>&lt;<span class="type">T</span>&gt; :
+    <span class="type">ISpecificationRepository</span>&lt;<span class="type">T</span>&gt;
+    <span class="kw">where</span> <span class="type">T</span> : <span class="kw">class</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt;
+        <span class="attr">GetAsync</span>(<span class="type">Specification</span>&lt;<span class="type">T</span>&gt; spec)
+    {
+        <span class="kw">var</span> query = _context.Set&lt;<span class="type">T</span>&gt;().AsQueryable();
+
+        <span class="comment">// Apply criteria</span>
+        <span class="kw">if</span> (spec.Criteria != <span class="kw">null</span>)
+            query = query.Where(spec.Criteria);
+
+        <span class="comment">// Apply includes</span>
+        query = spec.Includes.Aggregate(query,
+            (current, include) =&gt; current.Include(include));
+
+        <span class="comment">// Apply ordering</span>
+        <span class="kw">if</span> (spec.OrderBy != <span class="kw">null</span>)
+            query = query.OrderBy(spec.OrderBy);
+
+        <span class="kw">return await</span> query.ToListAsync();
+    }
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Usage is clean and expressive:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Using Specifications</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">CustomerService</span>
+{
+    <span class="kw">private readonly</span> <span class="type">ISpecificationRepository</span>&lt;<span class="type">Customer</span>&gt; _repo;
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">GetActiveInSeattle</span>()
+    {
+        <span class="comment">// Create spec with business rules</span>
+        <span class="kw">var</span> spec = <span class="kw">new</span> <span class="type">ActiveCustomersSpec</span>(<span class="str">"Seattle"</span>);
+
+        <span class="comment">// Repository applies it</span>
+        <span class="kw">var</span> customers = <span class="kw">await</span> _repo.GetAsync(spec);
+    }
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Specifications Encapsulate Complexity</div>
+        <div class="insight-text">Specifications move complex filtering logic out of service classes and into reusable, testable objects. The repository doesn't need to know about business rules—it just applies the specification. This is especially powerful when the same criteria are used in multiple places.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">08</div>
+        <h2 class="section-title">Testing Repositories: Mocking and In-Memory Implementations</h2>
+      </div>
+      <div class="prose">
+        <p>One of the biggest advantages of the repository pattern is testability. Because the interface is abstracted from the implementation, you can create mock or in-memory repositories for testing:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - In-Memory Test Repository</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">InMemoryCustomerRepository</span> :
+    <span class="type">ICustomerRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="type">List</span>&lt;<span class="type">Customer</span>&gt; _customers =
+        <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Customer</span>&gt;();
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Customer</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">return await</span> <span class="type">Task</span>.FromResult(
+            _customers.FirstOrDefault(c =&gt; c.Id == id));
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">Customer</span>&gt;&gt;
+        <span class="attr">GetActiveCustomersAsync</span>()
+    {
+        <span class="kw">return await</span> <span class="type">Task</span>.FromResult(
+            _customers.Where(c =&gt; c.IsActive).ToList());
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">AddAsync</span>(<span class="type">Customer</span> customer)
+    {
+        _customers.Add(customer);
+        <span class="kw">return await</span> <span class="type">Task</span>.CompletedTask;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">SaveAsync</span>()
+    {
+        <span class="kw">return await</span> <span class="type">Task</span>.CompletedTask;
+    }
+}
+
+<span class="comment">// Unit test using in-memory repository</span>
+[<span class="type">Fact</span>]
+<span class="kw">public async</span> <span class="type">Task</span> <span class="attr">GetActiveCustomersAsync_ReturnsOnlyActive</span>()
+{
+    <span class="comment">// Arrange</span>
+    <span class="kw">var</span> repo = <span class="kw">new</span> <span class="type">InMemoryCustomerRepository</span>();
+    <span class="kw">var</span> customer1 = <span class="kw">new</span> <span class="type">Customer</span> { Id = <span class="num">1</span>, IsActive = <span class="kw">true</span> };
+    <span class="kw">var</span> customer2 = <span class="kw">new</span> <span class="type">Customer</span> { Id = <span class="num">2</span>, IsActive = <span class="kw">false</span> };
+    <span class="kw">await</span> repo.AddAsync(customer1);
+    <span class="kw">await</span> repo.AddAsync(customer2);
+
+    <span class="comment">// Act</span>
+    <span class="kw">var</span> result = <span class="kw">await</span> repo.GetActiveCustomersAsync();
+
+    <span class="comment">// Assert</span>
+    <span class="type">Assert</span>.Single(result);
+    <span class="type">Assert</span>.Equal(customer1.Id, result.First().Id);
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Alternatively, use Moq for more complex scenarios:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Mocking Repositories with Moq</div>
+        <div class="code-content"><pre>[<span class="type">Fact</span>]
+<span class="kw">public async</span> <span class="type">Task</span> <span class="attr">ApplyDiscountAsync_CallsRepository</span>()
+{
+    <span class="comment">// Arrange</span>
+    <span class="kw">var</span> mockRepo = <span class="kw">new</span> <span class="type">Mock</span>&lt;<span class="type">ICustomerRepository</span>&gt;();
+    <span class="kw">var</span> customer = <span class="kw">new</span> <span class="type">Customer</span>
+    {
+        Id = <span class="num">1</span>,
+        Email = <span class="str">"test@example.com"</span>,
+        IsActive = <span class="kw">true</span>
+    };
+
+    mockRepo
+        .Setup(r =&gt; r.GetByIdAsync(<span class="num">1</span>))
+        .ReturnsAsync(customer);
+
+    <span class="kw">var</span> service = <span class="kw">new</span> <span class="type">CustomerService</span>(mockRepo.Object);
+
+    <span class="comment">// Act</span>
+    <span class="kw">await</span> service.ApplyDiscountAsync(<span class="num">1</span>);
+
+    <span class="comment">// Assert</span>
+    mockRepo.Verify(r =&gt; r.GetByIdAsync(<span class="num">1</span>),
+                    <span class="type">Times</span>.Once);
+    mockRepo.Verify(r =&gt; r.SaveAsync(),
+                    <span class="type">Times</span>.Once);
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Testing Without a Database</div>
+        <div class="insight-text">In-memory repositories let you test business logic without touching the database, making tests fast and reliable. Mocks are useful when you want to verify that your service called the repository with specific parameters. Together, they eliminate the need for integration tests during development—unit tests are enough for the service layer.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">09</div>
+        <h2 class="section-title">The Repository Anti-Pattern: Leaky Abstractions</h2>
+      </div>
+      <div class="prose">
+        <p>The Repository pattern can become problematic when it becomes a <strong>leaky abstraction</strong>—when implementation details seep through and break the abstraction. Here are common anti-patterns:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - ANTI-PATTERN: Exposing IQueryable</div>
+        <div class="code-content"><pre><span class="comment">// BAD: Exposes EF Core's query provider</span>
+<span class="kw">public interface</span> <span class="type">IBadRepository</span>&lt;<span class="type">T</span>&gt;
+{
+    <span class="type">IQueryable</span>&lt;<span class="type">T</span>&gt; <span class="attr">Query</span>(); <span class="comment">// Oops!</span>
+}
+
+<span class="comment">// Now the caller is writing LINQ against EF Core!</span>
+<span class="comment">// They're tightly coupled to EF Core, defeating the purpose</span>
+<span class="kw">var</span> customers = <span class="kw">await</span> _repository
+    .Query()
+    .Where(c =&gt; c.IsActive)
+    .ToListAsync();
+
+<span class="comment">// If you swap to Dapper, this code breaks!</span>
+<span class="comment">// The abstraction is worthless now.</span></pre></div>
+      </div>
+
+      <div class="prose">
+        <p>The problem: <code>IQueryable</code> is an EF Core implementation detail. By exposing it, you've lost the abstraction—callers are now writing EF LINQ directly. This means you can't swap implementations.</p>
+        <p>Another anti-pattern is making the repository too thin:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - ANTI-PATTERN: Repositories That Are Just CRUD</div>
+        <div class="code-content"><pre><span class="comment">// BAD: Repository is just a thin wrapper</span>
+<span class="kw">public class</span> <span class="type">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="type">IRepository</span>&lt;<span class="type">Order</span>&gt; _orderRepo;
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">ProcessOrderAsync</span>(<span class="type">Order</span> order)
+    {
+        <span class="kw">await</span> _orderRepo.AddAsync(order); <span class="comment">// OK</span>
+
+        <span class="comment">// But all the real logic is here in the service:</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> order.Items)
+        {
+            item.Discount = CalculateDiscount(item);
+        }
+
+        <span class="kw">if</span> (order.Total &gt; <span class="num">1000</span>)
+        {
+            <span class="comment">// Manually fetch related data</span>
+            <span class="kw">var</span> customer = <span class="kw">await</span> _orderRepo.GetByIdAsync(
+                order.CustomerId);
+            <span class="kw">var</span> rewards = <span class="kw">await</span> _rewardRepo
+                .GetByCustomerAsync(customer.Id);
+            customer.RewardPoints += <span class="num">100</span>;
+        }
+
+        <span class="kw">await</span> _orderRepo.SaveChangesAsync();
+    }
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>Here, the repository is useless—it's just calling DbContext methods. The real logic is in the service. This is a sign that your repository should have domain-specific methods like <code>ProcessOrderWithRewardsAsync()</code>.</p>
+        <p><strong>When NOT to use the Repository pattern:</strong> In simple CRUD applications where you're just wrapping entity operations, the repository adds boilerplate without value. For example, if your entire application is "get user, update user, save," using DbContext directly might be simpler. Also, in CQRS architectures, you often don't use repositories at all—you use query handlers and command handlers instead.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Rule of Thumb</div>
+        <div class="insight-text">Use the Repository pattern when: (1) You have complex query logic that you want to encapsulate, (2) You might swap implementations, or (3) You want to express business intent in method names. Don't use it when your application is simple CRUD and the repository would just be thin wrappers around DbSet methods.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">10</div>
+        <h2 class="section-title">Deep Theory: The Cost of Abstraction</h2>
+      </div>
+      <div class="prose">
+        <p>Every abstraction comes with a cost. Let's examine the trade-offs:</p>
+        <p><strong>Benefits of Repository Pattern:</strong> (1) Swappable implementations—you can test with in-memory, change to Dapper later, (2) Domain language—method names express intent, (3) Centralized query logic—easier to optimize later, (4) Easier testing—no database required.</p>
+        <p><strong>Costs of Repository Pattern:</strong> (1) Boilerplate—every method needs an interface and implementation, (2) Leaky abstractions—IQueryable exposes details anyway, (3) Unnecessary for simple apps—over-engineering for CRUD, (4) Hidden query cost—developers don't see SQL, may write N+1 queries unknowingly.</p>
+        <p>The real insight: a repository is a <strong>deliberate trade-off</strong>. In large systems with many developers and complex queries, repositories pay for themselves. In small systems, they're overhead. Be honest about whether you need the abstraction.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">DbSet IS a Repository</div>
+        <div class="insight-text">This point bears repeating: EF Core's DbSet already implements the repository pattern. When you do `_context.Customers.Where(...).ToListAsync()`, you're using a repository. The question isn't "should I use repositories?" but "should I wrap this in a custom interface?" For simple CRUD, probably not. For complex business logic, yes.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">11</div>
+        <h2 class="section-title">Repository Pattern in Clean Architecture</h2>
+      </div>
+      <div class="prose">
+        <p>In <strong>Clean Architecture</strong>, the repository pattern plays a crucial role in separating concerns across layers:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Clean Architecture Repository Placement</div>
+        <div class="code-content"><pre><span class="comment">// DOMAIN LAYER (no external dependencies)</span>
+<span class="comment">// Contains business rules and entities</span>
+<span class="kw">public class</span> <span class="type">Customer</span>
+{
+    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> Name { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public bool</span> IsActive { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="comment">// Domain method - no data access</span>
+    <span class="kw">public bool</span> <span class="attr">IsEligibleForDiscount</span>()
+    {
+        <span class="kw">return</span> IsActive && TotalOrders &gt; <span class="num">10</span>;
+    }
+}
+
+<span class="comment">// APPLICATION LAYER (high-level rules, no DB details)</span>
+<span class="comment">// Interface only - no implementation!</span>
+<span class="kw">namespace</span> MyApp.Application.Repositories
+{
+    <span class="kw">public interface</span> <span class="type">ICustomerRepository</span>
+    {
+        <span class="kw">Task</span>&lt;<span class="type">Customer</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id);
+        <span class="kw">Task</span> <span class="attr">SaveAsync</span>(<span class="type">Customer</span> customer);
+    }
+}
+
+<span class="comment">// INFRASTRUCTURE LAYER (DB-specific details)</span>
+<span class="comment">// Implementation here - uses EF Core, Dapper, etc.</span>
+<span class="kw">namespace</span> MyApp.Infrastructure.Repositories
+{
+    <span class="kw">public class</span> <span class="type">CustomerRepository</span> : <span class="type">ICustomerRepository</span>
+    {
+        <span class="kw">private readonly</span> <span class="type">ApplicationDbContext</span> _context;
+
+        <span class="kw">public</span> <span class="type">CustomerRepository</span>(<span class="type">ApplicationDbContext</span> context)
+        {
+            _context = context;
+        }
+
+        <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Customer</span>?&gt; <span class="attr">GetByIdAsync</span>(<span class="kw">int</span> id)
+        {
+            <span class="kw">return await</span> _context.Customers.FindAsync(id);
+        }
+
+        <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">SaveAsync</span>(<span class="type">Customer</span> customer)
+        {
+            _context.Customers.Update(customer);
+            <span class="kw">await</span> _context.SaveChangesAsync();
+        }
+    }
+}
+
+<span class="comment">// APPLICATION SERVICE (business logic orchestration)</span>
+<span class="kw">public class</span> <span class="type">ApplyDiscountService</span>
+{
+    <span class="kw">private readonly</span> <span class="type">ICustomerRepository</span> _repository;
+
+    <span class="kw">public</span> <span class="type">ApplyDiscountService</span>(<span class="type">ICustomerRepository</span> repository)
+    {
+        _repository = repository;
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">ApplyEligibleDiscountAsync</span>(<span class="kw">int</span> customerId)
+    {
+        <span class="kw">var</span> customer = <span class="kw">await</span> _repository.GetByIdAsync(customerId);
+
+        <span class="kw">if</span> (customer?.IsEligibleForDiscount() == <span class="kw">true</span>)
+        {
+            customer.ApplyDiscount(<span class="num">0.1</span>);
+            <span class="kw">await</span> _repository.SaveAsync(customer);
+        }
+    }
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p>The key insight: The Application layer defines the interface, the Infrastructure layer implements it. The Domain layer knows nothing about data access. This is the dependency inversion principle—high-level modules don't depend on low-level modules; they both depend on abstractions.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Architecture Benefits</div>
+        <div class="insight-text">By placing the repository interface in the Application layer and the implementation in Infrastructure, you ensure that your business logic is independent of database technology. You can test your services with a mock repository, and you can swap database implementations without touching the business logic—that's the power of Clean Architecture.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div class="section-number">12</div>
+        <h2 class="section-title">Real-World Scenarios: When Repositories Shine</h2>
+      </div>
+      <div class="prose">
+        <p><strong>Scenario 1: Multi-Tenant SaaS Applications</strong> Repositories encapsulate the complexity of filtering by tenant. Every query must include a tenant filter. With a repository, this logic is in one place:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Multi-Tenant Repository</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">TenantAwareRepository</span>&lt;<span class="type">T</span>&gt;
+    <span class="type">IRepository</span>&lt;<span class="type">T</span>&gt;
+    <span class="kw">where</span> <span class="type">T</span> : <span class="type">ITenantEntity</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+    <span class="kw">private readonly</span> <span class="type">ITenantProvider</span> _tenantProvider;
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IEnumerable</span>&lt;<span class="type">T</span>&gt;&gt; <span class="attr">GetAllAsync</span>()
+    {
+        <span class="kw">var</span> tenantId = _tenantProvider.GetTenantId();
+        <span class="kw">return await</span> _context.Set&lt;<span class="type">T</span>&gt;()
+            .Where(e =&gt; e.TenantId == tenantId)
+            .ToListAsync();
+    }
+
+    <span class="comment">// EVERY query automatically filters by tenant</span>
+    <span class="comment">// Developers can't forget it</span>
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p><strong>Scenario 2: Legacy Database with Complex Stored Procedures</strong> You have years of SQL logic in stored procedures. Repositories wrap these calls:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Repository Wrapping Stored Procedures</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">LegacyOrderRepository</span> : <span class="type">IOrderRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">OrderSummary</span>&gt; <span class="attr">GetOrderSummaryAsync</span>(
+        <span class="kw">int</span> orderId)
+    {
+        <span class="comment">// Call stored procedure directly</span>
+        <span class="kw">var</span> result = <span class="kw">await</span> _context
+            .OrderSummaries
+            .FromSql($<span class="str">"EXEC sp_GetOrderSummary {orderId}"</span>)
+            .FirstOrDefaultAsync();
+
+        <span class="kw">return</span> result;
+    }
+
+    <span class="comment">// Encapsulates legacy SQL complexity</span>
+    <span class="comment">// New code uses clean repository interface</span>
+}</pre></div>
+      </div>
+
+      <div class="prose">
+        <p><strong>Scenario 3: Complex Analytical Queries with Caching</strong> Some queries are expensive. Repositories cache results:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="comparison-label">C# - Repository with Caching</div>
+        <div class="code-content"><pre><span class="kw">public class</span> <span class="type">CachedAnalyticsRepository</span> :
+    <span class="type">IAnalyticsRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+    <span class="kw">private readonly</span> <span class="type">IMemoryCache</span> _cache;
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">RevenueStats</span>&gt;
+        <span class="attr">GetMonthlyRevenueAsync</span>(<span class="kw">int</span> month)
+    {
+        <span class="kw">var</span> cacheKey = <span class="str">$"revenue_{month}"</span>;
+
+        <span class="kw">if</span> (!_cache.TryGetValue(cacheKey, <span class="kw">out</span>
+            <span class="type">RevenueStats</span> stats))
+        {
+            <span class="comment">// Expensive query</span>
+            stats = <span class="kw">await</span> _context.Orders
+                .Where(o =&gt; o.Date.Month == month)
+                .GroupBy(o =&gt; o.Date.Date)
+                .Select(g =&gt; <span class="kw">new</span> <span class="type">RevenueStats</span> { ... })
+                .FirstOrDefaultAsync();
+
+            _cache.Set(cacheKey, stats,
+                <span class="kw">TimeSpan</span>.FromHours(<span class="num">1</span>));
+        }
+
+        <span class="kw">return</span> stats;
+    }
+
+    <span class="comment">// Callers don't know about caching</span>
+    <span class="comment">// Repository can optimize transparently</span>
+}</pre></div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Repositories Enable Optimization Without Refactoring</div>
+        <div class="insight-text">The real power of repositories: you can add caching, logging, performance optimizations, or migrate to a different database without changing a single line of application code. The interface stays the same; the implementation evolves.</div>
+      </insight>
+    </div>
+
+    <div class="key-takeaways">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li><strong>Repository pattern</strong> abstracts data access, separating business logic from database details—like SQL views/stored procedures for OOP. Martin Fowler defined it as "mediating between domain and mapping layers."</li>
+        <li><strong>SQL repositories exist too</strong>—views and stored procedures serve the same purpose at the database level. C# repositories are the application-level equivalent.</li>
+        <li><strong>Generic repositories</strong> work with any entity type but often hide important business logic and are better as a foundation than a primary pattern.</li>
+        <li><strong>Specific repositories</strong> express domain intent through method names like GetActiveCustomers() and are usually the better approach in real applications.</li>
+        <li><strong>Pagination, filtering, sorting</strong> belong in repositories, not scattered through service code. Use both LINQ method syntax and query syntax depending on readability.</li>
+        <li><strong>Specification pattern</strong> pairs beautifully with repositories, encapsulating complex filtering logic into reusable objects.</li>
+        <li><strong>Testing is easier with repositories</strong>—use in-memory implementations or mocks to test business logic without a database.</li>
+        <li><strong>Avoid leaky abstractions</strong>—don't expose IQueryable or let implementation details (EF Core, Dapper) leak into the caller's code.</li>
+        <li><strong>DbSet IS a repository</strong>—the real question is whether you need a custom wrapper, not whether to use repositories at all.</li>
+        <li><strong>In Clean Architecture</strong>, the interface lives in the Application layer, the implementation in Infrastructure—this keeps your business logic independent of database tech.</li>
+        <li><strong>Abstraction costs</strong>—repositories add boilerplate but pay off in large systems with complex logic and multiple developers. In small CRUD apps, they're overhead.</li>
+        <li><strong>Real-world wins</strong>: multi-tenant filtering, legacy stored procedures, caching, and performance optimization all become transparent with repositories.</li>
+      </ul>
+    </div>
+
+    <div class="nav-buttons">
+      <a href="ch22-dapper-bulk.html" class="nav-button prev">← Previous: Dapper Bulk Operations</a>
+      <a href="ch24-unit-of-work.html" class="nav-button next">Next: Unit of Work →</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>SQL to C# - Part 5: Architecture & Real-World Patterns</p>
+    <p><a href="index.html">Back to Table of Contents</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 7: GROUP BY → .GroupBy() — Aggregation — SQL to C#</title>
+<meta name="description" content="Master GROUP BY aggregation in SQL and LINQ .GroupBy(). Learn COUNT, SUM, AVG, MIN, MAX, HAVING clauses, and the fundamental data structure differences between SQL and LINQ aggregation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp,
+.code-block.csharp-method,
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">
+      SQL to C#
+      <span class="nav-pill">Ch 07</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">← All Chapters</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="chapter-header">
+    <div class="chapter-num">Chapter 07</div>
+    <h1>GROUP BY → .GroupBy() — Aggregation</h1>
+    <p class="chapter-desc">Master GROUP BY aggregation and the fundamental differences between SQL and LINQ. Learn COUNT, SUM, AVG, MIN, MAX, HAVING filtering, multi-column grouping, and why LINQ's data model is fundamentally different from SQL's.</p>
+  </header>
+
+  <div class="in-this-chapter">
+    <h3>In This Chapter</h3>
+    <ul>
+      <li>The conceptual difference: SQL rows vs LINQ groups as collections</li>
+      <li>Basic aggregation with COUNT, SUM, AVG, MIN, and MAX</li>
+      <li>Null handling in aggregate functions</li>
+      <li>HAVING clauses for filtering groups (not rows)</li>
+      <li>Grouping by multiple columns with anonymous types</li>
+      <li>COUNT DISTINCT and filtering duplicates within groups</li>
+      <li>The GroupBy mental model: understanding IGrouping collections</li>
+      <li>Performance implications of different aggregation patterns</li>
+      <li>Complex aggregations with nested LINQ expressions</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 01: What Is Aggregation? -->
+  <section class="section">
+    <div class="section-num">01</div>
+    <h2>The Fundamental GroupBy Mental Model</h2>
+
+    <p class="section-text">
+      This is the critical section. GROUP BY in SQL and .GroupBy() in LINQ appear similar, but their underlying data models are fundamentally different. Understanding this difference is the #1 source of confusion and bugs when moving between SQL and LINQ.
+    </p>
+
+    <p class="section-text">
+      In SQL, GROUP BY collapses rows into groups. The result set contains one row per group, with aggregate values (COUNT, SUM, etc.) representing each group. You cannot access individual row data within a group in SQL; the query returns only what you explicitly SELECT in the GROUP BY clause and the aggregate functions.
+    </p>
+
+    <p class="section-text">
+      In LINQ, .GroupBy() returns a collection of groups. Each group is an IGrouping<TKey, TElement>—a collection of the original elements. You can iterate through all elements in a group, inspect them, and compute aggregates. This is fundamentally more powerful than SQL GROUP BY: you have access to all original rows, not just aggregates.
+    </p>
+
+    <p class="section-text">
+      Conceptual difference:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">SQL vs LINQ Data Structures</span>
+        <pre><code>// SQL GROUP BY conceptually produces:
+// One row per group with aggregate values
+// Category | Count | Sum
+// --------|-------|-----
+// Food    | 45    | 2340
+// Books   | 23    | 1200
+
+// LINQ GroupBy produces:
+// One IGrouping<TKey, TElement> per group
+// IGrouping<"Food", Product>: [prod1, prod2, ..., prod45]
+// IGrouping<"Books", Product>: [prod46, prod47, ..., prod68]
+//
+// Each group is a full collection you can iterate,
+// filter, project, and aggregate</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Visual representation:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Understanding IGrouping Collections</span>
+        <pre><code>var groups = products
+  .GroupBy(p => p.Category)
+  .ToList();
+
+// groups is List<IGrouping<string, Product>>
+//
+// Each group has:
+// - Key: the category string ("Food", "Books", etc.)
+// - Elements: all Product objects in that category
+//
+// So you can:
+foreach (var group in groups)
+{
+  Console.WriteLine($"Category: {group.Key}");
+
+  // Iterate all products in this group
+  foreach (var product in group)
+  {
+    Console.WriteLine($"  - {product.Name}: {product.Price}");
+  }
+
+  // Or aggregate:
+  var count = group.Count();
+  var total = group.Sum(p => p.Price);
+  var avg = group.Average(p => p.Price);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>SQL vs LINQ: Different Data Models</strong>
+      <p>SQL GROUP BY returns reduced data (one row per group with aggregates). LINQ GroupBy returns all original data, organized into collections. This means LINQ can do things SQL GROUP BY cannot: access all rows, conditionally aggregate, transform the collection structure. But it also means LINQ processes more data in memory. For large datasets, consider aggregating at the database level where possible.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 02: COUNT -->
+  <section class="section">
+    <div class="section-num">02</div>
+    <h2>COUNT Aggregation</h2>
+
+    <p class="section-text">
+      COUNT is the most basic aggregate: it counts rows in a group. COUNT(*) counts all rows including NULLs. COUNT(column) counts non-NULL values in that column. In LINQ, .Count() and .Count(predicate) provide the same functionality.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL COUNT</span>
+        <pre><code>SELECT
+  Category,
+  COUNT(*) AS ProductCount,
+  COUNT(DiscountedPrice) AS
+    HasDiscount
+FROM Products
+GROUP BY Category;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = products
+  .GroupBy(p => p.Category)
+  .Select(g => new {
+    Category = g.Key,
+    ProductCount = g.Count(),
+    HasDiscount = g.Count(p =>
+      p.DiscountedPrice != null)
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from p in products
+              group p by p.Category
+              into g
+              select new {
+                Category = g.Key,
+                ProductCount = g.Count(),
+                HasDiscount = g.Count(p =>
+                  p.DiscountedPrice != null)
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Filtering groups by count (HAVING in SQL):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL with HAVING</span>
+        <pre><code>SELECT Category, COUNT(*) AS Count
+FROM Products
+GROUP BY Category
+HAVING COUNT(*) > 10;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# with .Where() After .GroupBy()</span>
+        <pre><code>var result = products
+  .GroupBy(p => p.Category)
+  .Where(g => g.Count() > 10)
+  .Select(g => new {
+    g.Key,
+    Count = g.Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>COUNT: Performance Considerations</strong>
+      <p>COUNT(*) counts all rows. COUNT(column) skips NULLs. In LINQ, .Count() counts all elements; .Count(predicate) counts matching elements. When filtering by count, use .Where() after .GroupBy() but before .Select(). This applies the filter at the group level, not after aggregation.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 03: SUM, AVG, MIN, MAX -->
+  <section class="section">
+    <div class="section-num">03</div>
+    <h2>SUM, AVG, MIN, and MAX Aggregates</h2>
+
+    <p class="section-text">
+      Beyond counting, aggregation commonly involves numeric operations: summing, averaging, finding minimums and maximums. SQL and LINQ provide identical functions with the same names. All ignore NULL values automatically (except COUNT(*) which counts NULLs).
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL SUM, AVG, MIN, MAX</span>
+        <pre><code>SELECT
+  Category,
+  COUNT(*) AS Items,
+  SUM(Price) AS TotalValue,
+  AVG(Price) AS AvgPrice,
+  MIN(Price) AS CheapestItem,
+  MAX(Price) AS MostExpensive
+FROM Products
+GROUP BY Category;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# Equivalent</span>
+        <pre><code>var result = products
+  .GroupBy(p => p.Category)
+  .Select(g => new {
+    Category = g.Key,
+    Items = g.Count(),
+    TotalValue = g.Sum(p => p.Price),
+    AvgPrice = g.Average(p => p.Price),
+    CheapestItem = g.Min(p => p.Price),
+    MostExpensive = g.Max(p => p.Price)
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Handling NULL values in aggregates:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL with NULL Handling</span>
+        <pre><code>SELECT
+  Category,
+  COUNT(*) AS AllItems,
+  COUNT(DiscountPercent) AS ItemsOnSale,
+  SUM(COALESCE(Discount, 0)) AS TotalDiscount,
+  AVG(CAST(Price AS DECIMAL))
+    AS AvgPrice
+FROM Products
+GROUP BY Category;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# with NULL Handling</span>
+        <pre><code>var result = products
+  .GroupBy(p => p.Category)
+  .Select(g => new {
+    Category = g.Key,
+    AllItems = g.Count(),
+    ItemsOnSale = g.Count(p =>
+      p.DiscountPercent.HasValue),
+    TotalDiscount = g.Sum(p =>
+      p.Discount ?? 0),
+    AvgPrice = g.Average(p =>
+      (decimal)p.Price)
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Aggregate Functions and NULL</strong>
+      <p>SUM, AVG, MIN, and MAX all ignore NULL values. SUM(NULL) + 5 = 5 (the NULL is skipped). If all values in a group are NULL, SUM returns NULL (not 0). Use COALESCE (??) to provide defaults. COUNT(column) counts non-NULL values; COUNT(*) counts all rows.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 04: HAVING -->
+  <section class="section">
+    <div class="section-num">04</div>
+    <h2>HAVING Clauses: Filtering Groups, Not Rows</h2>
+
+    <p class="section-text">
+      A critical distinction: WHERE filters rows before grouping. HAVING filters groups after grouping. In LINQ, there's no HAVING keyword; instead, you apply .Where() after .GroupBy() to filter groups. This is actually cleaner and more intuitive than SQL's HAVING.
+    </p>
+
+    <p class="section-text">
+      WHERE vs HAVING (fundamental difference):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL WHERE (before grouping) vs HAVING (after grouping)</span>
+        <pre><code>-- WHERE filters rows BEFORE grouping
+-- HAVING filters groups AFTER grouping
+SELECT Category, COUNT(*) AS Count
+FROM Products
+WHERE Price > 100  -- Only products over $100
+GROUP BY Category
+HAVING COUNT(*) > 5;  -- Only categories with 5+ expensive items</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# WHERE (before grouping) then .Where() (after grouping)</span>
+        <pre><code>var result = products
+  .Where(p => p.Price > 100)  // Filter rows BEFORE grouping
+  .GroupBy(p => p.Category)
+  .Where(g => g.Count() > 5)  // Filter groups AFTER grouping
+  .Select(g => new {
+    Category = g.Key,
+    Count = g.Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Complex HAVING conditions:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL Complex HAVING</span>
+        <pre><code>SELECT
+  Category,
+  AVG(Price) AS AvgPrice,
+  COUNT(*) AS ItemCount
+FROM Products
+GROUP BY Category
+HAVING AVG(Price) > 50
+  AND COUNT(*) > 10;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# Complex Group Filtering</span>
+        <pre><code>var result = products
+  .GroupBy(p => p.Category)
+  .Where(g => g.Average(p => p.Price) > 50
+    && g.Count() > 10)
+  .Select(g => new {
+    g.Key,
+    AvgPrice = g.Average(p => p.Price),
+    ItemCount = g.Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>WHERE Precedes GROUP BY, HAVING Follows It</strong>
+      <p>WHERE filters individual rows before groups are formed. HAVING filters groups after aggregation. In LINQ, chain .Where() before .GroupBy() for row filtering, then another .Where() after .GroupBy() for group filtering. This makes the intent crystal clear.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 05: Multiple Column Grouping -->
+  <section class="section">
+    <div class="section-num">05</div>
+    <h2>Grouping by Multiple Columns</h2>
+
+    <p class="section-text">
+      GROUP BY often combines multiple columns to create composite groups. SQL lists all columns; LINQ uses an anonymous type to represent the composite key. The generated SQL is identical.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  Category,
+  Brand,
+  COUNT(*) AS Count,
+  AVG(Price) AS AvgPrice
+FROM Products
+GROUP BY Category, Brand;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = products
+  .GroupBy(p => new {
+    p.Category,
+    p.Brand
+  })
+  .Select(g => new {
+    g.Key.Category,
+    g.Key.Brand,
+    Count = g.Count(),
+    AvgPrice = g.Average(p => p.Price)
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from p in products
+              group p by new {
+                p.Category,
+                p.Brand
+              }
+              into g
+              select new {
+                g.Key.Category,
+                g.Key.Brand,
+                Count = g.Count(),
+                AvgPrice = g.Average(
+                  p => p.Price)
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Three-level grouping (Category, Brand, Price Range):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL Three-Level GROUP BY</span>
+        <pre><code>SELECT
+  Category,
+  Brand,
+  CASE
+    WHEN Price < 50 THEN 'Budget'
+    WHEN Price < 200 THEN 'Standard'
+    ELSE 'Premium'
+  END AS PriceRange,
+  COUNT(*) AS Count
+FROM Products
+GROUP BY
+  Category,
+  Brand,
+  CASE
+    WHEN Price < 50 THEN 'Budget'
+    WHEN Price < 200 THEN 'Standard'
+    ELSE 'Premium'
+  END;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# Three-Level Grouping</span>
+        <pre><code>var result = products
+  .GroupBy(p => new {
+    p.Category,
+    p.Brand,
+    PriceRange = p.Price < 50
+      ? "Budget"
+      : p.Price < 200
+        ? "Standard"
+        : "Premium"
+  })
+  .Select(g => new {
+    g.Key.Category,
+    g.Key.Brand,
+    g.Key.PriceRange,
+    Count = g.Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Composite Keys Are Anonymous Types</strong>
+      <p>Use new { } with property shorthand to create composite grouping keys. Each combination of properties becomes a distinct group. The generated SQL includes all properties in the GROUP BY clause. Remember that in LINQ, you access the composite key via g.Key.PropertyName.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 06: COUNT DISTINCT -->
+  <section class="section">
+    <div class="section-num">06</div>
+    <h2>COUNT DISTINCT and Complex Aggregations</h2>
+
+    <p class="section-text">
+      SQL's COUNT(DISTINCT column) counts unique values in a column within a group. LINQ has no direct DISTINCT aggregate, so you must select distinct values and then count them. This is slightly verbose in C# but results in identical SQL.
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL COUNT DISTINCT</span>
+        <pre><code>SELECT
+  Department,
+  COUNT(*) AS EmployeeCount,
+  COUNT(DISTINCT ManagerId) AS UniqueMgrs,
+  COUNT(DISTINCT YEAR(HireDate))
+    AS YearsRepresented
+FROM Employees
+GROUP BY Department;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# Count Distinct Values</span>
+        <pre><code>var result = employees
+  .GroupBy(e => e.Department)
+  .Select(g => new {
+    Department = g.Key,
+    EmployeeCount = g.Count(),
+    UniqueMgrs = g
+      .Select(e => e.ManagerId)
+      .Distinct()
+      .Count(),
+    YearsRepresented = g
+      .Select(e => e.HireDate.Year)
+      .Distinct()
+      .Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      More complex aggregations within groups:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Advanced Aggregations</span>
+        <pre><code>var result = orders
+  .GroupBy(o => o.CustomerId)
+  .Select(g => new {
+    CustomerId = g.Key,
+    TotalOrders = g.Count(),
+    TotalSpent = g.Sum(o => o.Total ?? 0),
+    AvgOrderValue = g.Average(o => o.Total ?? 0),
+
+    // Top 3 product categories in this customer's orders
+    TopCategories = g
+      .SelectMany(o => o.Items)
+      .GroupBy(oi => oi.Product.Category)
+      .OrderByDescending(cat => cat.Count())
+      .Take(3)
+      .Select(cat => cat.Key)
+      .ToList(),
+
+    // Most recent order date
+    MostRecentOrder = g.Max(o => o.OrderDate),
+
+    // Count of orders over $500
+    LargeOrders = g.Count(o => o.Total > 500)
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Aggregations Can Be Nested and Complex</strong>
+      <p>While SQL's aggregate functions are limited, LINQ allows complex aggregations: nested grouping, filtering within groups, combining multiple aggregates. This power comes with responsibility—ensure your aggregations are efficient and don't pull too much data into memory. For very complex aggregations, consider computing at the database level with a stored procedure or computed view.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 07: GroupBy Mental Model -->
+  <section class="section">
+    <div class="section-num">07</div>
+    <h2>The GroupBy Mental Model: Data Structure Understanding</h2>
+
+    <p class="section-text">
+      To write correct LINQ aggregation queries, you must understand the data structure that GroupBy produces. SQL GROUP BY is fundamentally a reduction operation: many rows become one row per group. LINQ GroupBy is a partitioning operation: many rows become many groups, each containing multiple rows.
+    </p>
+
+    <p class="section-text">
+      Understanding the collection structure:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">GroupBy Returns IGrouping Collections</span>
+        <pre><code>// Original data:
+var products = new List<Product> {
+  new("Laptop", "Electronics", 1200),
+  new("Phone", "Electronics", 800),
+  new("Headphones", "Electronics", 150),
+  new("Coffee", "Food", 5),
+  new("Tea", "Food", 4),
+};
+
+// After GroupBy:
+var groups = products
+  .GroupBy(p => p.Category)
+  .ToList();
+
+// groups is List<IGrouping<string, Product>>
+// With 2 groups (one IGrouping per unique category):
+//
+// IGrouping<"Electronics", Product> {
+//   Key = "Electronics",
+//   Elements = [Laptop, Phone, Headphones]
+// }
+//
+// IGrouping<"Food", Product> {
+//   Key = "Food",
+//   Elements = [Coffee, Tea]
+// }
+
+// You can iterate and access:
+foreach (var group in groups)
+{
+  Console.WriteLine($"{group.Key}: {group.Count()} items");
+
+  // Access individual elements
+  var names = group.Select(p => p.Name);
+
+  // Compute aggregates on the group
+  var total = group.Sum(p => p.Price);
+
+  // Filter the group
+  var expensive = group.Where(p => p.Price > 100);
+}</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Why this matters for query design:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">SQL: Limited Flexibility</span>
+        <pre><code>-- SQL GROUP BY constrains what you can access
+-- You can only SELECT:
+-- 1. The grouping columns
+-- 2. Aggregate functions (COUNT, SUM, etc.)
+-- You CANNOT access individual row data
+
+SELECT Category, COUNT(*), AVG(Price)
+FROM Products
+GROUP BY Category;
+-- Cannot select product names or IDs</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# GroupBy: Full Access to Rows</span>
+        <pre><code>// LINQ allows accessing all original data
+var result = products
+  .GroupBy(p => p.Category)
+  .Select(g => new {
+    Category = g.Key,
+    Count = g.Count(),
+    AvgPrice = g.Average(p => p.Price),
+
+    // SQL can't do this: list all product names
+    ProductNames = g.Select(p => p.Name)
+      .OrderBy(n => n)
+      .ToList(),
+
+    // Or find the most expensive item
+    MostExpensive = g
+      .OrderByDescending(p => p.Price)
+      .First(),
+
+    // Or group-within-group
+    ByBrand = g
+      .GroupBy(p => p.Brand)
+      .Select(bg => new {
+        Brand = bg.Key,
+        Count = bg.Count()
+      })
+      .ToList()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>LINQ GroupBy Is More Powerful Than SQL GROUP BY</strong>
+      <p>SQL GROUP BY reduces data (one row per group). LINQ GroupBy partitions data (all rows kept, organized into groups). This means LINQ can do things SQL cannot: access individual rows, conditionally aggregate, nest groups within groups. But this power comes with a memory cost. Always consider whether you should aggregate at the database level first, then apply further logic in C#.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 08: Performance and Strategy -->
+  <section class="section">
+    <div class="section-num">08</div>
+    <h2>Aggregation Performance and Strategy</h2>
+
+    <p class="section-text">
+      Grouping and aggregation can be expensive operations, especially on large datasets. Understanding when to aggregate at the database level versus in C# is essential for writing performant code. Generally, aggregate at the database when possible (fewer round-trips, optimized execution), and perform only lightweight transformations in C#.
+    </p>
+
+    <p class="section-text">
+      Database-level aggregation is preferred:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Aggregate at Database (Efficient)</span>
+        <pre><code>// GOOD: Aggregate at database
+// Returns only aggregated data, not all rows
+var result = context.Orders
+  .GroupBy(o => o.CustomerId)
+  .Select(g => new {
+    CustomerId = g.Key,
+    OrderCount = g.Count(),
+    TotalSpent = g.Sum(o => o.Total ?? 0),
+    AvgOrderValue = g.Average(o => o.Total ?? 0)
+  })
+  .ToList();
+
+// Generated SQL (approximate):
+// SELECT
+//   o.CustomerId,
+//   COUNT(*) OrderCount,
+//   SUM(o.Total) TotalSpent,
+//   AVG(o.Total) AvgOrderValue
+// FROM Orders o
+// GROUP BY o.CustomerId
+
+// Result: Only aggregated summaries sent to C#
+// Much less data transfer, faster execution
+      </div>
+    </div>
+
+    <p class="section-text">
+      Avoid fetching all rows to C# just to aggregate:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">BAD: Aggregate in C# (Inefficient)</span>
+        <pre><code>// BAD: Fetch all orders, aggregate in C#
+// This brings millions of rows to memory!
+var allOrders = context.Orders
+  .AsNoTracking()
+  .ToList();
+
+var result = allOrders
+  .GroupBy(o => o.CustomerId)
+  .Select(g => new {
+    CustomerId = g.Key,
+    OrderCount = g.Count(),
+    TotalSpent = g.Sum(o => o.Total ?? 0)
+  })
+  .ToList();
+
+// Problems:
+// 1. All orders loaded into memory (memory spike)
+// 2. All rows transferred over network (slow)
+// 3. Aggregation happens in slow C# code
+// 4. No index usage for grouping
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">GOOD: Aggregate at Database</span>
+        <pre><code>// GOOD: Aggregate at database
+// Only sends aggregated summaries to C#
+var result = context.Orders
+  .GroupBy(o => o.CustomerId)
+  .Select(g => new {
+    CustomerId = g.Key,
+    OrderCount = g.Count(),
+    TotalSpent = g.Sum(o => o.Total ?? 0)
+  })
+  .ToList();
+
+// Benefits:
+// 1. Only aggregates sent to memory
+// 2. Minimal network traffic
+// 3. Database optimizes execution
+// 4. Indexes used for grouping/aggregation
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Push Aggregation to the Database</strong>
+      <p>Always aggregate at the database level when possible. The database is designed for this work: it uses indexes, parallel processing, and optimized algorithms. C# in-memory aggregation is useful for final transformations only. Fetching all rows to C# just to aggregate is a catastrophic performance anti-pattern that will fail at scale.</p>
+    </div>
+  </section>
+
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>SQL GROUP BY reduces rows to one per group with aggregates. LINQ GroupBy partitions rows into IGrouping collections containing all original rows. These are fundamentally different data models.</li>
+      <li>Each IGrouping has a Key (the grouping value) and acts as a collection of all matching elements. You can iterate, filter, and aggregate within each group.</li>
+      <li>COUNT(*) counts all rows; COUNT(column) counts non-NULL values. In LINQ, use .Count() and .Count(predicate) respectively.</li>
+      <li>SUM, AVG, MIN, and MAX ignore NULL values. If all values in a group are NULL, the aggregate returns NULL (not 0). Use ?? to provide defaults.</li>
+      <li>WHERE filters rows before grouping. HAVING (or .Where() after .GroupBy() in LINQ) filters groups after aggregation. The order matters: different results.</li>
+      <li>GROUP BY multiple columns using an anonymous type in LINQ: .GroupBy(p => new { p.Category, p.Brand }). Access composite key via g.Key.PropertyName.</li>
+      <li>COUNT(DISTINCT column) has no direct LINQ equivalent. Instead, use .Select(x => x.Column).Distinct().Count() to count unique values within a group.</li>
+      <li>LINQ GroupBy enables complex aggregations impossible in SQL: nested grouping, filtering within groups, selecting all rows within a group. This power requires careful performance consideration.</li>
+      <li>Remember the fundamental difference: SQL GROUP BY = reduction to one row per group. LINQ GroupBy = partitioning into collections. They're not the same operation.</li>
+    </ul>
+  </div>
+
+  <!-- CHAPTER NAV -->
+  <div class="chapter-nav">
+    <a href="ch06-where-filtering.html" class="nav-item prev">
+      <span class="nav-label">Previous Chapter</span>
+      <span class="nav-title">WHERE → .Where() — Filtering</span>
+    </a>
+    <a href="ch08-orderby-sorting.html" class="nav-item next">
+      <span class="nav-label">Next Chapter</span>
+      <span class="nav-title">ORDER BY → .OrderBy() — Sorting</span>
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-inner">SQL to C#: A practical guide to translating database logic into modern C# LINQ patterns.</p>
+  </div>
+</footer>
+
+</body>
+</html>

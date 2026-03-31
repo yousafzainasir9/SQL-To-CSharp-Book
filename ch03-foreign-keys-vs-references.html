@@ -1,0 +1,1595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: Foreign Keys vs Object References — SQL to C#</title>
+<meta name="description" content="Deep dive into foreign keys, navigation properties, referential integrity, cascade rules, self-referencing relationships, optional vs required relationships, and shadow properties in Entity Framework.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── CHAPTER HEADER ── */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 750px;
+}
+
+/* ── IN THIS CHAPTER BOX ── */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* ── CONTENT SECTIONS ── */
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 20px;
+  max-width: 750px;
+}
+
+.section-text em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* ── CODE COMPARISON ── */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 8px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code {
+  color: var(--ink);
+}
+
+/* ── SINGLE CODE BLOCK ── */
+.code-block-single {
+  border-radius: 8px;
+  padding: 24px;
+  overflow-x: auto;
+  margin-bottom: 28px;
+}
+
+.code-block-single.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block-single.sql code {
+  color: #e8e4db;
+}
+
+.code-block-single.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block-single.csharp code {
+  color: var(--ink);
+}
+
+/* ── KEY INSIGHT CALLOUT ── */
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── KEY TAKEAWAYS ── */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.7;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* ── CHAPTER NAV ── */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.footer-section p,
+.footer-section a {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink2);
+  text-decoration: none;
+  line-height: 1.7;
+}
+
+.footer-section a:hover {
+  color: var(--acc);
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  padding: 4px 0;
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a href="index.html" class="nav-brand">
+      SQL to C#
+      <span class="nav-pill">Chapter 03</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">← All Chapters</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <header class="chapter-header">
+      <div class="chapter-num">Part 1: Linking Tables and Objects</div>
+      <h1>Foreign Keys vs Object References<br>Building Relationships Across Tables and Classes</h1>
+      <p class="chapter-desc">Foreign keys are SQL's mechanism for linking rows in different tables, enforcing referential integrity at the database level. Navigation properties in C# serve the same purpose from the object-oriented perspective. This chapter explores the deep theory behind both approaches, why they exist, how to configure them, and the critical differences in validation and lifecycle management between SQL and Entity Framework.</p>
+    </header>
+
+    <div class="in-this-chapter">
+      <h3>In This Chapter</h3>
+      <ul>
+        <li>What is a Foreign Key? What is a Navigation Property? — Theory and mechanics</li>
+        <li>Defining Relationships in SQL vs EF Core — Complete syntax for both approaches</li>
+        <li>Referential Integrity: Database vs Application Layer — Where validation really happens</li>
+        <li>CASCADE Rules and DeleteBehavior — Handling related data deletion</li>
+        <li>Self-Referencing Relationships — Building hierarchies and recursive structures</li>
+        <li>Optional vs Required Relationships — Nullable types and their implications</li>
+        <li>Shadow Properties and FK Conventions — Hidden foreign keys in Entity Framework</li>
+      </ul>
+    </div>
+
+    <section class="section">
+      <div class="section-num">01</div>
+      <h2>What Is a Foreign Key? What Is a Navigation Property?</h2>
+      <p class="section-text">
+        A <em>foreign key</em> is a fundamental concept in relational database design. It's a column (or set of columns) whose values must match the primary key values of another table. The foreign key establishes a constraint that enforces referential integrity: it ensures that you cannot have an order without a corresponding customer, a comment without a corresponding post, or an invoice without a company. It's the database's way of saying, "This value refers to a specific row in that other table, and that row must exist."
+      </p>
+      <p class="section-text">
+        In SQL Server, a foreign key is defined with the FOREIGN KEY constraint. When you declare that Orders.CustomerId REFERENCES Customers(Id), you're creating a pointer from one table to another. The database stores this metadata and enforces it every time you attempt an INSERT, UPDATE, or DELETE. If you try to insert an order with CustomerId = 999 but no customer with Id = 999 exists, the INSERT fails immediately.
+      </p>
+      <p class="section-text">
+        In C#, the equivalent concept is the <em>navigation property</em>. This is a property on one class that references an instance of another class. An Order object has a Customer property that points to the Customer object it belongs to. At runtime, this is just an object reference—the same mechanism that makes all object-oriented programming work. But from the domain modeling perspective, it represents the same logical relationship as the SQL foreign key.
+      </p>
+      <p class="section-text">
+        Entity Framework is the bridge between these two worlds. It maintains both representations: the foreign key column (CustomerId as an int) and the navigation property (Customer as a reference to a Customer object). When you add an order to a customer's Orders collection, EF automatically sets CustomerId. When you load an order from the database, EF instantiates the Customer object and populates the Customer property. This synchronization is one of ORM's core responsibilities.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Foreign Key Column</span>
+          <code>-- Define the parent table
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL,
+  Email NVARCHAR(100)
+);
+
+-- Define the child table with FK
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  OrderDate DATETIME2 NOT NULL,
+  Total DECIMAL(10,2) NOT NULL,
+  CONSTRAINT FK_Orders_Customers
+    FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id)
+);
+
+-- The FK column links to Customers
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (5, GETUTCDATE(), 150.00);
+-- CustomerId = 5 MUST exist in Customers</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Navigation Properties</span>
+          <code>public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public string? Email { get; set; }
+
+  // Navigation: collection of orders
+  public ICollection<Order> Orders { get; set; }
+    = new List<Order>();
+}
+
+public class Order
+{
+  public int Id { get; set; }
+  public int CustomerId { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+
+  // Navigation: reference to parent
+  public Customer Customer { get; set; }
+}
+
+// Access via navigation
+var customer = order.Customer; // object reference
+var customerId = order.CustomerId; // scalar value</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>A foreign key ID and a navigation property are two perspectives on the same relationship. The ID (CustomerId) is the physical storage—what's actually written to the database column. The navigation property (Customer) is the object-oriented interface—how you access the related data in your C# code. Entity Framework keeps them synchronized automatically.</p>
+      </div>
+
+      <p class="section-text">
+        The distinction matters for how you think about relationships. In SQL, you always work with the ID: "Select me all orders where CustomerId = 5." In C#, you typically work with the navigation: "Load customer 5 and access customer.Orders." But both are valid, and understanding how they map is essential for becoming proficient with data access.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-num">02</div>
+      <h2>Defining Relationships in SQL vs EF Core</h2>
+      <p class="section-text">
+        Creating a relationship requires defining the structure at both the SQL level and the C# level, then telling Entity Framework how they correspond. Let's walk through a complete example: Customers and Orders. In SQL, you create the tables with a FOREIGN KEY constraint. In C#, you create classes with navigation properties. In EF, you configure the mapping via Fluent API or Data Annotations.
+      </p>
+      <p class="section-text">
+        SQL's CREATE TABLE syntax for foreign keys is straightforward: the child table (Orders) has a column (CustomerId) that REFERENCES the parent table's (Customers) primary key. The CONSTRAINT keyword lets you name the constraint, which is useful for debugging and documentation. Without a name, SQL Server generates one automatically, but named constraints are clearer in error messages.
+      </p>
+
+      <div class="code-block-single sql">
+        <span class="code-label">SQL: Complete One-to-Many Relationship</span>
+        <code>-- Parent table
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL,
+  Email NVARCHAR(100) NOT NULL UNIQUE,
+  CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+-- Child table with explicit FK
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  OrderDate DATETIME2 NOT NULL,
+  Total DECIMAL(10,2) NOT NULL,
+  Status NVARCHAR(50) DEFAULT 'Pending',
+  CONSTRAINT FK_Orders_Customer
+    FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id)
+);
+
+-- Create an index on the FK for performance
+CREATE INDEX IX_Orders_CustomerId
+  ON Orders(CustomerId);
+
+-- Verify: insert a valid order
+INSERT INTO Customers (Name, Email) VALUES ('Alice', 'alice@example.com');
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (1, GETUTCDATE(), 99.99);
+
+-- Violates FK constraint (customer 999 doesn't exist)
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (999, GETUTCDATE(), 50.00);
+-- ERROR: The INSERT, UPDATE, or DELETE statement conflicted
+-- with a FOREIGN KEY constraint</code>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Entity Classes with Navigation</span>
+        <code>public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public string Email { get; set; }
+  public DateTime CreatedAt { get; set; }
+
+  // Navigation: one customer has many orders
+  public ICollection<Order> Orders { get; set; }
+    = new List<Order>();
+}
+
+public class Order
+{
+  public int Id { get; set; }
+
+  // Foreign key column (scalar value)
+  public int CustomerId { get; set; }
+
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+  public string Status { get; set; }
+
+  // Navigation: each order belongs to one customer
+  public Customer? Customer { get; set; }
+}
+
+// DbContext configuration (Fluent API)
+public class AppDbContext : DbContext
+{
+  public DbSet<Customer> Customers { get; set; }
+  public DbSet<Order> Orders { get; set; }
+
+  protected override void OnModelCreating(
+    ModelBuilder modelBuilder)
+  {
+    // Explicit relationship configuration
+    modelBuilder.Entity<Order>()
+      .HasOne(o => o.Customer)           // Order has one Customer
+      .WithMany(c => c.Orders)           // Customer has many Orders
+      .HasForeignKey(o => o.CustomerId)  // FK column is CustomerId
+      .OnDelete(DeleteBehavior.Cascade); // Delete orders when customer deleted
+  }
+}
+
+// Alternative: Using Data Annotations
+public class Order
+{
+  public int Id { get; set; }
+
+  [Required]
+  [ForeignKey(nameof(Customer))]
+  public int CustomerId { get; set; }
+
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+
+  [Required]
+  public Customer Customer { get; set; }
+}</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>SQL requires an explicit FOREIGN KEY constraint. EF Core can infer many relationships from naming conventions (if you name a property CustomerId and have a navigation property Customer, EF understands the relationship). But explicit configuration via Fluent API is clearer and more maintainable, especially in complex models. Always be explicit about critical relationships.</p>
+      </div>
+
+      <p class="section-text">
+        Entity Framework uses conventions to detect relationships if you follow naming patterns. If a property is named CustomerId and there's a navigation property named Customer that references the Customer class, EF infers the relationship. However, relying on conventions can be fragile. Complex models with multiple relationships to the same type need explicit configuration. The Fluent API approach using HasOne().WithMany().HasForeignKey() is explicit and self-documenting.
+      </p>
+    </section>
+
+    <section class="section">
+      <div class="section-num">03</div>
+      <h2>Referential Integrity: Database vs Application Layer</h2>
+      <p class="section-text">
+        This is perhaps the most important section in this chapter: understanding where validation really happens. Referential integrity means ensuring that a foreign key always points to a valid, existing row in the parent table. SQL enforces this at the database level through the FOREIGN KEY constraint. Entity Framework can enforce it at the application level through SaveChanges(). Dapper enforces it nowhere—you're responsible for it.
+      </p>
+      <p class="section-text">
+        When you try to INSERT an order with an invalid CustomerId directly into the SQL database (via SQL Server Management Studio or raw SQL), the database rejects it immediately. The INSERT fails before it even reaches disk. This is the strongest possible guarantee: the database itself prevents invalid data from being stored.
+      </p>
+      <p class="section-text">
+        When you use Entity Framework, validation happens later. You can create an Order object in memory with CustomerId = 999 (even if no such customer exists). The object exists in memory just fine. Only when you call SaveChanges() does EF validate the foreign key constraint. If the constraint would be violated, SaveChanges() throws a DbUpdateException. By that time, you're in application code, and you can catch the exception and handle it gracefully.
+      </p>
+      <p class="section-text">
+        When you use Dapper, there's no ORM layer to validate for you. You execute raw SQL directly. If your SQL violates a FK constraint, the database rejects it and Dapper throws an exception. But you can construct invalid objects freely in memory. This is why Dapper requires more discipline and careful SQL writing.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Immediate Rejection</span>
+          <code>-- Database enforces FK constraint at insert time
+-- This violates the constraint (no customer 999)
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (999, GETUTCDATE(), 50.00);
+
+-- Result:
+-- Msg 547, Level 16, State 0
+-- The INSERT, UPDATE, or DELETE statement
+-- conflicted with a FOREIGN KEY constraint
+-- "FK_Orders_Customer"
+-- The statement has been terminated.
+
+-- Valid insert (customer 1 exists)
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (1, GETUTCDATE(), 50.00);
+-- SUCCESS: 1 rows affected</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Validation on SaveChanges()</span>
+          <code>var context = new AppDbContext();
+
+// Create an invalid order in memory
+var order = new Order
+{
+  CustomerId = 999,  // No customer with this ID
+  OrderDate = DateTime.UtcNow,
+  Total = 50m
+};
+
+context.Orders.Add(order);
+
+// At this point, the object exists in memory
+// But the FK might be invalid
+Console.WriteLine(order.Id); // 0 (not saved yet)
+
+try
+{
+  context.SaveChanges();
+  // EF validates the FK before INSERT
+  // Fails because customer 999 doesn't exist
+}
+catch (DbUpdateException ex)
+{
+  Console.WriteLine("FK violation: " + ex.Message);
+  // Handle the error gracefully
+  // Transaction rollback happens automatically
+}</code>
+        </div>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Dapper — No Built-in FK Validation</span>
+        <code>// With Dapper, you execute raw SQL
+using (var connection = new SqlConnection(connectionString))
+{
+  connection.Open();
+
+  // This INSERT violates the FK constraint
+  // But Dapper doesn't validate—the database does
+  try
+  {
+    var sql = @"
+      INSERT INTO Orders (CustomerId, OrderDate, Total)
+      VALUES (@CustomerId, @OrderDate, @Total)
+    ";
+
+    var affectedRows = connection.Execute(sql, new
+    {
+      CustomerId = 999,
+      OrderDate = DateTime.UtcNow,
+      Total = 50m
+    });
+
+    // If we get here, the insert succeeded
+    Console.WriteLine($"Inserted {affectedRows} rows");
+  }
+  catch (SqlException ex)
+  {
+    // FK constraint violation caught here
+    // "The INSERT, UPDATE, or DELETE statement
+    //  conflicted with a FOREIGN KEY constraint"
+    Console.WriteLine("Database rejected the insert: " + ex.Message);
+    // You must handle this error manually
+  }
+}
+
+// Best practice: Validate BEFORE executing SQL
+// Check that CustomerId exists first:
+var customerExists = connection.QuerySingleOrDefault<int>(
+  "SELECT 1 FROM Customers WHERE Id = @Id",
+  new { Id = 999 }
+) != 0;
+
+if (!customerExists)
+{
+  throw new InvalidOperationException("Customer does not exist");
+}</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Defense in depth means validating at multiple layers. SQL validates at the database level (strongest guarantee). EF validates at the application level when you call SaveChanges(). Dapper forces you to validate in your application code before executing SQL. No matter which approach you use, always validate: use [Required] attributes in C#, let the database enforce constraints, and handle exceptions gracefully.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">04</div>
+      <h2>CASCADE Rules and DeleteBehavior</h2>
+      <p class="section-text">
+        When you delete a parent entity, what happens to the child records? If you delete a customer, should their orders be deleted too? Set to NULL? Prevent deletion? This is what CASCADE rules are for. In SQL, you define this with ON DELETE on the foreign key. In Entity Framework, you configure it with DeleteBehavior on the relationship.
+      </p>
+      <p class="section-text">
+        SQL supports several ON DELETE options: CASCADE (delete the children), SET NULL (set FK to NULL), NO ACTION (throw error), SET DEFAULT (set to a default value), RESTRICT (similar to NO ACTION). Entity Framework mirrors these with DeleteBehavior enum values: Cascade, SetNull, Restrict, ClientSetNull, NoAction. Understanding the implications of each is critical for data consistency.
+      </p>
+      <p class="section-text">
+        Cascade is the most common: delete the parent, and the database automatically deletes all child rows. This maintains referential integrity but is destructive. Set NULL is gentler: the parent deletes, but child records survive with a NULL foreign key (orphaned records). Restrict prevents deletion if children exist—you must delete children first. ClientSetNull is an EF-specific behavior where the application (not the database) sets FK to NULL.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: ON DELETE Options</span>
+          <code>-- ON DELETE CASCADE: auto-delete children
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY
+);
+
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY,
+  CustomerId INT NOT NULL,
+  FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id)
+    ON DELETE CASCADE  -- Orders auto-deleted
+);
+
+-- Cascade in action:
+DELETE FROM Customers WHERE Id = 5;
+-- This automatically deletes all orders
+-- where CustomerId = 5
+
+-- ON DELETE SET NULL: orphan children
+CREATE TABLE Products (
+  Id INT PRIMARY KEY,
+  CategoryId INT,
+  FOREIGN KEY (CategoryId)
+    REFERENCES Categories(Id)
+    ON DELETE SET NULL  -- FK becomes NULL
+);
+
+-- Delete category, products survive
+DELETE FROM Categories WHERE Id = 3;
+-- Products.CategoryId = 3 becomes NULL
+
+-- ON DELETE NO ACTION: prevent deletion
+CREATE TABLE Employees (
+  Id INT PRIMARY KEY,
+  ManagerId INT,
+  FOREIGN KEY (ManagerId)
+    REFERENCES Employees(Id)
+    ON DELETE NO ACTION  -- Throws error
+);
+
+DELETE FROM Employees WHERE Id = 1;
+-- Error if anyone reports to this manager</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: DeleteBehavior in EF Core</span>
+          <code>public class AppDbContext : DbContext
+{
+  protected override void OnModelCreating(
+    ModelBuilder modelBuilder)
+  {
+    // DeleteBehavior.Cascade: auto-delete children
+    modelBuilder.Entity<Order>()
+      .HasOne(o => o.Customer)
+      .WithMany(c => c.Orders)
+      .OnDelete(DeleteBehavior.Cascade);
+    // Deleting customer → deletes all orders
+
+    // DeleteBehavior.SetNull: orphan children
+    modelBuilder.Entity<Product>()
+      .HasOne(p => p.Category)
+      .WithMany(c => c.Products)
+      .OnDelete(DeleteBehavior.SetNull);
+    // Deleting category → products' CategoryId = NULL
+
+    // DeleteBehavior.Restrict: prevent deletion
+    modelBuilder.Entity<Employee>()
+      .HasOne(e => e.Manager)
+      .WithMany(m => m.DirectReports)
+      .OnDelete(DeleteBehavior.Restrict);
+    // Can't delete manager if subordinates exist
+
+    // DeleteBehavior.NoAction: throw error (SQL only)
+    modelBuilder.Entity<Invoice>()
+      .HasOne(i => i.Company)
+      .WithMany()
+      .OnDelete(DeleteBehavior.NoAction);
+
+    // DeleteBehavior.ClientSetNull: app sets FK to NULL
+    modelBuilder.Entity<Comment>()
+      .HasOne(c => c.Author)
+      .WithMany()
+      .OnDelete(DeleteBehavior.ClientSetNull);
+    // EF doesn't use DB CASCADE, app handles it
+  }
+}
+
+// Usage example with Cascade:
+var context = new AppDbContext();
+var customer = context.Customers.Find(5);
+
+// When we remove, EF respects the Cascade rule
+context.Customers.Remove(customer);
+context.SaveChanges();
+// This generates:
+// 1. DELETE FROM Orders WHERE CustomerId = 5
+// 2. DELETE FROM Customers WHERE Id = 5
+// (or uses DB CASCADE if configured)</code>
+        </div>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Practical DeleteBehavior Example</span>
+        <code>public class BlogContext : DbContext
+{
+  public DbSet<Blog> Blogs { get; set; }
+  public DbSet<Post> Posts { get; set; }
+  public DbSet<Comment> Comments { get; set; }
+
+  protected override void OnModelCreating(ModelBuilder mb)
+  {
+    // Blog → Posts: Cascade (delete blog → delete posts)
+    mb.Entity<Post>()
+      .HasOne(p => p.Blog)
+      .WithMany(b => b.Posts)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Post → Comments: Cascade
+    mb.Entity<Comment>()
+      .HasOne(c => c.Post)
+      .WithMany(p => p.Comments)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // User → Author: SetNull (orphan posts)
+    mb.Entity<Post>()
+      .HasOne(p => p.Author)
+      .WithMany()
+      .OnDelete(DeleteBehavior.SetNull);
+  }
+}
+
+public class Blog
+{
+  public int Id { get; set; }
+  public string Title { get; set; }
+  public ICollection<Post> Posts { get; set; }
+}
+
+public class Post
+{
+  public int Id { get; set; }
+  public string Title { get; set; }
+  public int BlogId { get; set; }        // Required FK
+  public int? AuthorId { get; set; }     // Nullable FK
+  public Blog Blog { get; set; }         // Required nav
+  public User? Author { get; set; }      // Nullable nav
+  public ICollection<Comment> Comments { get; set; }
+}
+
+public class Comment
+{
+  public int Id { get; set; }
+  public string Text { get; set; }
+  public int PostId { get; set; }
+  public Post Post { get; set; }
+}
+
+public class User
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+}
+
+// When deleting with cascades:
+var context = new BlogContext();
+var blog = context.Blogs.Find(1);
+context.Blogs.Remove(blog);
+context.SaveChanges();
+
+// Generated SQL (conceptually):
+// 1. DELETE FROM Comments WHERE PostId IN (
+//      SELECT Id FROM Posts WHERE BlogId = 1)
+// 2. DELETE FROM Posts WHERE BlogId = 1
+// 3. DELETE FROM Blogs WHERE Id = 1</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Choose DeleteBehavior carefully based on your domain logic. Cascade is destructive but maintains referential integrity automatically. SetNull is gentler, creating orphaned records. Restrict forces explicit deletion order. Be explicit about delete behavior—never rely on defaults for critical relationships. Test your delete scenarios to ensure they match your business requirements.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">05</div>
+      <h2>Self-Referencing Relationships</h2>
+      <p class="section-text">
+        Sometimes a table references itself. An Employee has a ManagerId that points to another Employee. A Category can have a ParentCategoryId pointing to another Category. A Comment can have a ParentCommentId pointing to another Comment (for nested comments). These self-referencing relationships model hierarchies and trees.
+      </p>
+      <p class="section-text">
+        In SQL, you create a self-referencing foreign key: the ManagerId column REFERENCES the same Employees table's Id column. You can even use recursive CTEs (Common Table Expressions) to traverse the hierarchy. In C#, an Employee object has both a Manager navigation property (pointing to another Employee) and a DirectReports collection (containing multiple Employees that report to this one).
+      </p>
+      <p class="section-text">
+        Self-referencing relationships are powerful for modeling real-world hierarchies: organizational structures, file systems, comment threads, taxonomies. They require careful navigation and querying, but Entity Framework makes it natural with Include() chains and recursive LINQ.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Self-Referencing FK & Recursive CTE</span>
+          <code>CREATE TABLE Employees (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL,
+  ManagerId INT NULL,
+  CONSTRAINT FK_Employee_Manager
+    FOREIGN KEY (ManagerId)
+    REFERENCES Employees(Id)
+);
+
+-- Insert a hierarchy
+INSERT INTO Employees (Name, ManagerId) VALUES ('CEO', NULL);
+INSERT INTO Employees (Name, ManagerId) VALUES ('VP Sales', 1);
+INSERT INTO Employees (Name, ManagerId) VALUES ('VP Eng', 1);
+INSERT INTO Employees (Name, ManagerId) VALUES ('Sales Rep', 2);
+INSERT INTO Employees (Name, ManagerId) VALUES ('Engineer', 3);
+
+-- Query: Get an employee and their manager
+SELECT e.Name AS Employee, m.Name AS Manager
+FROM Employees e
+LEFT JOIN Employees m ON e.ManagerId = m.Id
+WHERE e.Id = 5;
+
+-- Result: Engineer | VP Eng
+
+-- Recursive CTE: get full hierarchy
+WITH EmployeeHierarchy AS (
+  SELECT Id, Name, ManagerId, 0 AS Level
+  FROM Employees
+  WHERE ManagerId IS NULL  -- Start at root (CEO)
+
+  UNION ALL
+
+  SELECT e.Id, e.Name, e.ManagerId, eh.Level + 1
+  FROM Employees e
+  INNER JOIN EmployeeHierarchy eh
+    ON e.ManagerId = eh.Id
+)
+SELECT REPLICATE('  ', Level) + Name AS Employee
+FROM EmployeeHierarchy
+ORDER BY Level, Name;
+
+-- Result:
+-- CEO
+--   VP Sales
+--     Sales Rep
+--   VP Eng
+--     Engineer</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Self-Referencing Navigation</span>
+          <code>public class Employee
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Foreign key (nullable for root)
+  public int? ManagerId { get; set; }
+
+  // Navigation to manager
+  public Employee? Manager { get; set; }
+
+  // Collection of subordinates
+  public ICollection<Employee> DirectReports { get; set; }
+    = new List<Employee>();
+}
+
+public class OrgContext : DbContext
+{
+  public DbSet<Employee> Employees { get; set; }
+
+  protected override void OnModelCreating(
+    ModelBuilder mb)
+  {
+    mb.Entity<Employee>()
+      .HasOne(e => e.Manager)
+      .WithMany(e => e.DirectReports)
+      .HasForeignKey(e => e.ManagerId)
+      .OnDelete(DeleteBehavior.SetNull);
+      // Set to NULL if manager is deleted
+  }
+}
+
+// Usage: Load hierarchy
+var context = new OrgContext();
+
+// Load an employee with manager info
+var emp = context.Employees
+  .Include(e => e.Manager)
+  .FirstOrDefault(e => e.Id == 5);
+
+Console.WriteLine($"{emp.Name} reports to {emp.Manager?.Name}");
+// Engineer reports to VP Eng
+
+// Load with all subordinates
+var vp = context.Employees
+  .Include(e => e.DirectReports)
+  .FirstOrDefault(e => e.Id == 3);
+
+foreach (var report in vp.DirectReports)
+  Console.WriteLine($"  - {report.Name}");
+// Output:
+//   - Engineer
+
+// Load full hierarchy recursively (expensive!)
+var ceo = context.Employees
+  .Include(e => e.DirectReports
+    .Select(r => r.DirectReports))
+  .FirstOrDefault(e => e.ManagerId == null);
+
+// Manual recursive query for deep hierarchies
+public List<Employee> GetHierarchyBelow(int empId)
+{
+  var result = new List<Employee>();
+  var queue = new Queue<int> { empId };
+
+  while (queue.Count > 0)
+  {
+    var currentId = queue.Dequeue();
+    var emp = context.Employees
+      .Include(e => e.DirectReports)
+      .FirstOrDefault(e => e.Id == currentId);
+
+    if (emp != null)
+    {
+      result.Add(emp);
+      foreach (var report in emp.DirectReports)
+        queue.Enqueue(report.Id);
+    }
+  }
+
+  return result;
+}</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Self-referencing relationships require careful loading strategies. Include() with nested Selects works for shallow hierarchies, but can cause N+1 problems for deep trees. For large hierarchies, consider recursive CTEs in SQL or use specialized libraries for hierarchical data. Always be aware of query performance when working with deep organizational structures or category trees.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">06</div>
+      <h2>Optional vs Required Relationships</h2>
+      <p class="section-text">
+        A required relationship means the child cannot exist without a parent: an Order must have a Customer; a Post must have a Blog. An optional relationship means the child can exist without a parent: a Product might have an optional Category; an Employee might have no Manager (the CEO). In SQL, you define this by making the foreign key column NOT NULL (required) or nullable (optional).
+      </p>
+      <p class="section-text">
+        In C#, you use type declarations to express this. A non-nullable int CustomerId represents a required foreign key. An int? ManagerId represents an optional one. A non-nullable Customer property represents a required navigation. A Customer? property represents an optional navigation. Entity Framework respects these declarations: when you call SaveChanges(), it validates that required relationships are actually populated before inserting.
+      </p>
+      <p class="section-text">
+        The distinction affects delete behavior and data integrity. If a relationship is required, you cannot delete the parent without first handling the children. If it's optional, orphaning children (setting FK to NULL) is an option. This is why understanding optional vs required is critical for designing robust databases and applications.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Required vs Optional FK</span>
+          <code>-- Required FK: NOT NULL
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,  -- Required
+  OrderDate DATETIME2 NOT NULL,
+  FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
+);
+
+-- Every order MUST have a customer
+INSERT INTO Orders (CustomerId, OrderDate)
+VALUES (5, GETUTCDATE());  -- Valid
+
+INSERT INTO Orders (CustomerId, OrderDate)
+VALUES (NULL, GETUTCDATE());  -- Error: NULL not allowed
+
+-- Optional FK: nullable
+CREATE TABLE Products (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(200) NOT NULL,
+  CategoryId INT NULL,  -- Optional
+  FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
+);
+
+-- Product can exist without a category
+INSERT INTO Products (Name, CategoryId)
+VALUES ('Uncategorized Item', NULL);  -- Valid
+
+INSERT INTO Products (Name, CategoryId)
+VALUES ('Electronics', 3);  -- Also valid if category 3 exists</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Nullable vs Non-Nullable</span>
+          <code>// Required relationship
+public class Order
+{
+  public int Id { get; set; }
+
+  // Required FK: non-nullable int
+  public int CustomerId { get; set; }
+
+  public DateTime OrderDate { get; set; }
+
+  // Required navigation: non-nullable
+  public Customer Customer { get; set; }
+}
+
+// Optional relationship
+public class Product
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Optional FK: nullable int
+  public int? CategoryId { get; set; }
+
+  // Optional navigation: nullable
+  public Category? Category { get; set; }
+}
+
+public class Employee
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Optional FK: nullable for CEO
+  public int? ManagerId { get; set; }
+
+  // Optional navigation
+  public Employee? Manager { get; set; }
+
+  public ICollection<Employee> DirectReports { get; set; }
+}
+
+// Validation differences:
+var context = new AppDbContext();
+
+// Invalid: order without customer
+var invalidOrder = new Order
+{
+  OrderDate = DateTime.UtcNow,
+  // CustomerId not set (null)
+  // Customer not set (null)
+};
+
+context.Orders.Add(invalidOrder);
+
+try
+{
+  context.SaveChanges();
+  // Throws: 'CustomerId' is required
+  // (Non-nullable property on entity requires a value)
+}
+catch (InvalidOperationException ex)
+{
+  Console.WriteLine("Invalid order: " + ex.Message);
+}
+
+// Valid: optional relationships can be null
+var product = new Product
+{
+  Name = "Widget",
+  CategoryId = null,  // OK
+  Category = null     // OK
+};
+
+context.Products.Add(product);
+context.SaveChanges();  // Success
+
+// Access optional navigation safely
+var p = context.Products.Include(p => p.Category).First();
+if (p.Category != null)
+  Console.WriteLine($"Category: {p.Category.Name}");
+else
+  Console.WriteLine("No category assigned");</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Use non-nullable types for required relationships (int for FK, T for navigation). Use nullable types for optional relationships (int?, T?). This makes your domain model self-documenting and lets the compiler help catch errors. Entity Framework enforces these constraints when you call SaveChanges(), preventing invalid data from reaching the database.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">07</div>
+      <h2>Shadow Properties and FK Conventions</h2>
+      <p class="section-text">
+        Sometimes you have a navigation property without an explicit foreign key property in your class. If your Order class has a Customer navigation property but no CustomerId property, Entity Framework creates a "shadow property" behind the scenes. The shadow property is a real database column, but there's no C# property to access it directly. It's hidden from your code but still enforced in the database.
+      </p>
+      <p class="section-text">
+        Shadow properties exist for two reasons: convenience (you don't need boilerplate FK properties if you only access the navigation) and encapsulation (you can hide implementation details). However, they can be confusing. When you filter orders by CustomerId in a LINQ query, you're accessing a shadow property. When you inspect entity tracking, you'll see "CustomerId" in the change tracker even though there's no C# property for it.
+      </p>
+      <p class="section-text">
+        In many cases, it's clearer to be explicit: always include the foreign key property (CustomerId) alongside the navigation property (Customer). This makes your intent clear and gives you access to the ID value without loading the entire related entity. You avoid shadow properties by being explicit in your entity design.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block csharp">
+          <span class="code-label">C#: Shadow Properties (No FK Property)</span>
+          <code>// Order with navigation but no FK property
+public class Order
+{
+  public int Id { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+
+  // Navigation to customer (NO CustomerId property)
+  public Customer? Customer { get; set; }
+  // EF creates a shadow property "CustomerId"
+}
+
+public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public ICollection<Order> Orders { get; set; }
+}
+
+// In database: Orders still has CustomerId column
+// But it's "shadowed"—not directly accessible in C#
+
+var context = new AppDbContext();
+
+// Query using the navigation
+var orders = context.Orders
+  .Where(o => o.Customer.Id == 5)  // Have to load Customer
+  .ToList();
+
+// Inspect the shadow property via tracking
+var order = context.Orders.First();
+var entry = context.Entry(order);
+
+// Access the shadow FK property
+var shadowCustomerId = entry.Property("CustomerId").CurrentValue;
+Console.WriteLine($"Customer ID: {shadowCustomerId}");
+
+// This is less efficient than having explicit FK property</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Explicit FK Property (Best Practice)</span>
+          <code>// Order with both FK property AND navigation
+public class Order
+{
+  public int Id { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+
+  // Explicit FK property
+  public int CustomerId { get; set; }
+
+  // Navigation to customer
+  public Customer? Customer { get; set; }
+}
+
+public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public ICollection<Order> Orders { get; set; }
+}
+
+var context = new AppDbContext();
+
+// Query without loading Customer
+var orders = context.Orders
+  .Where(o => o.CustomerId == 5)  // Use FK property directly
+  .ToList();
+
+// Access the FK value without a database query
+var order = context.Orders.First();
+var customerId = order.CustomerId;  // No shadow property needed
+Console.WriteLine($"Customer ID: {customerId}");
+
+// Access the navigation when needed
+var customerName = order.Customer?.Name;  // Loads if not already loaded
+
+// This is more efficient and explicit        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Avoid shadow properties in most cases. Always include explicit FK properties (CustomerId) alongside navigation properties (Customer). This makes your code clearer, your intent explicit, and gives you direct access to the ID without loading related data. Only use shadow properties in special cases where you truly want to hide the FK implementation.</p>
+      </div>
+
+      <p class="section-text">
+        To see what shadow properties exist on your entities, use the change tracker's Property() method or inspect the model at runtime. This is useful for debugging and understanding what EF has created automatically. However, the best practice is to design your entities with explicit foreign key properties from the start, eliminating the need for shadow properties altogether.
+      </p>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Detecting and Working with Shadow Properties</span>
+        <code>// Inspect an entity's shadow properties
+var context = new AppDbContext();
+var order = context.Orders.First();
+var entry = context.Entry(order);
+
+// List all properties (including shadow)
+var allProperties = entry.Metadata.GetProperties();
+foreach (var prop in allProperties)
+{
+  var isShadow = prop.IsShadowProperty();
+  var value = entry.Property(prop.Name).CurrentValue;
+
+  Console.WriteLine(
+    $"{prop.Name}: {value} (Shadow: {isShadow})");
+}
+
+// Output might be:
+// Id: 1 (Shadow: False)
+// OrderDate: 3/31/2026 (Shadow: False)
+// Total: 99.99 (Shadow: False)
+// CustomerId: 5 (Shadow: True)  <-- This is the shadow!
+
+// Get all shadow properties
+var shadowProps = allProperties
+  .Where(p => p.IsShadowProperty())
+  .ToList();
+
+// Explicitly set a shadow property value
+entry.Property("CustomerId").CurrentValue = 7;
+context.SaveChanges();
+
+// BUT: This is confusing and error-prone.
+// Better approach: Add the property to the class!
+
+public class Order  // IMPROVED VERSION
+{
+  public int Id { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+
+  // Now CustomerId is explicit
+  public int CustomerId { get; set; }  // No more shadow!
+
+  public Customer? Customer { get; set; }
+}
+
+// Recommendation: Run a diagnostic on your DbContext
+// to find shadow properties and consider making them explicit
+
+public class ShadowPropertyDiagnostic
+{
+  public static void ReportShadowProperties(DbContext context)
+  {
+    var model = context.Model;
+    foreach (var entityType in model.GetEntityTypes())
+    {
+      var shadows = entityType.GetProperties()
+        .Where(p => p.IsShadowProperty())
+        .ToList();
+
+      if (shadows.Any())
+      {
+        Console.WriteLine($"{entityType.Name} has shadow properties:");
+        foreach (var shadow in shadows)
+          Console.WriteLine($"  - {shadow.Name}");
+      }
+    }
+  }
+}
+
+// Run it to find problematic shadows:
+ShadowPropertyDiagnostic.ReportShadowProperties(context);</code>
+      </div>
+    </section>
+
+    <div class="key-takeaways">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Foreign keys in SQL are constraints that link tables. Navigation properties in C# are object references that link entities. Both represent the same logical relationship from different perspectives.</li>
+        <li>The foreign key column (CustomerId) is the physical storage mechanism. The navigation property (Customer) is the object-oriented interface. Entity Framework synchronizes both automatically.</li>
+        <li>SQL enforces referential integrity at the database level immediately. EF enforces it at the application level when SaveChanges() is called. Dapper requires you to enforce it in application code.</li>
+        <li>Implement defense-in-depth validation: use [Required] attributes in C#, configure relationships explicitly in EF, and let the database be the final gatekeeper with FK constraints.</li>
+        <li>ON DELETE rules in SQL (CASCADE, SET NULL, NO ACTION) map to DeleteBehavior in EF (Cascade, SetNull, Restrict). Choose carefully based on your domain's requirements and data lifecycle.</li>
+        <li>Self-referencing relationships model hierarchies. Use nullable foreign keys for optional parents and include both single-object and collection navigation properties to represent up and down the hierarchy.</li>
+        <li>Required relationships use non-nullable FK properties (int, not int?) and non-nullable navigations (T, not T?). Optional relationships use nullable types. This makes your intent clear to the compiler and other developers.</li>
+        <li>Avoid shadow properties when possible. Always include explicit foreign key properties alongside navigation properties. This makes your code clearer and gives you direct access to ID values without loading related data.</li>
+        <li>The relationship configuration you choose (Fluent API vs Data Annotations vs Conventions) should be explicit and consistent. Don't rely on conventions for critical relationships in production code.</li>
+        <li>When querying, prefer using FK properties (CustomerId) over navigations (Customer) when you only need the ID. This avoids unnecessary database queries and eager-loading side effects.</li>
+      </ul>
+    </div>
+
+    <div class="chapter-nav">
+      <a href="ch02-rows-vs-objects.html" class="nav-item prev">
+        <span class="nav-label">← Previous Chapter</span>
+        <span class="nav-title">Rows vs Objects</span>
+      </a>
+      <a href="ch04-relationships.html" class="nav-item next">
+        <span class="nav-label">Next Chapter →</span>
+        <span class="nav-title">Relationships — Schema vs Object Graph</span>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access in .NET. Learn to think in both SQL and object-oriented programming, and master LINQ, Entity Framework, and Dapper.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#chapters">All Chapters</a></li>
+          <li><a href="https://github.com/yousafzainasir9">GitHub</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Topics Covered</h4>
+        <ul>
+          <li><a href="#">LINQ & Lambda Expressions</a></li>
+          <li><a href="#">Entity Framework Core</a></li>
+          <li><a href="#">Dapper & Micro-ORMs</a></li>
+          <li><a href="#">Query Optimization</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 SQL to C#. Built for developers who think in both SQL and C#.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

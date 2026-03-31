@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 10: Subqueries → Nested LINQ Expressions — SQL to C#</title>
+<meta name="description" content="Master SQL subqueries with LINQ. Learn scalar subqueries, EXISTS/ANY, IN/Contains, correlated subqueries, and derived tables using nested LINQ expressions and query composition.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp,
+.code-block.csharp-method,
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 10</div>
+  <h1>Subqueries → Nested LINQ Expressions</h1>
+  <p class="chapter-desc">Master SQL subqueries by understanding how LINQ implements them using nested query expressions and composition. Learn scalar subqueries, EXISTS/ANY predicates, IN/Contains filters, and correlated subqueries that reference outer scopes.</p>
+</div>
+
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>Scalar subqueries in SELECT with nested Count(), Sum(), and Min/Max</li>
+    <li>EXISTS operators translated to .Any() predicates</li>
+    <li>IN clauses transformed to .Contains() membership tests</li>
+    <li>NOT EXISTS patterns with !.Any() negation</li>
+    <li>Correlated subqueries capturing variables from outer scope</li>
+    <li>Derived tables and temporary result sets via query composition</li>
+    <li>ALL operators and .All() predicate patterns</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-num">01 — SCALAR SUBQUERIES</div>
+  <h2>Scalar Subqueries in SELECT: Nested Counts & Aggregates</h2>
+
+  <div class="section-text">
+    <p>A scalar subquery returns a single value (one row, one column) and can appear in the SELECT clause. Common examples include counting related records (how many orders does each customer have?), summing amounts, or finding minimum/maximum values. In SQL, you nest the subquery directly in the SELECT list. In LINQ, you express this through navigation properties or nested LINQ expressions in the projection.</p>
+    <p>Scalar subqueries are powerful for augmenting each row with derived data without requiring a GROUP BY. Each customer row includes their order count, for instance, without collapsing the result set.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL Scalar Subquery</span>
+      <pre><code>SELECT
+  c.CustomerId,
+  c.Name,
+  (SELECT COUNT(*) FROM Orders o
+   WHERE o.CustomerId = c.CustomerId) AS OrderCount
+FROM Customers c;</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Correlation Key</strong>
+    <p>The subquery references c.CustomerId from the outer query using the WHERE clause. This correlation is essential—it links each customer to their orders. Without it, COUNT(*) would return the same total for every row.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = orders
+      .Where(o => o.CustomerId == c.CustomerId)
+      .Count()
+  })
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from c in customers
+  select new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = (
+      from o in orders
+      where o.CustomerId == c.CustomerId
+      select o
+    ).Count()
+  }
+).ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">EF with Navigation Property</span>
+      <pre><code>var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = c.Orders.Count()
+  })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>The EF version with navigation properties is the cleanest. The Orders collection is lazy-loaded or included, and Count() is evaluated directly. The other versions manually iterate through the orders collection, filtering by CustomerId. All three produce similar SQL—a scalar subquery with a GROUP BY aggregate or a correlated COUNT().</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Scalar Subqueries with Different Aggregates</span>
+      <pre><code>// Get customer name, order count, total spent, and largest order
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = c.Orders.Count(),
+    TotalSpent = c.Orders.Sum(o => o.Total),
+    LargestOrder = c.Orders.Max(o => o.Total),
+    SmallestOrder = c.Orders.Min(o => o.Total),
+    AverageOrder = c.Orders.Average(o => o.Total)
+  })
+  .ToList();
+
+// Using explicit query subqueries (less efficient):
+var result = customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = (from o in orders where o.CustomerId == c.CustomerId select o).Count(),
+    TotalSpent = (from o in orders where o.CustomerId == c.CustomerId select o.Total).Sum(),
+    LargestOrder = (from o in orders where o.CustomerId == c.CustomerId select o.Total).Max(),
+    SmallestOrder = (from o in orders where o.CustomerId == c.CustomerId select o.Total).Min()
+  })
+  .ToList();
+
+// Nested subquery: get product names for each customer's top order
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    TopOrderAmount = c.Orders.Max(o => o.Total),
+    ProductsInTopOrder = c.Orders
+      .Where(o => o.Total == c.Orders.Max(co => co.Total))
+      .SelectMany(o => o.OrderItems)
+      .Select(oi => oi.Product.Name)
+      .ToList()
+  })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Note the nested subqueries in the ProductsInTopOrder example. This requires referencing c.Orders multiple times within the same projection. The performance impact is important: each reference may issue a separate database query if not carefully constructed with Include(). Always measure the generated SQL.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">02 — EXISTS → .Any()</div>
+  <h2>EXISTS: Testing for Related Data with .Any()</h2>
+
+  <div class="section-text">
+    <p>The EXISTS operator in SQL returns true if a subquery produces any rows. It's often used in WHERE clauses to filter based on related data existence. In LINQ, .Any() serves the same purpose—it returns true if the collection contains any elements matching a condition.</p>
+    <p>EXISTS is more efficient than COUNT(*) when you only care about presence/absence, not the quantity. The database can short-circuit evaluation once a single matching row is found.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL EXISTS</span>
+      <pre><code>SELECT c.CustomerId, c.Name
+FROM Customers c
+WHERE EXISTS (
+  SELECT 1 FROM Orders o
+  WHERE o.CustomerId = c.CustomerId
+  AND o.OrderDate > '2024-01-01'
+);</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = customers
+  .Where(c => orders
+    .Any(o => o.CustomerId == c.CustomerId
+      && o.OrderDate > new DateTime(2024, 1, 1))
+  )
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from c in customers
+  where (
+    from o in orders
+    where o.CustomerId == c.CustomerId
+      && o.OrderDate > new DateTime(2024, 1, 1)
+    select o
+  ).Any()
+  select c
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>EF Translation</strong>
+    <p>When using Entity Framework with navigation properties, .Any() translates directly to SQL EXISTS. The query is efficient because the database stops searching once a single match is found.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">EXISTS with Navigation Properties</span>
+      <pre><code>// Get customers who have orders
+var result = context.Customers
+  .Where(c => c.Orders.Any())
+  .ToList();
+
+// Get customers with orders over $1000
+var result = context.Customers
+  .Where(c => c.Orders.Any(o => o.Total > 1000))
+  .ToList();
+
+// Get customers with recent orders from a specific region
+var result = context.Customers
+  .Where(c => c.Orders.Any(o =>
+    o.OrderDate >= DateTime.Now.AddMonths(-3)
+    && o.ShippingRegion == "West"
+  ))
+  .ToList();
+
+// Combining multiple EXISTS conditions
+var result = context.Customers
+  .Where(c => c.Orders.Any())  // Has orders
+  .Where(c => c.Addresses.Any(a => a.IsDefault))  // Has default address
+  .ToList();
+
+// Using method chaining to combine with other filters
+var result = context.Customers
+  .Where(c => c.City == "Seattle")
+  .Where(c => c.Orders.Any(o => o.Total > 500))
+  .Select(c => c.Name)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>EXISTS is often more efficient than JOIN when you only need to verify presence. A query like "all customers with orders" is better expressed with EXISTS/Any() than with a DISTINCT join, because it avoids duplicate rows and allows the database to stop early.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">03 — IN WITH SUBQUERY</div>
+  <h2>IN Clause: .Contains() & Membership Tests</h2>
+
+  <div class="section-text">
+    <p>The IN operator tests whether a value appears in a set. The set can be a hardcoded list or a subquery result. In LINQ, you use .Contains() to test membership. This pattern is common for filtering based on derived sets, like "products sold in orders from Seattle customers" or "employees whose department is in the list [10, 20, 30]".</p>
+    <p>IN with subqueries is equivalent to an INNER JOIN but can be more readable when you're filtering rather than combining result sets.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL IN with Subquery</span>
+      <pre><code>SELECT p.ProductId, p.Name
+FROM Products p
+WHERE p.ProductId IN (
+  SELECT DISTINCT oi.ProductId
+  FROM Orders o
+  INNER JOIN OrderItems oi ON o.OrderId = oi.OrderId
+  WHERE o.CustomerId IN (
+    SELECT CustomerId FROM Customers WHERE City = 'Seattle'
+  )
+);</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>This SQL query finds all products sold to customers in Seattle. It uses nested IN clauses. Let's translate to LINQ:</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>// Step 1: Get Seattle customers
+var seattleCustomerIds = customers
+  .Where(c => c.City == "Seattle")
+  .Select(c => c.CustomerId)
+  .ToList();
+
+// Step 2: Get products sold to them
+var result = products
+  .Where(p => orderItems
+    .Where(oi => orders
+      .Where(o => seattleCustomerIds.Contains(o.CustomerId))
+      .Select(o => o.OrderId)
+      .Contains(oi.OrderId)
+    )
+    .Select(oi => oi.ProductId)
+    .Contains(p.ProductId)
+  )
+  .Distinct()
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from p in products
+  where (
+    from oi in orderItems
+    where (
+      from o in orders
+      where (
+        from c in customers
+        where c.City == "Seattle"
+        select c.CustomerId
+      ).Contains(o.CustomerId)
+      select o.OrderId
+    ).Contains(oi.OrderId)
+    select oi.ProductId
+  ).Distinct().Contains(p.ProductId)
+  select p
+).Distinct().ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">EF with Navigation Properties</span>
+      <pre><code>// Most readable and efficient with EF
+var result = context.Products
+  .Where(p => context.OrderItems
+    .Where(oi => context.Orders
+      .Any(o => context.Customers
+        .Where(c => c.City == "Seattle")
+        .Select(c => c.CustomerId)
+        .Contains(o.CustomerId)
+      && oi.OrderId == o.OrderId)
+    )
+    .Select(oi => oi.ProductId)
+    .Contains(p.ProductId)
+  )
+  .Distinct()
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Performance Note</strong>
+    <p>When using .Contains() with subqueries, the SQL translation is crucial. EF Core generates nested IN clauses. For complex scenarios with multiple IN levels, consider breaking the query into steps, executing inner queries first, and then using .Contains() on the client. Measure the generated SQL to avoid Cartesian products.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Practical IN/Contains Examples</span>
+      <pre><code>// Simple IN with hardcoded list
+var statuses = new[] { "Shipped", "Delivered" };
+var result = context.Orders
+  .Where(o => statuses.Contains(o.Status))
+  .ToList();
+
+// IN with subquery (simple case)
+var categoryIds = context.Categories
+  .Where(c => c.IsActive)
+  .Select(c => c.CategoryId)
+  .ToList();
+
+var result = context.Products
+  .Where(p => categoryIds.Contains(p.CategoryId))
+  .ToList();
+
+// IN with navigation property results
+var result = context.Customers
+  .Where(c => context.Orders
+    .Where(o => o.Total > 1000)
+    .Select(o => o.CustomerId)
+    .Contains(c.CustomerId)
+  )
+  .ToList();
+
+// Combining IN with other conditions
+var result = context.Products
+  .Where(p => new[] { 10, 20, 30 }.Contains(p.CategoryId))
+  .Where(p => p.Price < 100)
+  .Where(p => p.IsInStock)
+  .ToList();
+
+// NOT IN using !Contains
+var excludedCategories = new[] { 1, 2, 3 };
+var result = context.Products
+  .Where(p => !excludedCategories.Contains(p.CategoryId))
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>For simple cases, IN with hardcoded values is straightforward. For subqueries, always consider whether a JOIN is clearer and more efficient. If you're filtering products by categories that meet certain criteria, a DISTINCT after an INNER JOIN might be faster than IN with a subquery.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">04 — NOT EXISTS</div>
+  <h2>NOT EXISTS: Finding Records Without Related Data</h2>
+
+  <div class="section-text">
+    <p>NOT EXISTS is the inverse of EXISTS. It returns rows where the subquery produces no matches. Common examples: customers without orders, products never sold, employees without assignments. In LINQ, you express this with !.Any()—negating the Any() check.</p>
+    <p>NOT EXISTS is often more efficient than outer joins with a NULL check because it stops searching once a single match is found, allowing the database to eliminate the candidate row early.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL NOT EXISTS</span>
+      <pre><code>SELECT c.CustomerId, c.Name
+FROM Customers c
+WHERE NOT EXISTS (
+  SELECT 1 FROM Orders o
+  WHERE o.CustomerId = c.CustomerId
+);</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = customers
+  .Where(c => !orders
+    .Any(o => o.CustomerId == c.CustomerId)
+  )
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from c in customers
+  where !(
+    from o in orders
+    where o.CustomerId == c.CustomerId
+    select o
+  ).Any()
+  select c
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Negation Precedence</strong>
+    <p>The ! operator negates the .Any() result. This is cleaner than writing .Any(...) == false. The intent is clearer: "where any() returns false" becomes "where not any()". EF translates both to NOT EXISTS.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">NOT EXISTS Examples</span>
+      <pre><code>// Get customers with NO orders
+var result = context.Customers
+  .Where(c => !c.Orders.Any())
+  .ToList();
+
+// Get products never ordered
+var result = context.Products
+  .Where(p => !context.OrderItems.Any(oi => oi.ProductId == p.ProductId))
+  .ToList();
+
+// Get categories with no active products
+var result = context.Categories
+  .Where(cat => !context.Products.Any(p =>
+    p.CategoryId == cat.CategoryId && p.IsActive
+  ))
+  .ToList();
+
+// Get employees with no assigned tasks
+var result = context.Employees
+  .Where(e => !context.Tasks.Any(t =>
+    t.AssignedToEmployeeId == e.EmployeeId
+    && t.Status != "Completed"
+  ))
+  .ToList();
+
+// Combining NOT EXISTS with other conditions
+var result = context.Customers
+  .Where(c => !c.Orders.Any())  // No orders
+  .Where(c => c.CreatedDate > DateTime.Now.AddYears(-1))  // Recent customers
+  .Select(c => new { c.CustomerId, c.Name, c.CreatedDate })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>NOT EXISTS is ideal for finding "gaps" in relationships. It's often used in data cleaning, reporting on unused resources, or identifying orphaned records. The ! operator makes the intent clear and direct.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">05 — CORRELATED SUBQUERIES</div>
+  <h2>Correlated Subqueries: Outer Variable Capture</h2>
+
+  <div class="section-text">
+    <p>A correlated subquery references columns from the outer query. This creates a dependency: the subquery executes once per outer row, with different correlation values each time. In LINQ, correlated subqueries are implicit when you reference outer variables inside nested LINQ expressions or lambdas.</p>
+    <p>Correlated subqueries can impact performance because they're evaluated row-by-row. Understanding how to write them correctly and when to use alternatives (JOINs, GROUP BY) is critical for optimization.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL Correlated Subquery</span>
+      <pre><code>SELECT
+  c.CustomerId,
+  c.Name,
+  (SELECT COUNT(*)
+   FROM Orders o
+   WHERE o.CustomerId = c.CustomerId
+     AND o.OrderDate BETWEEN DATEADD(YEAR, -1, GETDATE()) AND GETDATE()
+  ) AS RecentOrderCount
+FROM Customers c;</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>The subquery references c.CustomerId, which comes from the outer Customers table. For each customer, the subquery re-executes, filtering orders for that specific customer. This is a correlated subquery.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var oneYearAgo = DateTime.Now.AddYears(-1);
+var result = customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    RecentOrderCount = orders
+      .Where(o => o.CustomerId == c.CustomerId
+        && o.OrderDate >= oneYearAgo
+        && o.OrderDate <= DateTime.Now
+      )
+      .Count()
+  })
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var oneYearAgo = DateTime.Now.AddYears(-1);
+var result = (
+  from c in customers
+  select new {
+    c.CustomerId,
+    c.Name,
+    RecentOrderCount = (
+      from o in orders
+      where o.CustomerId == c.CustomerId
+        && o.OrderDate >= oneYearAgo
+        && o.OrderDate <= DateTime.Now
+      select o
+    ).Count()
+  }
+).ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">EF with Navigation Property</span>
+      <pre><code>var oneYearAgo = DateTime.Now.AddYears(-1);
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    RecentOrderCount = c.Orders
+      .Count(o => o.OrderDate >= oneYearAgo
+        && o.OrderDate <= DateTime.Now
+      )
+  })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Outer Variable Capture</strong>
+    <p>In all three versions, the reference to 'c' inside the nested query/lambda is a closure capturing the outer loop variable. The database translates this to a correlated subquery automatically. Ensure the variable (oneYearAgo) defined outside is effectively constant; changes to it won't be reflected in the subquery.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Complex Correlated Subqueries</span>
+      <pre><code>// Rank products within their category by price
+var result = context.Products
+  .Select(p => new {
+    p.ProductId,
+    p.Name,
+    p.CategoryId,
+    p.Price,
+    RankInCategory = context.Products
+      .Where(other => other.CategoryId == p.CategoryId
+        && other.Price >= p.Price
+      )
+      .Count()
+  })
+  .ToList();
+
+// Find the most recent order for each customer
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    MostRecentOrder = c.Orders
+      .Where(o => o.OrderDate == c.Orders.Max(co => co.OrderDate))
+      .FirstOrDefault()
+  })
+  .ToList();
+
+// Get customers and their orders exceeding their average
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    AverageOrderValue = c.Orders.Average(o => o.Total),
+    LargeOrders = c.Orders
+      .Where(o => o.Total > c.Orders.Average(co => co.Total))
+      .Select(o => new { o.OrderId, o.Total })
+      .ToList()
+  })
+  .ToList();
+
+// Percent of category sales for each product
+var result = context.Products
+  .Select(p => new {
+    p.ProductId,
+    p.Name,
+    p.CategoryId,
+    TotalSales = context.OrderItems
+      .Where(oi => oi.ProductId == p.ProductId)
+      .Sum(oi => oi.Quantity),
+    CategoryTotalSales = context.OrderItems
+      .Where(oi => oi.Product.CategoryId == p.CategoryId)
+      .Sum(oi => oi.Quantity),
+  })
+  .AsEnumerable()
+  .Select(p => new {
+    p.ProductId,
+    p.Name,
+    p.CategoryId,
+    p.TotalSales,
+    p.CategoryTotalSales,
+    PercentOfCategory = p.CategoryTotalSales == 0
+      ? 0
+      : (p.TotalSales * 100.0 / p.CategoryTotalSales)
+  })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Correlated subqueries are powerful but can be slow for large datasets. Each outer row causes the subquery to re-execute. For performance-critical queries, consider using GROUP BY, window functions, or JOINs instead. Always measure the generated SQL to understand the execution plan.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">06 — DERIVED TABLES</div>
+  <h2>Derived Tables: Query Composition & Temporary Result Sets</h2>
+
+  <div class="section-text">
+    <p>A derived table is a subquery in the FROM clause that creates a temporary result set. In SQL, you use (SELECT ...) AS alias FROM (...). In LINQ, you create this through query composition—defining a query, then querying that query. Derived tables are useful for breaking complex queries into readable steps or for filtering on aggregated values.</p>
+    <p>LINQ handles derived tables naturally through composable queries. You build a query step by step, and EF translates the entire composition to a single database query or nested subqueries as needed.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL Derived Table</span>
+      <pre><code>SELECT
+  d.CustomerId,
+  d.Name,
+  d.OrderCount,
+  d.TotalSpent
+FROM (
+  SELECT
+    c.CustomerId,
+    c.Name,
+    COUNT(o.OrderId) AS OrderCount,
+    SUM(o.Total) AS TotalSpent
+  FROM Customers c
+  LEFT JOIN Orders o ON c.CustomerId = o.CustomerId
+  GROUP BY c.CustomerId, c.Name
+) d
+WHERE d.OrderCount > 5
+ORDER BY d.TotalSpent DESC;</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Query Composition</strong>
+    <p>In LINQ, you don't need explicit "derived table" syntax. You simply compose queries: first build the grouped summary, then filter and order it. The compiler and EF handle the SQL generation.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax with Composed Queries</span>
+      <pre><code>// Step 1: Build the summary (derived table)
+var customerSummary = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = c.Orders.Count(),
+    TotalSpent = c.Orders.Sum(o => o.Total)
+  });
+
+// Step 2: Filter and order (WHERE and ORDER BY on derived table)
+var result = customerSummary
+  .Where(s => s.OrderCount > 5)
+  .OrderByDescending(s => s.TotalSpent)
+  .ToList();
+
+// Or chain it all together:
+var result = context.Customers
+  .Select(c => new {
+    c.CustomerId,
+    c.Name,
+    OrderCount = c.Orders.Count(),
+    TotalSpent = c.Orders.Sum(o => o.Total)
+  })
+  .Where(s => s.OrderCount > 5)
+  .OrderByDescending(s => s.TotalSpent)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>This is much clearer than the SQL equivalent. The composed query naturally expresses the logic: project, filter, order. EF translates this to efficient SQL, often using a CTE (Common Table Expression) or a subquery internally.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">More Complex Derived Table Examples</span>
+      <pre><code>// Example 1: Filter on derived data
+var topCategories = context.Categories
+  .Select(cat => new {
+    cat.CategoryId,
+    cat.Name,
+    ProductCount = context.Products.Count(p => p.CategoryId == cat.CategoryId),
+    AveragePrice = context.Products
+      .Where(p => p.CategoryId == cat.CategoryId)
+      .Average(p => p.Price)
+  })
+  .Where(x => x.ProductCount > 10 && x.AveragePrice > 50)
+  .OrderBy(x => x.Name)
+  .ToList();
+
+// Example 2: Rank within derived result
+var rankedProducts = context.Products
+  .Select(p => new {
+    p.ProductId,
+    p.Name,
+    p.Price,
+    CategoryId = p.CategoryId,
+    CategoryName = p.Category.Name
+  })
+  .AsEnumerable()
+  .GroupBy(p => p.CategoryId)
+  .SelectMany(g => g
+    .OrderBy(p => p.Price)
+    .Select((p, index) => new {
+      p.ProductId,
+      p.Name,
+      p.Price,
+      p.CategoryName,
+      RankInCategory = index + 1
+    })
+  )
+  .ToList();
+
+// Example 3: Multi-level aggregation
+var salesByMonthAndCategory = context.Orders
+  .Select(o => new {
+    o.OrderDate.Year,
+    o.OrderDate.Month,
+    o.OrderItems.FirstOrDefault().Product.CategoryId
+  })
+  .Where(x => x.CategoryId.HasValue)
+  .GroupBy(x => new { x.Year, x.Month, x.CategoryId })
+  .Select(g => new {
+    g.Key.Year,
+    g.Key.Month,
+    g.Key.CategoryId,
+    OrderCount = g.Count(),
+    TotalAmount = context.Orders
+      .Where(o => o.OrderDate.Year == g.Key.Year
+        && o.OrderDate.Month == g.Key.Month
+      )
+      .Sum(o => o.Total)
+  })
+  .OrderBy(x => x.Year)
+  .ThenBy(x => x.Month)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Derived tables in LINQ are simply intermediate queries in a composition chain. This makes them highly composable and readable. You can build complex queries incrementally, testing each step, and the EF compiler optimizes them into efficient SQL.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">07 — ALL PREDICATE</div>
+  <h2>ALL Operator: .All() Predicate Patterns</h2>
+
+  <div class="section-text">
+    <p>The ALL operator in SQL checks if all values in a set satisfy a condition. For example, "get customers where all their orders are delivered" or "products where all variants are in stock". SQL uses NOT EXISTS with a negated condition; LINQ uses .All() predicate. This is less common than EXISTS or IN, but powerful for specific use cases.</p>
+    <p>Performance note: ALL often requires inspecting many rows, whereas EXISTS can short-circuit. Understand your data distribution before using ALL extensively.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL ALL (NOT EXISTS negation)</span>
+      <pre><code>-- Get customers where ALL orders are delivered
+SELECT c.CustomerId, c.Name
+FROM Customers c
+WHERE NOT EXISTS (
+  SELECT 1 FROM Orders o
+  WHERE o.CustomerId = c.CustomerId
+    AND o.Status != 'Delivered'
+);</code></pre>
+    </div>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = customers
+  .Where(c => c.Orders.All(o => o.Status == "Delivered"))
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from c in customers
+  where c.Orders.All(o => o.Status == "Delivered")
+  select c
+).ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">EF with Navigation Property</span>
+      <pre><code>var result = context.Customers
+  .Where(c => c.Orders.All(o => o.Status == "Delivered"))
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>All() vs Any()</strong>
+    <p>All() returns true if every element matches the condition. Any() returns true if at least one element matches. They're logical opposites. Logically, All() with a negated condition (All(x => !condition)) is equivalent to !Any(x => condition).</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">All() Examples</span>
+      <pre><code>// Get customers with all orders delivered
+var result = context.Customers
+  .Where(c => c.Orders.All(o => o.Status == "Delivered"))
+  .ToList();
+
+// Get products where all OrderItems have quantity >= 1
+var result = context.Products
+  .Where(p => context.OrderItems
+    .Where(oi => oi.ProductId == p.ProductId)
+    .All(oi => oi.Quantity >= 1)
+  )
+  .ToList();
+
+// Get customers who have placed orders AND all orders are valid
+var result = context.Customers
+  .Where(c => c.Orders.Any() && c.Orders.All(o => o.Status != "Cancelled"))
+  .ToList();
+
+// Combining All() with other conditions
+var result = context.Employees
+  .Where(e => e.Projects.All(p => p.Status == "Completed"))
+  .Where(e => e.Projects.Count() >= 3)
+  .Select(e => new { e.EmployeeId, e.Name })
+  .ToList();
+
+// Complex All() with multiple predicates
+var result = context.Orders
+  .Where(o => o.OrderItems.All(oi =>
+    oi.Product.IsInStock
+    && oi.Quantity > 0
+    && oi.UnitPrice > 0
+  ))
+  .ToList();
+
+// Using All() to validate business rules
+var result = context.Invoices
+  .Where(inv => inv.LineItems.All(li =>
+    li.Quantity > 0
+    && li.UnitPrice > 0
+    && li.Quantity * li.UnitPrice == li.Total
+  ))
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>All() is useful for validation and constraint checking. It's commonly used in business logic to ensure data integrity: "all line items are valid", "all tasks are completed", "all shipments are confirmed". Be mindful of performance: All() must inspect every row, whereas exists/any can short-circuit. For very large collections, consider indexing strategies or aggregation at the database level.</p>
+  </div>
+</div>
+
+<div class="key-takeaways">
+  <h3>Key Takeaways</h3>
+  <ul>
+    <li>Scalar subqueries in SELECT become nested aggregates in LINQ projections (Count(), Sum(), etc.)</li>
+    <li>EXISTS translates directly to .Any() for testing related data presence</li>
+    <li>IN clauses map to .Contains() for membership testing</li>
+    <li>NOT EXISTS uses !.Any() negation for finding records without related data</li>
+    <li>Correlated subqueries emerge naturally from outer variable capture in nested queries</li>
+    <li>Derived tables are simply intermediate queries in composition chains</li>
+    <li>ALL operator maps to .All() predicate for validating conditions across collections</li>
+    <li>Entity Framework navigation properties often eliminate the need for explicit subqueries</li>
+    <li>Always measure generated SQL—LINQ translations can be surprising for complex scenarios</li>
+  </ul>
+</div>
+
+</div>
+
+<div class="chapter-nav">
+  <a href="ch09-joins.html" class="nav-item prev">
+    <span class="nav-label">Previous Chapter</span>
+    <span class="nav-title">JOINs → Navigation</span>
+  </a>
+  <a href="ch11-window-functions.html" class="nav-item next">
+    <span class="nav-label">Next Chapter</span>
+    <span class="nav-title">Window Functions → LINQ Limits</span>
+  </a>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <p>SQL to C# • A comprehensive guide to translating SQL into LINQ and Entity Framework</p>
+    </div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

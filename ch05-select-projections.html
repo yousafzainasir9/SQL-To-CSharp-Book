@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5: SELECT → .Select() — Projections — SQL to C#</title>
+<meta name="description" content="Master SELECT projections in SQL and their C# LINQ equivalents. Learn anonymous types, DTOs, computed columns, and what Entity Framework generates under the hood.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* CHAPTER HEADER */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* IN THIS CHAPTER */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* CONTENT SECTIONS */
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.section-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* CODE COMPARISON */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block.csharp-method {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+/* SINGLE CODE BLOCK */
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+/* KEY INSIGHT CALLOUT */
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* KEY TAKEAWAYS */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* CHAPTER NAV */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+/* FOOTER */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">
+      SQL to C#
+      <span class="nav-pill">Ch 05</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">← All Chapters</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="chapter-header">
+    <div class="chapter-num">Chapter 05</div>
+    <h1>SELECT → .Select() — Projections</h1>
+    <p class="chapter-desc">Discover the relational algebra foundations of projections. Master SQL's SELECT statement and LINQ's .Select() method. Learn to transform data shapes, reduce database load, and generate optimal SQL through computed columns, aliases, and Entity Framework translation.</p>
+  </header>
+
+  <div class="in-this-chapter">
+    <h3>In This Chapter</h3>
+    <ul>
+      <li>Projection theory: set operations and relational algebra</li>
+      <li>Basic column selection and what it means for performance</li>
+      <li>Aliases and computed columns—transforming data at query time</li>
+      <li>SELECT DISTINCT and the cost of removing duplicates</li>
+      <li>Conditional transformations with CASE and ternary operators</li>
+      <li>Projection targets: anonymous types, DTOs, and records</li>
+      <li>Nested projections and subqueries with let binding</li>
+      <li>Decoding Entity Framework's generated SQL with .ToQueryString()</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 01: What Are Projections? -->
+  <section class="section">
+    <div class="section-num">01</div>
+    <h2>What Are Projections?</h2>
+
+    <p class="section-text">
+      In relational algebra, projection is a fundamental operation that selects a subset of attributes (columns) from a relation (table). Rather than retrieving entire rows with all their columns, projection reduces the dataset to only the columns you need. This isn't just a convenience—it's a core principle of efficient database design and query optimization.
+    </p>
+
+    <p class="section-text">
+      When you write a SQL SELECT statement, you're performing a projection. You specify which columns should appear in the result set, and the database engine executes exactly that operation. In LINQ, the .Select() method performs the same relational algebra operation, transforming each element in a sequence into a new shape. Both approaches reduce the volume of data transferred from the database to your application, lower memory consumption, and improve query performance.
+    </p>
+
+    <p class="section-text">
+      The theoretical foundation is this: given a table with 50 columns, fetching all 50 columns for every row (SELECT *) is dramatically slower than fetching only the 3 columns you actually need. The database must:
+    </p>
+
+    <p class="section-text">
+      1. Read more pages from disk (each page has limited space)<br>
+      2. Transfer more data over the network (in networked databases)<br>
+      3. Allocate more memory in your application<br>
+      4. Process unnecessary data in subsequent operations<br>
+    </p>
+
+    <p class="section-text">
+      Projections solve this by pushing column selection down to the database level, where the filtering happens before data leaves the database.
+    </p>
+
+    <div class="key-insight">
+      <strong>Relational Algebra Foundation</strong>
+      <p>Projection (π in formal notation) is a unary operation: it takes one relation and produces one relation with fewer attributes. Both SQL and LINQ implement projection the same way. The difference is syntax: SQL uses explicit column lists, while LINQ uses lambda expressions and anonymous types. The result is identical.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 02: Basic Column Selection -->
+  <section class="section">
+    <div class="section-num">02</div>
+    <h2>Basic Column Selection</h2>
+
+    <p class="section-text">
+      The most fundamental projection is selecting a few columns from a table. In SQL, you list the columns in the SELECT clause. In LINQ, you use .Select() with a lambda that creates an anonymous type containing only those properties.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT Name, Email, Phone
+FROM Customers;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = customers
+  .Select(c => new {
+    c.Name,
+    c.Email,
+    c.Phone
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from c in customers
+              select new {
+                c.Name,
+                c.Email,
+                c.Phone
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Both C# approaches create anonymous types—compiler-generated classes with the specified properties. When you use property shorthand (c.Name instead of Name = c.Name), the property name is automatically inferred from the expression. The query syntax reads more like SQL, while method syntax is more flexible and chainable. Entity Framework translates both to identical SQL.
+    </p>
+
+    <p class="section-text">
+      Here's what happens under the hood:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">Generated Anonymous Type (compiler creates this)</span>
+        <pre><code>// Compiler generates this (approximate):
+internal sealed class <>f__AnonymousType0 {
+  public string Name { get; }
+  public string Email { get; }
+  public string Phone { get; }
+}</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL by EF</span>
+        <pre><code>SELECT
+  c.Name,
+  c.Email,
+  c.Phone
+FROM Customers AS c;</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Notice the generated SQL selects only the three columns you need, not SELECT *. This is the performance win: reduced I/O, reduced network traffic, and reduced memory footprint.
+    </p>
+
+    <div class="key-insight">
+      <strong>Why Projections Matter</strong>
+      <p>On a table with 20 columns where you only need 3, a projection reduces the result set volume by ~85%. This has compounding effects: fewer database pages read, smaller network packets, less memory allocation, faster application processing. Always project to only the columns you need.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 03: Computed Columns and Aliases -->
+  <section class="section">
+    <div class="section-num">03</div>
+    <h2>Computed Columns and Aliases</h2>
+
+    <p class="section-text">
+      Beyond selecting existing columns, projections can transform data. SQL uses the AS keyword to create column aliases and computed columns. LINQ uses property assignment in anonymous types. Both approaches compute new values at query time, meaning the database does the work, not your C# code.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  OrderId,
+  Quantity,
+  UnitPrice,
+  Quantity * UnitPrice AS Total,
+  Quantity * UnitPrice * 0.9 AS Discounted
+FROM OrderItems;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = items
+  .Select(i => new {
+    i.OrderId,
+    i.Quantity,
+    i.UnitPrice,
+    Total = i.Quantity * i.UnitPrice,
+    Discounted = i.Quantity
+      * i.UnitPrice * 0.9m
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from i in items
+              select new {
+                i.OrderId,
+                i.Quantity,
+                i.UnitPrice,
+                Total = i.Quantity * i.UnitPrice,
+                Discounted = i.Quantity
+                  * i.UnitPrice * 0.9m
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      In SQL, the AS keyword creates an alias that names the computed expression. In LINQ, you assign the computed value to a property. The key principle is the same: the computation happens at the database, not in your application, which is far more efficient than fetching raw values and computing in C#.
+    </p>
+
+    <p class="section-text">
+      String operations work similarly:
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  FirstName,
+  LastName,
+  CONCAT(FirstName, ' ', LastName)
+    AS FullName,
+  LEN(Email) AS EmailLength
+FROM Users;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = users
+  .Select(u => new {
+    u.FirstName,
+    u.LastName,
+    FullName = $"{u.FirstName} "
+      + u.LastName,
+    EmailLength = u.Email.Length
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from u in users
+              select new {
+                u.FirstName,
+                u.LastName,
+                FullName = $"{u.FirstName} "
+                  + u.LastName,
+                EmailLength = u.Email.Length
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      COALESCE and ISNULL in SQL handle NULL values. In C#, use the null-coalescing operator ?? to provide defaults:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL NULL Handling</span>
+        <pre><code>SELECT
+  CustomerId,
+  COALESCE(MiddleName, '') AS Middle,
+  ISNULL(Phone, 'No phone') AS ContactPhone
+FROM Customers;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# NULL Handling</span>
+        <pre><code>var result = customers
+  .Select(c => new {
+    c.CustomerId,
+    Middle = c.MiddleName ?? "",
+    ContactPhone = c.Phone ?? "No phone"
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Computation Location Matters</strong>
+      <p>Computing in SQL means the database processes millions of rows in parallel with optimized code. Computing in C# means serializing millions of rows to your app, then processing one at a time. Always push computation to the database with .Select(). Entity Framework translates C# string concatenation, arithmetic, and null coalescing to SQL equivalents.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 04: SELECT DISTINCT -->
+  <section class="section">
+    <div class="section-num">04</div>
+    <h2>SELECT DISTINCT — Removing Duplicates</h2>
+
+    <p class="section-text">
+      When you need unique values from a column, SQL's DISTINCT keyword eliminates duplicates from the result set. LINQ provides the .Distinct() method, which removes duplicate items based on object equality. Both are set-theoretic operations that require comparing all rows, which is computationally expensive but essential for certain queries.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT DISTINCT City
+FROM Customers
+ORDER BY City;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = customers
+  .Select(c => c.City)
+  .Distinct()
+  .OrderBy(city => city)
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from c in customers
+              select c.City)
+  .Distinct()
+  .OrderBy(city => city)
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      DISTINCT works on multiple columns too:
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT DISTINCT City, Country
+FROM Customers
+ORDER BY Country, City;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = customers
+  .Select(c => new { c.City, c.Country })
+  .Distinct()
+  .OrderBy(x => x.Country)
+  .ThenBy(x => x.City)
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from c in customers
+              select new { c.City, c.Country })
+  .Distinct()
+  .OrderBy(x => x.Country)
+  .ThenBy(x => x.City)
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      When using DISTINCT on anonymous types, .Distinct() compares all properties. Two anonymous types are considered equal only if all properties match exactly.
+    </p>
+
+    <div class="key-insight">
+      <strong>DISTINCT Performance Impact</strong>
+      <p>DISTINCT requires the database to sort or hash every result row to identify duplicates. On large result sets, this is expensive. Without an index, the database uses a hash aggregation or tempdb sort. Always apply DISTINCT at the database level (in .Select().Distinct()), not in C#. Fetching 10,000 rows then calling .Distinct() in-memory is far slower than SELECT DISTINCT with 500 rows returned.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 05: CASE → Conditional Logic -->
+  <section class="section">
+    <div class="section-num">05</div>
+    <h2>CASE Expressions and Conditional Projections</h2>
+
+    <p class="section-text">
+      SQL's CASE expression evaluates multiple conditions and returns different values accordingly. LINQ uses the ternary operator (? :) for the same purpose. Both are computed at the database level, adding a conditional branch to your projection. This is powerful for categorizing data without additional application-level processing.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  Name,
+  Age,
+  CASE
+    WHEN Age >= 18 THEN 'Adult'
+    WHEN Age >= 13 THEN 'Teenager'
+    ELSE 'Child'
+  END AS AgeCategory
+FROM Users;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = users
+  .Select(u => new {
+    u.Name,
+    u.Age,
+    AgeCategory = u.Age >= 18
+      ? "Adult"
+      : u.Age >= 13
+        ? "Teenager"
+        : "Child"
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = (from u in users
+              select new {
+                u.Name,
+                u.Age,
+                AgeCategory = u.Age >= 18
+                  ? "Adult"
+                  : u.Age >= 13
+                    ? "Teenager"
+                    : "Child"
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      For more complex categorization:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL CASE (Multiple Conditions)</span>
+        <pre><code>SELECT
+  OrderId,
+  OrderTotal,
+  CASE
+    WHEN OrderTotal > 1000 THEN 'Premium'
+    WHEN OrderTotal > 500 THEN 'Standard'
+    WHEN OrderTotal > 100 THEN 'Small'
+    ELSE 'Minimal'
+  END AS OrderCategory,
+  CASE
+    WHEN OrderDate >= DATEADD(day,-30,GETDATE())
+      THEN 'Recent'
+    ELSE 'Old'
+  END AS OrderAge
+FROM Orders;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C# Ternary (Multiple Conditions)</span>
+        <pre><code>var result = context.Orders
+  .Select(o => new {
+    o.OrderId,
+    o.OrderTotal,
+    Category = o.OrderTotal > 1000
+      ? "Premium"
+      : o.OrderTotal > 500
+        ? "Standard"
+        : o.OrderTotal > 100
+          ? "Small"
+          : "Minimal",
+    Age = o.OrderDate >=
+      DateTime.UtcNow.AddDays(-30)
+      ? "Recent"
+      : "Old"
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Entity Framework translates these nested ternaries to SQL CASE statements:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL (EF Translation)</span>
+        <pre><code>SELECT
+  o.OrderId,
+  o.OrderTotal,
+  CASE
+    WHEN o.OrderTotal > 1000 THEN N'Premium'
+    WHEN o.OrderTotal > 500 THEN N'Standard'
+    WHEN o.OrderTotal > 100 THEN N'Small'
+    ELSE N'Minimal'
+  END AS Category,
+  CASE
+    WHEN o.OrderDate >= @p0 THEN N'Recent'
+    ELSE N'Old'
+  END AS Age
+FROM Orders AS o;</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Translation Boundaries</strong>
+      <p>EF translates simple ternaries and comparisons to CASE. If you call a custom C# method inside .Select(), translation fails and the query throws an exception. Keep your .Select() expressions simple: comparisons, arithmetic, string methods, null coalescing. Move complex logic after .ToList().</p>
+    </div>
+  </section>
+
+  <!-- SECTION 06: Projection Targets -->
+  <section class="section">
+    <div class="section-num">06</div>
+    <h2>Projecting to DTOs, Records, and Anonymous Types</h2>
+
+    <p class="section-text">
+      Projections can target different C# types: anonymous types (compiler-generated, single-use), DTOs (named classes, reusable), or records (immutable value types). The choice depends on where you need the data and how it flows through your application. All three generate the same SQL, but have different lifecycle and reusability characteristics.
+    </p>
+
+    <p class="section-text">
+      Anonymous types are perfect for one-off transformations:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Anonymous Type (Local Scope)</span>
+        <pre><code>// Anonymous type: compiler-generated, scoped to this method
+var customerSummaries = context.Customers
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    OrderCount = c.Orders.Count()
+  })
+  .ToList();
+
+// Type is not reusable outside this scope
+// Generated type has auto-generated name like <>f__AnonymousType0</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      DTOs are reusable classes for data transfer:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">DTO Class Definition</span>
+        <pre><code>// Define once, reuse everywhere
+public class CustomerSummary
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public int OrderCount { get; set; }
+
+  // Optional: method for business logic
+  public string Status => OrderCount > 10
+    ? "VIP"
+    : "Regular";
+}</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">Project to DTO</span>
+        <pre><code>// Reuse the CustomerSummary type
+public List<CustomerSummary> GetTopCustomers()
+{
+  return context.Customers
+    .Where(c => c.Orders.Count() > 5)
+    .Select(c => new CustomerSummary {
+      Id = c.Id,
+      Name = c.Name,
+      OrderCount = c.Orders.Count()
+    })
+    .ToList();
+}</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Records are newer syntax for immutable data transfer objects:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">Record Definition (Immutable)</span>
+        <pre><code>// Record syntax: immutable, concise
+public record CustomerSummary(
+  int Id,
+  string Name,
+  int OrderCount
+);
+
+// Can also use init-only properties:
+public record CustomerSummary2
+{
+  public int Id { get; init; }
+  public string Name { get; init; }
+  public int OrderCount { get; init; }
+}</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">Project to Record</span>
+        <pre><code>// Positional projection (positional record)
+var result1 = context.Customers
+  .Select(c => new CustomerSummary(
+    c.Id,
+    c.Name,
+    c.Orders.Count()
+  ))
+  .ToList();
+
+// Property-based projection (works with both)
+var result2 = context.Customers
+  .Select(c => new CustomerSummary {
+    Id = c.Id,
+    Name = c.Name,
+    OrderCount = c.Orders.Count()
+  })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Comparing approaches:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Comparison: Anonymous vs DTO vs Record</span>
+        <pre><code>// Anonymous: Quick, local, single use
+// Pros: No class definition, concise
+// Cons: Not reusable, harder to test, no IntelliSense across files
+var anonResult = customers.Select(c => new { c.Id, c.Name }).ToList();
+
+// DTO: Explicit, reusable, testable
+// Pros: Named type, can add methods, works everywhere
+// Cons: Requires class definition, verbose
+var dtoResult = customers.Select(c => new CustomerDTO {
+  Id = c.Id,
+  Name = c.Name
+}).ToList();
+
+// Record: Immutable, concise, reusable
+// Pros: Immutability, pattern matching, equality by value
+// Cons: Newer syntax, slightly less familiar to some devs
+var recordResult = customers.Select(c => new CustomerRecord(c.Id, c.Name)).ToList();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Performance: All Three Are Identical</strong>
+      <p>Entity Framework generates the same SQL for all three projection targets. The performance difference is negligible. Choose based on reusability: anonymous for local one-offs, DTOs for API responses and cross-layer data transfer, records for modern immutable data structures.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 07: Nested Projections -->
+  <section class="section">
+    <div class="section-num">07</div>
+    <h2>Nested Projections and Flattening</h2>
+
+    <p class="section-text">
+      Projections can include aggregations over related data (counts, sums, nested objects). LINQ query syntax provides the let keyword for intermediate calculations, making complex projections more readable.
+    </p>
+
+    <p class="section-text">
+      Simple nested aggregation:
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  c.Id,
+  c.Name,
+  COUNT(o.Id) AS OrderCount,
+  COALESCE(SUM(o.Total), 0)
+    AS TotalSpent
+FROM Customers c
+LEFT JOIN Orders o
+  ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = context.Customers
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    OrderCount = c.Orders.Count(),
+    TotalSpent = c.Orders
+      .Sum(o => o.Total ?? 0)
+  })
+  .ToList();</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax (let)</span>
+        <pre><code>var result = (from c in context.Customers
+              let count = c.Orders.Count()
+              let total = c.Orders
+                .Sum(o => o.Total ?? 0)
+              select new {
+                c.Id,
+                c.Name,
+                OrderCount = count,
+                TotalSpent = total
+              })
+  .ToList();</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      The let keyword simplifies calculations by assigning intermediate values. This makes the final select clause more readable when projections are complex.
+    </p>
+
+    <p class="section-text">
+      Nested object projection (be careful: this can cause N+1):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">Simple Nested Projection</span>
+        <pre><code>// Good: Flattened projection
+var result = context.Customers
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    RecentOrderDates = c.Orders
+      .Where(o => o.OrderDate >=
+        DateTime.UtcNow.AddDays(-30))
+      .Select(o => o.OrderDate)
+      .ToList()
+  })
+  .ToList();
+
+// This projects customer data + nested order dates
+// Entity Framework can optimize this reasonably well</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">Avoid: Complex Nested Structures</span>
+        <pre><code>// Problematic: Nested collections in projection
+var result = context.Customers
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    Orders = c.Orders.Select(o => new {
+      o.Id,
+      o.Total,
+      Items = o.OrderItems.Select(oi => new {
+        oi.ProductId,
+        oi.Quantity
+      }).ToList()
+    }).ToList()
+  })
+  .ToList();
+
+// This can cause multiple round-trips or
+// generate massive SQL with cartesian products</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Projection Depth Trade-off</strong>
+      <p>Shallow projections (select specific columns) are always efficient. Nested projections with .Select() on navigation properties require care: too many levels of nesting can generate N+1 queries or massive cartesian joins. When projecting nested collections, keep it to one level deep and flatten the structure when possible.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 08: EF Generated SQL -->
+  <section class="section">
+    <div class="section-num">08</div>
+    <h2>Understanding Entity Framework's Generated SQL</h2>
+
+    <p class="section-text">
+      Entity Framework Core translates your LINQ expressions into SQL at query execution time. Understanding what it generates is crucial for debugging performance and ensuring your queries are efficient. The .ToQueryString() method (available in EF Core 5.0+) reveals the generated SQL before execution.
+    </p>
+
+    <p class="section-text">
+      Simple projection:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ Query</span>
+        <pre><code>var query = context.Products
+  .Where(p => p.Category == "Electronics")
+  .Select(p => new {
+    p.Id,
+    p.Name,
+    p.Price
+  });
+
+string sql = query.ToQueryString();
+Console.WriteLine(sql);</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL</span>
+        <pre><code>SELECT
+  p.Id,
+  p.Name,
+  p.Price
+FROM Products AS p
+WHERE p.Category = N'Electronics';</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Projection with computed columns:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ with Computation</span>
+        <pre><code>var query = context.OrderItems
+  .Select(oi => new {
+    oi.OrderId,
+    oi.ProductId,
+    Subtotal = oi.Quantity * oi.UnitPrice,
+    WithTax = (oi.Quantity * oi.UnitPrice)
+      * 1.1m
+  });
+
+string sql = query.ToQueryString();</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL</span>
+        <pre><code>SELECT
+  oi.OrderId,
+  oi.ProductId,
+  (oi.Quantity * oi.UnitPrice) AS Subtotal,
+  ((oi.Quantity * oi.UnitPrice) * 1.1)
+    AS WithTax
+FROM OrderItems AS oi;</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Projection with aggregation:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ with Aggregation</span>
+        <pre><code>var query = context.Customers
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    RecentOrders = c.Orders
+      .Where(o => o.OrderDate >=
+        DateTime.UtcNow.AddDays(-90))
+      .Count(),
+    TotalRevenue = c.Orders
+      .Sum(o => o.Total ?? 0)
+  });
+
+string sql = query.ToQueryString();</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL</span>
+        <pre><code>SELECT
+  c.Id,
+  c.Name,
+  COUNT(CASE
+    WHEN o.OrderDate >=
+      DATEADD(day, -90, GETDATE())
+    THEN 1
+    END) AS RecentOrders,
+  COALESCE(SUM(o.Total), 0) AS TotalRevenue
+FROM Customers AS c
+LEFT JOIN Orders AS o
+  ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name;</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Projection with conditional logic:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ with Ternary</span>
+        <pre><code>var query = context.Products
+  .Select(p => new {
+    p.Id,
+    p.Name,
+    p.Price,
+    PriceCategory = p.Price > 500
+      ? "Premium"
+      : p.Price > 100
+        ? "Mid-Range"
+        : "Budget"
+  });
+
+string sql = query.ToQueryString();</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL (CASE)</span>
+        <pre><code>SELECT
+  p.Id,
+  p.Name,
+  p.Price,
+  CASE
+    WHEN p.Price > 500 THEN N'Premium'
+    WHEN p.Price > 100 THEN N'Mid-Range'
+    ELSE N'Budget'
+  END AS PriceCategory
+FROM Products AS p;</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Detecting translation failures:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Monitoring EF Translation</span>
+        <pre><code>// Enable query logging to see SQL automatically
+var options = new DbContextOptionsBuilder<AppDbContext>()
+  .UseSqlServer(connectionString)
+  .LogTo(
+    message => Console.WriteLine(message),
+    LogLevel.Information
+  )
+  .Build();
+
+// Or use a logger factory
+var loggerFactory = LoggerFactory.Create(
+  builder => builder.AddConsole()
+);
+
+var options2 = new DbContextOptionsBuilder<AppDbContext>()
+  .UseSqlServer(connectionString)
+  .UseLoggerFactory(loggerFactory)
+  .Build();
+
+// Test your queries in development to spot translation issues early
+using var context = new AppDbContext(options);
+var problematicQuery = context.Products
+  .Select(p => new {
+    p.Id,
+    Status = GetPriceStatus(p.Price) // WILL FAIL!
+  });
+
+// This throws: DbContext query compilation failed
+// because GetPriceStatus can't be translated to SQL</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Always Verify Generated SQL</strong>
+      <p>Never assume your .Select() translates efficiently. Always use .ToQueryString() during development to inspect generated SQL. Look for: unnecessary SELECT *, missing WHERE clauses, unexpected JOINs, and GROUP BY clauses you didn't intend. These are signs your projection is not doing what you think.</p>
+    </div>
+  </section>
+
+  <!-- KEY TAKEAWAYS -->
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Projections are a relational algebra operation: selecting a subset of attributes from a relation, reducing data volume at the database level.</li>
+      <li>Use .Select() to project only the columns you need. Fetching fewer columns dramatically reduces I/O, network traffic, and memory consumption.</li>
+      <li>Aliases (SQL AS) map to property assignment in LINQ anonymous types. Both rename and compute columns at query time.</li>
+      <li>DISTINCT and .Distinct() remove duplicates, but are expensive operations. Apply at the database level, not in C# after fetching.</li>
+      <li>CASE expressions (SQL) translate to ternary operators (C#). Entity Framework converts nested ternaries to SQL CASE statements.</li>
+      <li>Choose projection targets based on scope: anonymous types for local one-offs, DTOs for data transfer, records for immutable structures. All generate identical SQL.</li>
+      <li>Nested projections with aggregation (counts, sums) are powerful but can cause N+1 queries if not carefully structured.</li>
+      <li>Always verify generated SQL using .ToQueryString() or query logging. Never assume translation is efficient—verify it.</li>
+    </ul>
+  </div>
+
+  <!-- CHAPTER NAV -->
+  <div class="chapter-nav">
+    <a href="ch04-relationships.html" class="nav-item prev">
+      <span class="nav-label">Previous Chapter</span>
+      <span class="nav-title">Relationships</span>
+    </a>
+    <a href="ch06-where-filtering.html" class="nav-item next">
+      <span class="nav-label">Next Chapter</span>
+      <span class="nav-title">WHERE → .Where() — Filtering</span>
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-inner">SQL to C#: A practical guide to translating database logic into modern C# LINQ patterns.</p>
+  </div>
+</footer>
+
+</body>
+</html>

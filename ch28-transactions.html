@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 28: Transactions & Concurrency Control — SQL to C#</title>
+<meta name="description" content="Master ACID properties, transaction isolation levels, optimistic concurrency, and deadlock prevention in SQL and C#. Build reliable data access code.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── CHAPTER HEADER ── */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ── IN THIS CHAPTER BOX ── */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* ── CONTENT SECTIONS ── */
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+/* ── CODE COMPARISON ── */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code {
+  color: var(--ink);
+}
+
+/* ── KEY INSIGHT CALLOUT ── */
+.key-insight {
+  border-left: 5px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── KEY TAKEAWAYS ── */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* ── CHAPTER NAV ── */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.footer-section p,
+.footer-section a {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink2);
+  text-decoration: none;
+  line-height: 1.7;
+}
+
+.footer-section a:hover {
+  color: var(--acc);
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  padding: 4px 0;
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+  .chapter-header h1 {
+    font-size: 28px;
+  }
+  .section h2 {
+    font-size: 22px;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="wrap">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">SQL to C#</a>
+    <span class="nav-pill">Chapter 28</span>
+    <ul class="nav-links">
+      <li><a href="#section-01">ACID Properties</a></li>
+      <li><a href="#section-02">EF Core Transactions</a></li>
+      <li><a href="#section-03">Dapper Transactions</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 28</div>
+  <h1>Transactions & Concurrency Control</h1>
+  <p class="chapter-desc">Master the foundations of database transactions: ACID guarantees, isolation levels, and practical patterns for handling concurrent access. Learn how Entity Framework and Dapper manage transactions differently, and when to implement optimistic or pessimistic locking.</p>
+</div>
+
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>Understanding ACID properties and what they guarantee</li>
+    <li>Using transactions in Entity Framework Core</li>
+    <li>Managing transactions explicitly in Dapper</li>
+    <li>Isolation levels: READ COMMITTED, REPEATABLE READ, SERIALIZABLE</li>
+    <li>Optimistic concurrency with row versions</li>
+    <li>Detecting and preventing deadlocks</li>
+  </ul>
+</div>
+
+<!-- Section 01 -->
+<div class="section" id="section-01">
+  <div class="section-num">01 — ACID Properties: Database Guarantees</div>
+  <h2>Understanding Atomic, Consistent, Isolated, Durable Operations</h2>
+
+  <p class="section-text">
+    ACID is an acronym describing four properties that guarantee reliable database transactions. Atomicity means a transaction either completes entirely or not at all—there's no partial success. Consistency means the database moves from one valid state to another; constraints are always enforced. Isolation means concurrent transactions don't interfere with each other. Durability means once committed, data persists even if the system crashes.
+  </p>
+
+  <p class="section-text">
+    Consider a bank transfer: moving $100 from Account A to Account B. Without ACID guarantees, the system might debit Account A, then crash before crediting Account B. The customer loses money. ACID prevents this: the debit and credit are atomic—both succeed or both fail, never one without the other.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Transaction Basics</span>
+      <code>-- ACID in action: bank transfer
+BEGIN TRANSACTION;
+
+-- Atomicity: Both operations succeed or both fail
+UPDATE Accounts SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+UPDATE Accounts SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+-- If we get here, both updates succeeded
+-- If an error occurs, automatic rollback
+COMMIT;  -- Persist changes permanently
+
+-- If error before COMMIT:
+ROLLBACK;  -- Undo all changes as if nothing happened
+
+-- ACID GUARANTEES:
+-- Atomicity: Both UPDATEs happen or neither happens
+-- Consistency: Total balance before = total balance after
+-- Isolation: Other users don't see intermediate state
+// Durability: After COMMIT, even power loss preserves data</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Transaction Semantics in EF Core</span>
+      <code>public class BankingService
+{
+  private readonly BankContext _context;
+
+  public async Task TransferFunds(
+    int fromAccountId, int toAccountId, decimal amount)
+  {
+    // EF Core automatically wraps SaveChanges in a transaction
+    var fromAccount = await _context.Accounts
+      .FirstAsync(a => a.Id == fromAccountId);
+    var toAccount = await _context.Accounts
+      .FirstAsync(a => a.Id == toAccountId);
+
+    // Update both accounts
+    fromAccount.Balance -= amount;
+    toAccount.Balance += amount;
+
+    // SaveChanges automatically:
+    // 1. Executes both UPDATEs
+    // 2. If no errors, commits (Atomicity, Durability)
+    // 3. If error during SaveChanges, rolls back (Atomicity)
+    await _context.SaveChangesAsync();
+
+    // Database ACID guarantees ensure:
+    // - Both updates happen or neither (Atomicity)
+    // - Balance constraints are enforced (Consistency)
+    // - Other transactions see complete transfer (Isolation)
+    // - After this method returns, data is permanent (Durability)
+  }
+}</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: SaveChanges is Already a Transaction</strong>
+    <p>In Entity Framework, a single call to SaveChanges() is automatically wrapped in a transaction. All pending changes—all pending Adds, Updates, and Deletes—are included in that atomic transaction. If any single operation fails, all pending changes are rolled back. You don't need to explicitly create a transaction for single SaveChanges calls.</p>
+  </div>
+
+</div>
+
+<!-- Section 02 -->
+<div class="section" id="section-02">
+  <div class="section-num">02 — Transactions in Entity Framework Core</div>
+  <h2>Explicit Transaction Control with DbContext</h2>
+
+  <p class="section-text">
+    While SaveChanges is already atomic, sometimes you need multiple SaveChanges calls to be atomic as a unit. For example, you might want to save changes to Orders and LineItems in a single atomic operation, or you need to execute raw SQL commands as part of the same transaction. This is where explicit transactions come in.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Multi-Statement Transaction</span>
+      <code>-- Explicit transaction wrapping multiple statements
+BEGIN TRANSACTION;
+
+-- Create order
+INSERT INTO Orders (CustomerId, OrderDate, Total)
+VALUES (5, GETDATE(), 149.99);
+
+DECLARE @OrderId INT = SCOPE_IDENTITY();
+
+-- Add line items
+INSERT INTO LineItems (OrderId, ProductId, Quantity, Price)
+VALUES (@OrderId, 42, 3, 49.99);
+
+INSERT INTO LineItems (OrderId, ProductId, Quantity, Price)
+VALUES (@OrderId, 89, 1, 0.00);
+
+-- Update product stock
+UPDATE Products SET StockQuantity = StockQuantity - 3
+WHERE ProductId = 42;
+
+UPDATE Products SET StockQuantity = StockQuantity - 1
+WHERE ProductId = 89;
+
+-- All succeed or all fail (Atomic)
+COMMIT;
+
+-- If error: ROLLBACK;</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Explicit Transaction in EF Core</span>
+      <code>public class OrderService
+{
+  private readonly OrderContext _context;
+
+  public async Task CreateOrderWithItems(
+    int customerId,
+    List<OrderLineDto> lines)
+  {
+    // Method 1: Use explicit transaction
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+      // Create the order
+      var order = new Order
+      {
+        CustomerId = customerId,
+        OrderDate = DateTime.UtcNow,
+        Total = lines.Sum(l => l.Quantity * l.UnitPrice)
+      };
+      _context.Orders.Add(order);
+      await _context.SaveChangesAsync();
+
+      // Add line items
+      foreach (var lineDto in lines)
+      {
+        var lineItem = new LineItem
+        {
+          OrderId = order.Id,
+          ProductId = lineDto.ProductId,
+          Quantity = lineDto.Quantity,
+          UnitPrice = lineDto.UnitPrice
+        };
+        _context.LineItems.Add(lineItem);
+
+        // Update product stock
+        var product = await _context.Products
+          .FirstAsync(p => p.Id == lineDto.ProductId);
+        product.StockQuantity -= lineDto.Quantity;
+      }
+      await _context.SaveChangesAsync();
+
+      // Explicitly commit
+      await transaction.CommitAsync();
+    }
+    catch (Exception ex)
+    {
+      // Explicit rollback (though using statement does this)
+      await transaction.RollbackAsync();
+      throw;
+    }
+  }
+
+  // Method 2: Simpler pattern - let using statement handle rollback
+  public async Task CreateOrderSimpler(
+    int customerId, List<OrderLineDto> lines)
+  {
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+      var order = new Order { CustomerId = customerId };
+      _context.Orders.Add(order);
+      await _context.SaveChangesAsync();
+
+      foreach (var line in lines)
+      {
+        _context.LineItems.Add(new LineItem
+        {
+          OrderId = order.Id,
+          ProductId = line.ProductId,
+          Quantity = line.Quantity
+        });
+      }
+      await _context.SaveChangesAsync();
+
+      await transaction.CommitAsync();
+      // If CommitAsync throws, the using statement disposes
+      // the transaction without committing (rollback effect)
+    }
+    catch
+    {
+      // Rollback happens automatically when transaction
+      // is disposed without CommitAsync being called
+      throw;
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+  <p class="section-text">
+    You can also include raw SQL commands in the same transaction:
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Mixing Raw SQL in Transaction</span>
+      <code>-- All statements in one atomic unit
+BEGIN TRANSACTION;
+
+INSERT INTO Orders (CustomerId, OrderDate) VALUES (5, GETDATE());
+DECLARE @OrderId INT = SCOPE_IDENTITY();
+
+INSERT INTO LineItems (OrderId, ProductId, Quantity)
+VALUES (@OrderId, 42, 3);
+
+UPDATE Products SET StockQuantity = StockQuantity - 3
+WHERE ProductId = 42;
+
+COMMIT;</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Mixing SaveChanges and Raw SQL</span>
+      <code>public async Task CreateOrderWithRawSQL(
+  int customerId, int productId, int quantity)
+{
+  await using var transaction =
+    await _context.Database.BeginTransactionAsync();
+
+  try
+  {
+    // EF-tracked change
+    var order = new Order { CustomerId = customerId };
+    _context.Orders.Add(order);
+    await _context.SaveChangesAsync();
+
+    // Raw SQL - included in same transaction
+    await _context.Database.ExecuteSqlAsync(
+      $"INSERT INTO LineItems (OrderId, ProductId, Quantity) " +
+      $"VALUES ({order.Id}, {productId}, {quantity})");
+
+    // Another raw SQL command
+    await _context.Database.ExecuteSqlAsync(
+      $"UPDATE Products SET StockQuantity = " +
+      $"StockQuantity - {quantity} WHERE Id = {productId}");
+
+    await transaction.CommitAsync();
+  }
+  catch
+  {
+    throw;
+  }
+}
+
+// WARNING: Use parameterization!
+// WRONG: ExecuteSqlAsync($"... WHERE Id = {id}")
+// RIGHT: ExecuteSqlAsync("... WHERE Id = {0}", id)
+// or: ExecuteSqlAsync("... WHERE Id = @id",
+//     new SqlParameter("@id", id))</code>
+    </div>
+  </div>
+
+</div>
+
+<!-- Section 03 -->
+<div class="section" id="section-03">
+  <div class="section-num">03 — Transactions in Dapper</div>
+  <h2>Managing Explicit Transactions with Raw SQL</h2>
+
+  <p class="section-text">
+    Dapper is a lightweight micro-ORM that gives you direct control over SQL, including explicit transaction management. Unlike Entity Framework's automatic transaction wrapping, you must explicitly manage transactions in Dapper. This gives you fine-grained control but requires more code.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Bank Transfer Logic (Reference)</span>
+      <code>BEGIN TRANSACTION;
+
+-- Transfer $100 from Account 1 to Account 2
+UPDATE Accounts SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+UPDATE Accounts SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+COMMIT;</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Dapper Transaction Pattern</span>
+      <code>public class DapperBankingRepository
+{
+  private readonly string _connectionString;
+
+  public void TransferFunds(
+    int fromAccountId, int toAccountId, decimal amount)
+  {
+    using (var connection = new SqlConnection(_connectionString))
+    {
+      connection.Open();
+
+      // Explicitly begin transaction
+      using (var transaction = connection.BeginTransaction())
+      {
+        try
+        {
+          // First operation
+          connection.Execute(
+            @"UPDATE Accounts
+              SET Balance = Balance - @Amount
+              WHERE AccountId = @AccountId",
+            new { Amount = amount, AccountId = fromAccountId },
+            transaction);
+
+          // Second operation
+          connection.Execute(
+            @"UPDATE Accounts
+              SET Balance = Balance + @Amount
+              WHERE AccountId = @AccountId",
+            new { Amount = amount, AccountId = toAccountId },
+            transaction);
+
+          // Commit both operations atomically
+          transaction.Commit();
+        }
+        catch
+        {
+          // If any operation fails, rollback both
+          transaction.Rollback();
+          throw;
+        }
+      }
+    }
+  }
+
+  // Async version
+  public async Task TransferFundsAsync(
+    int fromAccountId, int toAccountId, decimal amount)
+  {
+    using (var connection = new SqlConnection(_connectionString))
+    {
+      await connection.OpenAsync();
+
+      using (var transaction = connection.BeginTransaction())
+      {
+        try
+        {
+          await connection.ExecuteAsync(
+            @"UPDATE Accounts SET Balance = Balance - @Amount
+              WHERE AccountId = @AccountId",
+            new { Amount = amount, AccountId = fromAccountId },
+            transaction);
+
+          await connection.ExecuteAsync(
+            @"UPDATE Accounts SET Balance = Balance + @Amount
+              WHERE AccountId = @AccountId",
+            new { Amount = amount, AccountId = toAccountId },
+            transaction);
+
+          transaction.Commit();
+        }
+        catch
+        {
+          transaction.Rollback();
+          throw;
+        }
+      }
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Dapper vs EF Core Transaction Patterns</strong>
+    <p>EF Core's SaveChanges is automatically transactional, so you only need explicit transaction calls when you have multiple SaveChanges or need to mix SaveChanges with raw SQL. Dapper requires explicit transaction management for every multi-operation sequence. This is a tradeoff: EF automates the common case (single SaveChanges), while Dapper gives you explicit control and requires more ceremony.</p>
+  </div>
+
+</div>
+
+<!-- Section 04 -->
+<div class="section" id="section-04">
+  <div class="section-num">04 — Isolation Levels Explained</div>
+  <h2>Controlling How Concurrent Transactions See Each Other</h2>
+
+  <p class="section-text">
+    Isolation is the "I" in ACID. When multiple transactions run concurrently, isolation determines what each transaction can see. The strictest isolation level (SERIALIZABLE) is safest but slowest—it's like running transactions one-at-a-time. The loosest level (READ UNCOMMITTED) is fastest but allows dirty reads. Most applications use READ COMMITTED, a middle ground.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Isolation Levels and Anomalies</span>
+      <code>-- Set isolation level for current connection
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+-- Other isolation levels:
+-- READ UNCOMMITTED: Allows dirty reads (fastest, risky)
+-- READ COMMITTED: Doesn't allow dirty reads (default)
+-- REPEATABLE READ: Prevents dirty & non-repeatable reads
+-- SERIALIZABLE: Strictest, prevents all anomalies (slowest)
+-- SNAPSHOT: MVCC approach, alternative to SERIALIZABLE
+
+-- Example: Dirty read anomaly (READ UNCOMMITTED only)
+-- Transaction A inserts data but doesn't commit
+-- Transaction B reads uncommitted data
+// If Transaction A rolls back, Transaction B has invalid data
+
+-- Example: Non-repeatable read (READ UNCOMMITTED/COMMITTED)
+-- Transaction A reads a row
+-- Transaction B updates that row and commits
+-- Transaction A reads the same row again, gets different value
+// Violates consistency assumption (same query = same result)
+
+-- Example: Phantom read
+-- Transaction A runs SELECT WHERE City = 'Seattle'
+// Transaction B inserts a new row with City = 'Seattle'
+// Transaction A re-runs the same SELECT, gets different rows
+
+-- ISOLATION LEVEL CHART:
+// READ UNCOMMITTED:  ✓ dirty reads
+// READ COMMITTED:    ✗ dirty, ✓ non-repeatable, ✓ phantom
+// REPEATABLE READ:   ✗ dirty, ✗ non-repeatable, ✓ phantom
+// SERIALIZABLE:      ✗ dirty, ✗ non-repeatable, ✗ phantom</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Setting Isolation Level in EF Core</span>
+      <code>public class AccountRepository
+{
+  private readonly AccountContext _context;
+
+  // Default isolation level (READ COMMITTED)
+  public async Task<Account> GetAccountAsync(int id)
+  {
+    return await _context.Accounts
+      .FirstOrDefaultAsync(a => a.Id == id);
+  }
+
+  // Custom isolation level for critical operation
+  public async Task<decimal> GetAccountBalanceStrictAsync(int id)
+  {
+    // Use SERIALIZABLE for critical financial reads
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync(
+        IsolationLevel.Serializable);
+
+    try
+    {
+      var account = await _context.Accounts
+        .FirstAsync(a => a.Id == id);
+      await transaction.CommitAsync();
+      return account.Balance;
+    }
+    catch
+    {
+      throw;
+    }
+  }
+
+  // Loose isolation for reporting/non-critical reads
+  public async Task<Account> GetAccountDirtyAsync(int id)
+  {
+    // READ UNCOMMITTED: allows dirty reads but very fast
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync(
+        IsolationLevel.ReadUncommitted);
+
+    try
+    {
+      var account = await _context.Accounts
+        .FirstAsync(a => a.Id == id);
+      await transaction.CommitAsync();
+      return account;
+    }
+    catch
+    {
+      throw;
+    }
+  }
+}
+
+// In Dapper:
+public async Task<Account> GetAccountDapperAsync(int id)
+{
+  using (var connection = new SqlConnection(_connString))
+  {
+    await connection.OpenAsync();
+    using (var transaction =
+      connection.BeginTransaction(IsolationLevel.ReadUncommitted))
+    {
+      var account = await connection.QueryFirstAsync<Account>(
+        "SELECT * FROM Accounts WHERE Id = @Id",
+        new { Id = id },
+        transaction);
+      transaction.Commit();
+      return account;
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+  <p class="section-text">
+    The choice of isolation level is a critical performance vs safety decision. READ COMMITTED is the default for good reason: it prevents the most dangerous anomalies (dirty reads) without the performance cost of SERIALIZABLE.
+  </p>
+
+</div>
+
+<!-- Section 05 -->
+<div class="section" id="section-05">
+  <div class="section-num">05 — Optimistic Concurrency Control</div>
+  <h2>Detecting Conflicts Without Locking Rows</h2>
+
+  <p class="section-text">
+    Optimistic concurrency assumes conflicts are rare. Instead of locking rows, you include a version column in your WHERE clause. If another user modified the row, the version will be different, and your UPDATE will fail. This is efficient for read-heavy workloads where conflicts are uncommon. Entity Framework has built-in support for this pattern.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Optimistic Concurrency with RowVersion</span>
+      <code>-- Add a RowVersion column (SQL Server timestamp)
+CREATE TABLE Products (
+  Id INT PRIMARY KEY,
+  Name NVARCHAR(100),
+  Price DECIMAL(10,2),
+  RowVersion ROWVERSION  -- Auto-incrementing, database-managed
+);
+
+-- Initial state:
+-- Id=1, Name='Widget', Price=10.00, RowVersion=1
+
+-- User A reads product: RowVersion=1
+-- User B reads product: RowVersion=1
+-- User B updates: Price=12.00, RowVersion becomes 2
+
+-- User A tries to update with old RowVersion:
+UPDATE Products
+SET Price = 11.00
+WHERE Id = 1 AND RowVersion = 1;
+
+-- Result: 0 rows affected (User B's change won)
+// User A must:
+// 1. Refresh their copy (get new RowVersion=2)
+// 2. Reapply their changes
+// 3. Try again with RowVersion=2
+
+-- User B's update succeeded because:
+UPDATE Products
+SET Price = 12.00
+WHERE Id = 1 AND RowVersion = 1;
+-- 1 row affected, RowVersion auto-incremented to 2</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Optimistic Concurrency in EF Core</span>
+      <code>public class Product
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public decimal Price { get; set; }
+
+  // EF Core recognizes [Timestamp] for optimistic concurrency
+  [Timestamp]
+  public byte[] RowVersion { get; set; }
+}
+
+public class ProductService
+{
+  private readonly ProductContext _context;
+
+  public async Task UpdateProductPriceAsync(int productId, decimal newPrice)
+  {
+    var product = await _context.Products
+      .FirstAsync(p => p.Id == productId);
+
+    // User gets: Id=1, Price=10.00, RowVersion=[0,0,0,1]
+    product.Price = newPrice;
+
+    try
+    {
+      // SaveChanges includes RowVersion in WHERE clause:
+      // UPDATE Products
+      // SET Price = @Price
+      // WHERE Id = @Id AND RowVersion = @OldRowVersion
+      //
+      // If another user changed the row:
+      // - RowVersion will be different
+      // - UPDATE affects 0 rows
+      // - DbUpdateConcurrencyException is thrown
+      await _context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+      // Conflict detected!
+      // RowVersion mismatch = someone else modified the row
+
+      // Option 1: Lose changes (take database version)
+      await ex.Entries[0].ReloadAsync();
+      var current = ex.Entries[0].Entity as Product;
+      Console.WriteLine($"Price is now {current.Price}");
+
+      // Option 2: Retry with conflict resolution
+      product.Price = newPrice;
+      await _context.SaveChangesAsync();
+      // This time it succeeds because we loaded fresh RowVersion
+    }
+  }
+
+  // Typical conflict resolution pattern
+  public async Task<bool> TryUpdateWithRetryAsync(
+    int productId, decimal newPrice, int maxRetries = 3)
+  {
+    for (int attempt = 0; attempt < maxRetries; attempt++)
+    {
+      try
+      {
+        var product = await _context.Products
+          .AsNoTracking()
+          .FirstAsync(p => p.Id == productId);
+
+        product.Price = newPrice;
+        _context.Products.Update(product);
+        await _context.SaveChangesAsync();
+        return true;
+      }
+      catch (DbUpdateConcurrencyException)
+      {
+        if (attempt == maxRetries - 1) throw;
+        // Retry with fresh data
+        _context.ChangeTracker.Clear();
+      }
+    }
+    return false;
+  }
+}</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Optimistic vs Pessimistic Locking</strong>
+    <p>Optimistic concurrency (version checking) is efficient when conflicts are rare. Pessimistic concurrency (explicit locking) is safer when conflicts are common but creates contention. Choose optimistic for read-heavy scenarios, pessimistic for write-heavy scenarios. EF Core makes optimistic easy with the [Timestamp] attribute; SQL Server's ROWVERSION auto-increments on every modification.</p>
+  </div>
+
+</div>
+
+<!-- Section 06 -->
+<div class="section" id="section-06">
+  <div class="section-num">06 — Deadlocks: Detection and Prevention</div>
+  <h2>Understanding and Recovering from Circular Lock Waits</h2>
+
+  <p class="section-text">
+    A deadlock occurs when two transactions are waiting on each other: Transaction A holds a lock that Transaction B needs, and Transaction B holds a lock that Transaction A needs. Neither can proceed. The database detects this and kills one transaction (the "deadlock victim"), rolling back its changes. The other transaction proceeds.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Deadlock Example</span>
+      <code>-- TRANSACTION A (Session 1)
+BEGIN TRANSACTION;
+UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1;
+-- A now holds lock on Accounts.Id=1
+-- A wants lock on Accounts.Id=2
+WAITFOR DELAY '00:00:05';  -- Simulate work
+UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2;
+COMMIT;
+
+-- TRANSACTION B (Session 2)
+BEGIN TRANSACTION;
+UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 2;
+-- B now holds lock on Accounts.Id=2
+-- B wants lock on Accounts.Id=1
+UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 1;
+COMMIT;
+
+-- What happens:
+// A updates Account 1 (locks it)
+// B updates Account 2 (locks it)
+// A tries to update Account 2 (waits for B's lock)
+// B tries to update Account 1 (waits for A's lock)
+// DEADLOCK: Both waiting, neither can proceed
+// SQL Server kills victim (randomly chosen)
+// Victim's transaction rolls back completely
+// Winner's transaction proceeds
+
+-- Error in victim transaction:
+// Msg 1205, Level 13
+// Transaction (Process ID 57) was deadlocked on {lock}
+// resources with another process and has been chosen
+// as the deadlock victim. Rerun the transaction.</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Handling Deadlock with Polly Retry</span>
+      <code>public class ResilientAccountService
+{
+  private readonly AccountContext _context;
+  private readonly IAsyncPolicy<bool> _retryPolicy;
+
+  public ResilientAccountService(AccountContext context)
+  {
+    _context = context;
+
+    // Polly policy: retry on deadlock (SQL error 1205)
+    _retryPolicy = Policy<bool>
+      .Handle<SqlException>(ex => ex.Number == 1205)
+      .Or<DbUpdateException>(ex =>
+        ex.InnerException is SqlException se && se.Number == 1205)
+      .WaitAndRetryAsync(
+        retryCount: 3,
+        sleepDurationProvider: attempt =>
+          TimeSpan.FromMilliseconds(100 * (int)Math.Pow(2, attempt)),
+        onRetry: (outcome, timespan, retryCount, context) =>
+        {
+          Console.WriteLine(
+            $"Deadlock detected, retry {retryCount} after {timespan.TotalMilliseconds}ms");
+        });
+  }
+
+  // Automatic retry on deadlock
+  public async Task<bool> TransferFundsWithRetryAsync(
+    int fromId, int toId, decimal amount)
+  {
+    return await _retryPolicy.ExecuteAsync(async () =>
+    {
+      await using var transaction =
+        await _context.Database.BeginTransactionAsync();
+
+      try
+      {
+        var from = await _context.Accounts
+          .FirstAsync(a => a.Id == fromId);
+        var to = await _context.Accounts
+          .FirstAsync(a => a.Id == toId);
+
+        from.Balance -= amount;
+        to.Balance += amount;
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return true;
+      }
+      catch
+      {
+        await transaction.RollbackAsync();
+        throw;
+      }
+    });
+  }
+
+  // Prevent deadlocks: acquire locks in consistent order
+  public async Task TransferFundsOrderedAsync(
+    int fromId, int toId, decimal amount)
+  {
+    // Lock accounts in order of ID to prevent circular waits
+    int firstId = Math.Min(fromId, toId);
+    int secondId = Math.Max(fromId, toId);
+
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+      // Always acquire locks in same order across all transactions
+      var first = await _context.Accounts
+        .FromSqlInterpolated($"SELECT * FROM Accounts WHERE Id = {firstId}")
+        .ToListAsync();  // Forces lock
+
+      var second = await _context.Accounts
+        .FromSqlInterpolated($"SELECT * FROM Accounts WHERE Id = {secondId}")
+        .ToListAsync();  // Forces lock in order
+
+      // Now safe to proceed; no circular wait possible
+      var from = _context.Accounts.Local.First(a => a.Id == fromId);
+      var to = _context.Accounts.Local.First(a => a.Id == toId);
+
+      from.Balance -= amount;
+      to.Balance += amount;
+
+      await _context.SaveChangesAsync();
+      await transaction.CommitAsync();
+    }
+    catch
+    {
+      throw;
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+  <p class="section-text">
+    The two strategies for deadlock prevention are:
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Deadlock Prevention Strategies</span>
+      <code>-- STRATEGY 1: Lock ordering
+-- Always acquire locks in the same order across all transactions
+
+-- Transaction A (correct):
+BEGIN TRANSACTION;
+UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1;  -- Lock 1
+UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2;  -- Lock 2
+COMMIT;
+
+-- Transaction B (must also lock in order):
+BEGIN TRANSACTION;
+UPDATE Accounts SET Balance = Balance - 100 WHERE Id = 1;  -- Lock 1
+UPDATE Accounts SET Balance = Balance + 100 WHERE Id = 2;  -- Lock 2 (waits for Trans A)
+COMMIT;
+-- No deadlock: B waits for A, then proceeds
+
+-- STRATEGY 2: Timeout
+SET LOCK_TIMEOUT 5000;  -- Timeout after 5 seconds
+BEGIN TRANSACTION;
+UPDATE Accounts SET ...
+-- If can't acquire lock within 5 seconds, fail with error
+
+-- STRATEGY 3: Deadlock priority (rare)
+SET DEADLOCK_PRIORITY HIGH;  -- This transaction is less likely to be victim
+SET DEADLOCK_PRIORITY LOW;   -- This transaction is more likely to be victim</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Deadlock Prevention Best Practices</span>
+      <code>public class DeadlockPreventionService
+{
+  private readonly AccountContext _context;
+
+  // Best practice: Always lock in same order
+  public async Task SafeTransferAsync(
+    int fromId, int toId, decimal amount)
+  {
+    // Normalize order
+    var (first, second) = fromId < toId
+      ? (fromId, toId)
+      : (toId, fromId);
+
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+      // Load in locked order
+      var account1 = await _context.Accounts
+        .FirstAsync(a => a.Id == first);
+      var account2 = await _context.Accounts
+        .FirstAsync(a => a.Id == second);
+
+      // Now update in original order
+      if (fromId == first)
+      {
+        account1.Balance -= amount;
+        account2.Balance += amount;
+      }
+      else
+      {
+        account2.Balance -= amount;
+        account1.Balance += amount;
+      }
+
+      await _context.SaveChangesAsync();
+      await transaction.CommitAsync();
+    }
+    catch (SqlException ex) when (ex.Number == 1205)
+    {
+      // Deadlock victim - this is rare if lock ordering is correct
+      throw new InvalidOperationException(
+        "Deadlock occurred despite lock ordering. Retry later.", ex);
+    }
+  }
+
+  // Use short transactions (smaller window for conflicts)
+  public async Task QuickTransferAsync(
+    int fromId, int toId, decimal amount)
+  {
+    // Minimize transaction scope
+    var fromAccount = await _context.Accounts
+      .AsNoTracking()
+      .FirstAsync(a => a.Id == fromId);
+
+    var toAccount = await _context.Accounts
+      .AsNoTracking()
+      .FirstAsync(a => a.Id == toId);
+
+    // Calculate outside transaction
+    var newFromBalance = fromAccount.Balance - amount;
+    var newToBalance = toAccount.Balance + amount;
+
+    // Short transaction with just the updates
+    await using var transaction =
+      await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+      await _context.Database.ExecuteSqlAsync(
+        $"UPDATE Accounts SET Balance = {newFromBalance} WHERE Id = {fromId}");
+      await _context.Database.ExecuteSqlAsync(
+        $"UPDATE Accounts SET Balance = {newToBalance} WHERE Id = {toId}");
+      await transaction.CommitAsync();
+    }
+    catch
+    {
+      throw;
+    }
+  }
+}</code>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+<!-- KEY TAKEAWAYS SECTION -->
+<div class="wrap">
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>ACID properties (Atomicity, Consistency, Isolation, Durability) guarantee reliable database transactions even during failures</li>
+      <li>In Entity Framework, SaveChanges() is automatically atomic; use explicit transactions only when you need multiple SaveChanges or mixing SaveChanges with raw SQL</li>
+      <li>Dapper requires explicit transaction management for every multi-operation sequence via IDbTransaction</li>
+      <li>Isolation levels control how concurrent transactions see each other; READ COMMITTED is the default and usually optimal</li>
+      <li>Optimistic concurrency using row version columns ([Timestamp] in EF) detects conflicts efficiently without locking</li>
+      <li>Deadlocks occur when transactions wait on each other in circular fashion; prevent them by acquiring locks in consistent order and keeping transactions short</li>
+      <li>Use Polly retry policies to automatically recover from deadlock victims with exponential backoff</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CHAPTER NAVIGATION -->
+<div class="wrap">
+  <nav class="chapter-nav">
+    <a href="ch27-indexing.html" class="nav-item prev">
+      <span class="nav-label">Previous</span>
+      <span class="nav-title">Database Indexing</span>
+    </a>
+    <a href="ch29-testing.html" class="nav-item next">
+      <span class="nav-label">Next</span>
+      <span class="nav-title">Testing Data Access Code</span>
+    </a>
+  </nav>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access patterns, from SQL fundamentals to advanced EF Core and Dapper techniques. Learn how relational concepts map to object-oriented code.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Core Topics</h4>
+        <ul>
+          <li><a href="#">Data Modeling</a></li>
+          <li><a href="#">Query Patterns</a></li>
+          <li><a href="#">Performance Optimization</a></li>
+          <li><a href="#">Advanced EF Core</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">GitHub Repository</a></li>
+          <li><a href="#">Live Examples</a></li>
+          <li><a href="#">Community Forum</a></li>
+          <li><a href="#">Contact Authors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>SQL to C# — Master data access across SQL Server, Entity Framework Core, and Dapper. Published 2024.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

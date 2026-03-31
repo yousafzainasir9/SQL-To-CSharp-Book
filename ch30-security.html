@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 30: Security — SQL Injection Prevention — SQL to C#</title>
+<meta name="description" content="Master SQL injection prevention and security best practices. Learn parameterized queries, safe EF Core patterns, stored procedures, and connection string security.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── CHAPTER HEADER ── */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ── IN THIS CHAPTER BOX ── */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* ── CONTENT SECTIONS ── */
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+/* ── CODE COMPARISON ── */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code {
+  color: var(--ink);
+}
+
+/* ── KEY INSIGHT CALLOUT ── */
+.key-insight {
+  border-left: 5px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── KEY TAKEAWAYS ── */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* ── CHAPTER NAV ── */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.footer-section p,
+.footer-section a {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink2);
+  text-decoration: none;
+  line-height: 1.7;
+}
+
+.footer-section a:hover {
+  color: var(--acc);
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  padding: 4px 0;
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+  .chapter-header h1 {
+    font-size: 28px;
+  }
+  .section h2 {
+    font-size: 22px;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="wrap">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">SQL to C#</a>
+    <span class="nav-pill">Chapter 30</span>
+    <ul class="nav-links">
+      <li><a href="#section-01">SQL Injection</a></li>
+      <li><a href="#section-02">Parameterized Queries</a></li>
+      <li><a href="#section-03">Safe Patterns</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 30</div>
+  <h1>Security — SQL Injection Prevention</h1>
+  <p class="chapter-desc">Master the most critical security vulnerability in data access code: SQL injection. Learn how parameterized queries prevent attacks, identify dangerous patterns in EF Core and Dapper, and implement defense-in-depth strategies with stored procedures and connection string security.</p>
+</div>
+
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>Understanding SQL injection attacks and their devastating impact</li>
+    <li>Parameterized queries as the universal fix</li>
+    <li>Dangerous patterns to avoid in raw SQL</li>
+    <li>EF Core safety: FromSqlInterpolated vs FromSqlRaw</li>
+    <li>Stored procedures as a security layer</li>
+    <li>Connection string security and secret management</li>
+  </ul>
+</div>
+
+<!-- Section 01 -->
+<div class="section" id="section-01">
+  <div class="section-num">01 — What Is SQL Injection?</div>
+  <h2>Understanding the Attack and Its Consequences</h2>
+
+  <p class="section-text">
+    SQL injection is an attack where user input is concatenated directly into SQL commands, allowing attackers to insert arbitrary SQL code. Instead of using your intended SQL, the database executes the attacker's malicious SQL. The consequences can be catastrophic: data theft, deletion, modification, or complete database compromise.
+  </p>
+
+  <p class="section-text">
+    The fundamental problem is treating SQL as a string to be built rather than a structured command with separate code and data. When code and data are mixed, the parser can't distinguish which is which, and an attacker exploiting this ambiguity can inject commands.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Innocent Query vs Injection Attack</span>
+      <code>-- INNOCENT: Looking for user by username
+-- Code: SELECT * FROM Users WHERE Username = '...'
+-- User input: "alice"
+-- Result: SELECT * FROM Users WHERE Username = 'alice'
+-- Returns: Alice's record
+
+-- ATTACK: Attacker inputs a different string
+-- User input: "'; DROP TABLE Users; --"
+-- Result: SELECT * FROM Users WHERE Username = '';
+//        DROP TABLE Users; --'
+-- Executes 3 statements:
+// 1. SELECT * FROM Users WHERE Username = ''  (empty result)
+// 2. DROP TABLE Users;  (DESTROYS TABLE!)
+// 3. -- ' (comment, rest ignored)
+
+-- CONSEQUENCES:
+// - Users table is deleted
+// - All user data lost
+// - Application breaks
+// - Data recovery needed (backup restore)
+
+-- Another attack example: data extraction
+-- User input: "' OR '1'='1"
+-- Result: SELECT * FROM Users WHERE Username = '' OR '1'='1'
+-- WHERE condition is always true
+// Returns all users (password hash exposure)
+
+-- More sophisticated: time-based inference
+// Attacker can extract data character-by-character
+// By causing delays on true conditions
+// This is called "blind SQL injection"</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — The Vulnerable Pattern</span>
+      <code>// VULNERABLE CODE - DO NOT USE
+public class UserRepository
+{
+  private readonly SqlConnection _connection;
+
+  // NEVER do this:
+  public User GetUserVulnerable(string username)
+  {
+    // String concatenation = code + data mixed
+    string query = "SELECT * FROM Users WHERE Username = '" + username + "'";
+
+    using (var command = new SqlCommand(query, _connection))
+    {
+      using (var reader = command.ExecuteReader())
+      {
+        if (reader.Read())
+        {
+          return new User
+          {
+            Id = (int)reader["Id"],
+            Username = (string)reader["Username"],
+            // ... other fields
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  // If attacker passes username = "'; DROP TABLE Users; --"
+  // SQL becomes: SELECT * FROM Users WHERE Username = '';
+  //              DROP TABLE Users; --'
+  // Two commands execute:
+  // 1. SELECT (finds nothing)
+  // 2. DROP TABLE (DELETES USERS TABLE!)
+
+  // LINQ in EF Core is safe automatically:
+  public User GetUserSafe(string username)
+  {
+    // EF Core AUTOMATICALLY parameterizes this
+    var user = dbContext.Users
+      .FirstOrDefault(u => u.Username == username);
+    // No SQL injection possible - LINQ handles parameterization
+    return user;
+  }
+
+  // Dapper is safe with parameters:
+  public User GetUserDapperSafe(string username)
+  {
+    const string query = "SELECT * FROM Users WHERE Username = @Username";
+    return _connection.QueryFirstOrDefault<User>(
+      query,
+      new { Username = username }  // @ parameter syntax
+    );
+    // Dapper parameterizes automatically
+  }
+}</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Concatenation + User Input = Vulnerability</strong>
+    <p>The root cause of SQL injection is simple: concatenating user input directly into SQL strings. When input is treated as code instead of data, attackers can insert malicious commands. The fix is equally simple: use parameterized queries where code and data are separate. The SQL engine then treats the parameter as data only, never as executable code.</p>
+  </div>
+
+</div>
+
+<!-- Section 02 -->
+<div class="section" id="section-02">
+  <div class="section-num">02 — Parameterized Queries: The Universal Fix</div>
+  <h2>Separating Code from Data to Eliminate Injection</h2>
+
+  <p class="section-text">
+    Parameterized queries (also called prepared statements) are the universal solution. Instead of concatenating user input into the SQL string, you provide SQL with placeholders (parameters) and then bind the data separately. The SQL engine treats the data as data, never as code. This is supported everywhere: SQL Server, MySQL, PostgreSQL, SQLite—and all data access frameworks.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Parameterized Query Syntax</span>
+      <code>-- Parameterized query uses @ placeholders
+-- SQL code: "SELECT * FROM Users WHERE Username = @Username"
+-- Data: { Username = "alice" }
+-- The database receives the query and parameters SEPARATELY
+
+SELECT * FROM Users WHERE Username = @Username;
+-- @Username is a PLACEHOLDER
+-- Value is provided separately by the client
+-- Database never interprets the value as SQL code
+
+-- Example with multiple parameters:
+SELECT * FROM Orders
+WHERE CustomerId = @CustomerId
+  AND OrderDate >= @StartDate
+  AND Status = @Status;
+-- Three parameters: CustomerId, StartDate, Status
+// Database receives SQL structure + separate data values
+// Data cannot contain SQL code because it's not in the query
+
+-- Attack attempt with parameterized query:
+// Username parameter = "'; DROP TABLE Users; --"
+// SQL sent to server: SELECT * FROM Users WHERE Username = @Username
+// Parameter value sent: "'; DROP TABLE Users; --"
+// Database interprets as string literal, looks for username containing '; DROP...
+// No execution of DROP TABLE - it's just part of the data value</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Parameterized Queries in All Frameworks</span>
+      <code>// PATTERN 1: Dapper with parameters
+public class DapperUserRepository
+{
+  private readonly IDbConnection _connection;
+
+  public User GetByUsername(string username)
+  {
+    const string query = "SELECT * FROM Users WHERE Username = @Username";
+
+    return _connection.QueryFirstOrDefault<User>(
+      query,
+      new { Username = username }  // Parameter object
+    );
+    // Dapper automatically:
+    // 1. Parameterizes the query
+    // 2. Sends SQL and parameters to server separately
+    // 3. Server never treats parameter as code
+  }
+
+  public List<Order> GetOrdersByDateRange(
+    DateTime startDate, DateTime endDate, int customerId)
+  {
+    const string query = @"
+      SELECT * FROM Orders
+      WHERE CustomerId = @CustomerId
+        AND OrderDate >= @StartDate
+        AND OrderDate <= @EndDate
+      ORDER BY OrderDate DESC";
+
+    return _connection.Query<Order>(
+      query,
+      new { CustomerId = customerId, StartDate = startDate, EndDate = endDate }
+    ).ToList();
+  }
+}
+
+// PATTERN 2: Raw ADO.NET with SqlCommand
+public class AdoNetUserRepository
+{
+  private readonly string _connectionString;
+
+  public User GetByUsername(string username)
+  {
+    using (var connection = new SqlConnection(_connectionString))
+    using (var command = new SqlCommand(
+      "SELECT * FROM Users WHERE Username = @Username", connection))
+    {
+      // Add parameter - separated from SQL
+      command.Parameters.AddWithValue("@Username", username);
+
+      connection.Open();
+      using (var reader = command.ExecuteReader())
+      {
+        if (reader.Read())
+        {
+          return new User
+          {
+            Id = (int)reader["Id"],
+            Username = (string)reader["Username"]
+          };
+        }
+      }
+    }
+    return null;
+  }
+}
+
+// PATTERN 3: EF Core LINQ (safest - automatic parameterization)
+public class EFCoreUserRepository
+{
+  private readonly UserContext _context;
+
+  public User GetByUsername(string username)
+  {
+    // EF Core AUTOMATICALLY parameterizes this
+    // Behind the scenes:
+    // SQL: "SELECT ... FROM Users WHERE Username = @p0"
+    // Parameter: { @p0 = username }
+    return _context.Users
+      .FirstOrDefault(u => u.Username == username);
+    // No chance of SQL injection - parameterization is automatic
+  }
+
+  public List<Order> GetOrdersByDateRange(
+    DateTime startDate, DateTime endDate, int customerId)
+  {
+    // Multiple parameters, automatic parameterization
+    return _context.Orders
+      .Where(o => o.CustomerId == customerId
+        && o.OrderDate >= startDate
+        && o.OrderDate <= endDate)
+      .OrderByDescending(o => o.OrderDate)
+      .ToList();
+  }
+}</code>
+    </div>
+  </div>
+
+  <p class="section-text">
+    The key principle is: SQL code and data are never mixed. SQL is sent to the database, and data is sent separately. The database engine uses the SQL as the template and inserts the data without interpreting it as code.
+  </p>
+
+</div>
+
+<!-- Section 03 -->
+<div class="section" id="section-03">
+  <div class="section-num">03 — Dangerous Patterns to Avoid</div>
+  <h2>Identifying Vulnerable Code and Fixing It</h2>
+
+  <p class="section-text">
+    Even experienced developers sometimes write vulnerable SQL. The most common mistake is using raw SQL in EF Core, which looks safe but isn't. Other mistakes include string interpolation, dynamic table names, and trying to "sanitize" user input (a losing battle—parameterization is the only reliable defense).
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Scenarios That Need Parameters</span>
+      <code>-- Scenario 1: Search query
+-- VULNERABLE: string concatenation
+SELECT * FROM Products WHERE Name LIKE '%' + @SearchTerm + '%'
+
+-- SAFE: parameterization (with LIKE wildcard in parameter)
+SELECT * FROM Products WHERE Name LIKE @SearchTerm
+-- Pass parameter as "%searchterm%"
+
+-- Scenario 2: Dynamic column names (can't be parameterized)
+-- VULNERABLE: SELECT * FROM Users WHERE @ColumnName = @Value
+-- This doesn't work - @ColumnName is treated as data, not column name
+
+-- SAFE: Use stored procedures or builder pattern
+-- Stored procedure checks input against whitelist
+EXEC sp_SearchColumn @ColumnName, @Value
+
+-- Scenario 3: IN clause with multiple values
+-- VULNERABLE: SELECT * FROM Orders WHERE Id IN (123,456,789)
+-- If building the list from user input:
+// string ids = "123,456," + userInput  -- concatenation!
+
+-- SAFE: Use Table-Valued Parameters or multiple parameters
+SELECT * FROM Orders WHERE Id IN (@Id1, @Id2, @Id3)
+-- or use SQL Server's Table-Valued Parameters</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Dangerous Code Patterns and Fixes</span>
+      <code>// ══════════════════════════════════════════════════
+// PATTERN 1: String Concatenation (NEVER DO THIS)
+// ══════════════════════════════════════════════════
+
+// VULNERABLE:
+public List<Product> SearchProductsVulnerable(string searchTerm)
+{
+  string query = $"SELECT * FROM Products WHERE Name LIKE '%{searchTerm}%'";
+  // Attacker passes: "%' OR 1=1 --"
+  // Results in: SELECT * FROM Products WHERE Name LIKE '%%' OR 1=1 --%'
+  // Returns all products!
+
+  using (var command = new SqlCommand(query, _connection))
+  {
+    // VULNERABLE CODE - NEVER USE
+  }
+}
+
+// SAFE:
+public List<Product> SearchProductsSafe(string searchTerm)
+{
+  const string query = "SELECT * FROM Products WHERE Name LIKE @SearchTerm";
+  using (var command = new SqlCommand(query, _connection))
+  {
+    command.Parameters.AddWithValue("@SearchTerm", "%" + searchTerm + "%");
+    // String concatenation AFTER parameterization is safe
+    // The concatenated value is treated as a single parameter
+  }
+}
+
+// ══════════════════════════════════════════════════
+// PATTERN 2: EF Core FromSqlRaw with Interpolation (DANGEROUS!)
+// ══════════════════════════════════════════════════
+
+public class ProductRepository
+{
+  private readonly ProductContext _context;
+
+  // VULNERABLE: FromSqlRaw with string interpolation
+  public List<Product> GetByNameVulnerable(string name)
+  {
+    // This LOOKS like it might be safe, but it's not!
+    return _context.Products
+      .FromSqlRaw($"SELECT * FROM Products WHERE Name = {name}")
+      .ToList();
+    // String interpolation happens BEFORE SQL is sent
+    // Equivalent to: "SELECT * FROM Products WHERE Name = " + name
+    // SQL INJECTION VULNERABILITY!
+  }
+
+  // SAFE: FromSqlInterpolated (auto-parameterizes)
+  public List<Product> GetByNameSafe(string name)
+  {
+    return _context.Products
+      .FromSqlInterpolated($"SELECT * FROM Products WHERE Name = {name}")
+      .ToList();
+    // FromSqlInterpolated automatically parameterizes
+    // The interpolation creates parameters, not concatenation
+    // Safe from SQL injection!
+  }
+
+  // Also SAFE: FromSqlRaw with parameters
+  public List<Product> GetByNameAlt(string name)
+  {
+    return _context.Products
+      .FromSqlRaw(
+        "SELECT * FROM Products WHERE Name = @Name",
+        new SqlParameter("@Name", name))
+      .ToList();
+  }
+}
+
+// KEY DIFFERENCE:
+// FromSqlRaw($"...{var}...") = VULNERABLE (concatenation)
+// FromSqlInterpolated($"...{var}...") = SAFE (parameterization)
+// FromSqlRaw("...", params) = SAFE (explicit parameters)
+
+// ══════════════════════════════════════════════════
+// PATTERN 3: Dynamic Table/Column Names (CAN'T parameterize)
+// ══════════════════════════════════════════════════
+
+// VULNERABLE:
+public List<T> SearchDynamicColumn<T>(
+  string tableName, string columnName, string value)
+{
+  string query = $"SELECT * FROM {tableName} WHERE {columnName} = '{value}'";
+  // All three inputs could be injection vectors!
+}
+
+// SAFE: Validate against whitelist
+public List<T> SearchDynamic<T>(
+  string tableName, string columnName, string value)
+{
+  // Whitelist of allowed tables and columns
+  var allowedTables = new[] { "Products", "Orders", "Customers" };
+  var allowedColumns = new[] { "Id", "Name", "Email" };
+
+  if (!allowedTables.Contains(tableName))
+    throw new ArgumentException("Invalid table");
+  if (!allowedColumns.Contains(columnName))
+    throw new ArgumentException("Invalid column");
+
+  // Now safe to build query (table/column are whitelisted)
+  string query = $"SELECT * FROM {tableName} WHERE {columnName} = @Value";
+  // Value is still parameterized!
+
+  using (var command = new SqlCommand(query, _connection))
+  {
+    command.Parameters.AddWithValue("@Value", value);
+    // Execute safely
+  }
+}
+
+// ══════════════════════════════════════════════════
+// PATTERN 4: "Sanitizing" Input (WRONG APPROACH)
+// ══════════════════════════════════════════════════
+
+// NEVER rely on sanitization:
+public bool IsSafeInput(string input)
+{
+  // Try to remove dangerous characters
+  return !input.Contains("'") && !input.Contains(";") && !input.Contains("--");
+  // This is ineffective - many bypasses exist
+  // Use parameterization, not sanitization!
+}</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: FromSqlRaw vs FromSqlInterpolated</strong>
+    <p>In EF Core, FromSqlRaw($"...{var}...") is vulnerable because the $ happens before FromSqlRaw sees it. FromSqlInterpolated($"...{var}...") is safe because it converts the interpolation into parameters. This subtle difference trips up experienced developers. Always use FromSqlInterpolated unless you're explicitly providing SqlParameter objects to FromSqlRaw.</p>
+  </div>
+
+</div>
+
+<!-- Section 04 -->
+<div class="section" id="section-04">
+  <div class="section-num">04 — EF Core SQL Injection Risks</div>
+  <h2>Safe vs Unsafe Patterns in Entity Framework</h2>
+
+  <p class="section-text">
+    EF Core's LINQ is safe by default—automatic parameterization prevents injection. However, raw SQL methods (FromSqlRaw, ExecuteSqlRaw) can be dangerous if misused. The pattern FromSqlRaw($"...") with string interpolation is the most common mistake. Understanding the difference between FromSqlRaw and FromSqlInterpolated is critical.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — What Gets Sent to Database</span>
+      <code>-- When using FromSqlInterpolated:
+-- EF generates: "SELECT * FROM Products WHERE Name = @p0"
+-- Parameter: { @p0 = userInput }
+-- Safe: parameter is data, not code
+
+-- When using FromSqlRaw($"...{input}..."):
+-- C# string interpolation happens first
+-- Result: "SELECT * FROM Products WHERE Name = " + input
+-- If input = "'; DROP TABLE Products; --"
+// Result: SELECT * FROM Products WHERE Name = ''; DROP TABLE Products; --'
+// Multiple statements!
+
+-- When using FromSqlRaw("...", params):
+-- EF generates: "SELECT * FROM Products WHERE Name = @p0"
+// Parameter: { @p0 = userInput }
+// Safe: parameters provided explicitly</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — EF Core SQL Safety Patterns</span>
+      <code>public class ProductService
+{
+  private readonly ProductContext _context;
+
+  // ✓ SAFE: LINQ (automatic parameterization)
+  public async Task<List<Product>> GetByNameLinqAsync(string name)
+  {
+    return await _context.Products
+      .Where(p => p.Name == name)
+      .ToListAsync();
+    // EF automatically parameterizes the WHERE clause
+    // No SQL injection possible
+  }
+
+  // ✓ SAFE: FromSqlInterpolated
+  public async Task<List<Product>> GetByNameInterpolatedAsync(string name)
+  {
+    return await _context.Products
+      .FromSqlInterpolated($@"
+        SELECT * FROM Products WHERE Name = {name}")
+      .ToListAsync();
+    // FromSqlInterpolated converts the interpolation to parameters
+    // Behind the scenes: SELECT * FROM Products WHERE Name = @p0
+    // Parameter { @p0 = name }
+  }
+
+  // ✓ SAFE: FromSqlRaw with explicit parameters
+  public async Task<List<Product>> GetByNameRawParametersAsync(string name)
+  {
+    return await _context.Products
+      .FromSqlRaw(
+        "SELECT * FROM Products WHERE Name = @name",
+        new SqlParameter("@name", name))
+      .ToListAsync();
+  }
+
+  // ✗ DANGEROUS: FromSqlRaw with string interpolation
+  public async Task<List<Product>> GetByNameRawInterpolationAsync(string name)
+  {
+    // DO NOT DO THIS!
+    return await _context.Products
+      .FromSqlRaw($"SELECT * FROM Products WHERE Name = {name}")
+      .ToListAsync();
+    // String interpolation happens in C# BEFORE FromSqlRaw
+    // Result is concatenation, not parameterization
+    // Vulnerable to SQL injection!
+  }
+
+  // ✗ DANGEROUS: String concatenation with ExecuteSqlRaw
+  public async Task<int> ExecuteUpdateVulnerableAsync(
+    int productId, string newName)
+  {
+    // DO NOT DO THIS!
+    string sql = $"UPDATE Products SET Name = '{newName}' WHERE Id = {productId}";
+    return await _context.Database.ExecuteSqlRawAsync(sql);
+    // Pure string concatenation = vulnerable!
+  }
+
+  // ✓ SAFE: ExecuteSqlInterpolated
+  public async Task<int> ExecuteUpdateSafeAsync(
+    int productId, string newName)
+  {
+    return await _context.Database.ExecuteSqlInterpolatedAsync(
+      $"UPDATE Products SET Name = {newName} WHERE Id = {productId}");
+    // Parameterized automatically
+  }
+
+  // ✓ SAFE: ExecuteSqlRaw with parameters
+  public async Task<int> ExecuteUpdateSafeAltAsync(
+    int productId, string newName)
+  {
+    return await _context.Database.ExecuteSqlRawAsync(
+      "UPDATE Products SET Name = @name WHERE Id = @id",
+      new SqlParameter("@name", newName),
+      new SqlParameter("@id", productId));
+  }
+
+  // Real-world example: Complex filtering
+  public async Task<List<Order>> GetOrdersComplexAsync(
+    DateTime startDate, DateTime endDate, string status, int? customerId)
+  {
+    // Safe: All parameters are automatic with LINQ
+    var query = _context.Orders
+      .Where(o => o.OrderDate >= startDate
+        && o.OrderDate <= endDate
+        && o.Status == status);
+
+    if (customerId.HasValue)
+      query = query.Where(o => o.CustomerId == customerId.Value);
+
+    return await query.ToListAsync();
+    // Even complex queries are safe with LINQ
+    // EF parameterizes every condition automatically
+  }
+}</code>
+    </div>
+  </div>
+
+</div>
+
+<!-- Section 05 -->
+<div class="section" id="section-05">
+  <div class="section-num">05 — Stored Procedures as a Security Layer</div>
+  <h2>Defense in Depth: Application + Database Security</h2>
+
+  <p class="section-text">
+    While parameterized queries at the application level prevent SQL injection, stored procedures add a second layer of defense. When using stored procedures, the application doesn't send raw SQL at all—only the procedure name and parameters. The database has full control over what SQL executes. This also enables you to grant database permissions to the application user at the procedure level, denying direct table access.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Stored Procedures for Security</span>
+      <code>-- Create stored procedure with parameterized query
+CREATE PROCEDURE sp_GetOrdersByCustomer
+  @CustomerId INT,
+  @StartDate DATETIME
+AS
+BEGIN
+  SELECT * FROM Orders
+  WHERE CustomerId = @CustomerId
+    AND OrderDate >= @StartDate
+  ORDER BY OrderDate DESC;
+END;
+
+-- Grant procedure execute permission (not table access)
+GRANT EXECUTE ON sp_GetOrdersByCustomer TO AppUser;
+
+-- DENY direct table access
+DENY SELECT, INSERT, UPDATE, DELETE ON Orders TO AppUser;
+
+-- Now:
+// 1. App can call the procedure (EXECUTE permission)
+// 2. App cannot query Orders table directly (DENY SELECT)
+// 3. Attack must go through procedure (parameterized)
+// 4. Even if SQL injection happens in C# code,
+//    the application user can't bypass the procedure</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Calling Stored Procedures from C#</span>
+      <code>// PATTERN 1: Dapper (simple)
+public class OrderRepository
+{
+  private readonly IDbConnection _connection;
+
+  public async Task<List<Order>> GetOrdersByCustomer(
+    int customerId, DateTime startDate)
+  {
+    const string procedureName = "sp_GetOrdersByCustomer";
+
+    var orders = await _connection.QueryAsync<Order>(
+      procedureName,
+      new { CustomerId = customerId, StartDate = startDate },
+      commandType: CommandType.StoredProcedure);
+
+    return orders.ToList();
+    // CommandType.StoredProcedure tells ADO.NET:
+    // - This is a procedure, not raw SQL
+    // - Always parameterized (can't be SQL injection)
+  }
+}
+
+// PATTERN 2: EF Core with FromSqlRaw (special syntax)
+public class OrderRepositoryEF
+{
+  private readonly OrderContext _context;
+
+  public async Task<List<Order>> GetOrdersByCustomer(
+    int customerId, DateTime startDate)
+  {
+    return await _context.Orders
+      .FromSqlRaw(
+        "EXECUTE sp_GetOrdersByCustomer @CustomerId, @StartDate",
+        new SqlParameter("@CustomerId", customerId),
+        new SqlParameter("@StartDate", startDate))
+      .ToListAsync();
+    // EXECUTE sp_... with parameters is safe
+    // Parameters are always respected by SQL Server
+  }
+}
+
+// PATTERN 3: Raw ADO.NET with SqlCommand
+public class OrderRepositoryADO
+{
+  private readonly string _connectionString;
+
+  public async Task<List<Order>> GetOrdersByCustomer(
+    int customerId, DateTime startDate)
+  {
+    var orders = new List<Order>();
+
+    using (var connection = new SqlConnection(_connectionString))
+    using (var command = new SqlCommand(
+      "sp_GetOrdersByCustomer", connection))
+    {
+      command.CommandType = CommandType.StoredProcedure;
+
+      command.Parameters.AddWithValue("@CustomerId", customerId);
+      command.Parameters.AddWithValue("@StartDate", startDate);
+
+      await connection.OpenAsync();
+      using (var reader = await command.ExecuteReaderAsync())
+      {
+        while (await reader.ReadAsync())
+        {
+          orders.Add(new Order
+          {
+            Id = (int)reader["Id"],
+            CustomerId = (int)reader["CustomerId"],
+            OrderDate = (DateTime)reader["OrderDate"]
+          });
+        }
+      }
+    }
+
+    return orders;
+  }
+}
+
+// Security benefits of stored procedures:
+// 1. Application never sends raw SQL
+// 2. Database can restrict procedure-only access
+// 3. Stored procedure does the querying (parameterized SQL)
+// 4. Defense in depth: multiple layers of protection</code>
+    </div>
+  </div>
+
+</div>
+
+<!-- Section 06 -->
+<div class="section" id="section-06">
+  <div class="section-num">06 — Beyond SQL Injection: Connection String Security</div>
+  <h2>Protecting Credentials and Secrets</h2>
+
+  <p class="section-text">
+    While SQL injection is the primary concern, connection strings themselves are sensitive: they contain database server addresses, usernames, and sometimes passwords. Never hardcode connection strings in your code. Use environment variables, configuration files excluded from source control, or secret management services like Azure Key Vault.
+  </p>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL — Connection String Components</span>
+      <code>-- Connection string example:
+Server=myserver.database.windows.net;
+Database=mydb;
+User Id=appuser;
+Password=SuperSecretPassword123!;
+Encrypt=true;
+TrustServerCertificate=false;
+Connection Timeout=30;
+
+-- Sensitive components:
+// - Server: database location (could be exploited)
+// - Database: schema information leak
+// - User Id: application database user (principle of least privilege)
+// - Password: absolutely must not be hardcoded!
+
+-- Best practice:
+// 1. Use Azure SQL authentication (no passwords)
+// 2. Use managed identities (app automatically authenticated)
+// 3. Use environment-specific connection strings
+// 4. Never commit passwords to source control</code>
+    </div>
+    <div class="code-block csharp">
+      <span class="code-label">C# — Secure Connection String Management</span>
+      <code>// ══════════════════════════════════════════════════
+// WRONG: Hardcoded in code
+// ══════════════════════════════════════════════════
+public class OrderContext : DbContext
+{
+  protected override void OnConfiguring(
+    DbContextOptionsBuilder optionsBuilder)
+  {
+    // NEVER DO THIS!
+    optionsBuilder.UseSqlServer(
+      "Server=myserver.database.windows.net;" +
+      "Database=mydb;" +
+      "User Id=appuser;" +
+      "Password=SuperSecretPassword123!;");
+  }
+}
+// Password visible in source code - SECURITY DISASTER!
+
+// ══════════════════════════════════════════════════
+// RIGHT: From appsettings.json (not in source control)
+// ══════════════════════════════════════════════════
+public class OrderContext : DbContext
+{
+  private readonly string _connectionString;
+
+  public OrderContext(IConfiguration config)
+  {
+    _connectionString = config.GetConnectionString("DefaultConnection");
+    // appsettings.json has connection string
+    // appsettings.json is in .gitignore (not committed)
+  }
+
+  protected override void OnConfiguring(
+    DbContextOptionsBuilder optionsBuilder)
+  {
+    optionsBuilder.UseSqlServer(_connectionString);
+  }
+}
+
+// appsettings.json (committed to repo, no secrets):
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=mydb;"
+  }
+}
+
+// appsettings.Production.json (NOT committed, has secrets):
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=prod-server;Database=mydb;User Id=appuser;Password=..."
+  }
+}
+
+// ══════════════════════════════════════════════════
+// BETTER: User Secrets for development
+// ══════════════════════════════════════════════════
+// dotnet user-secrets init
+// dotnet user-secrets set "ConnectionStrings:DefaultConnection" "..."
+// Stored in ~/.microsoft/usersecrets (not in project)
+// Loaded automatically in development
+
+// ══════════════════════════════════════════════════
+// BEST: Azure Key Vault for production
+// ══════════════════════════════════════════════════
+public class OrderContext : DbContext
+{
+  private readonly string _connectionString;
+
+  public OrderContext(IConfiguration config)
+  {
+    // Retrieve connection string from Key Vault
+    _connectionString = config["ConnectionStrings:DefaultConnection"];
+    // Accessed via Azure.Identity managed identity
+    // No passwords in code or config files!
+  }
+}
+
+// Startup configuration:
+public static IHostBuilder CreateHostBuilder(string[] args) =>
+  Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+      var keyVaultUrl = "https://myvault.vault.azure.net/";
+      var credential = new DefaultAzureCredential();
+      config.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        credential);
+    })
+    .ConfigureServices((context, services) =>
+    {
+      services.AddDbContext<OrderContext>();
+    });
+
+// ══════════════════════════════════════════════════
+// Environment variables (for containers)
+// ══════════════════════════════════════════════════
+var connectionString = Environment.GetEnvironmentVariable(
+  "ConnectionStrings__DefaultConnection")
+  ?? throw new InvalidOperationException("Connection string not configured");
+
+var optionsBuilder = new DbContextOptionsBuilder<OrderContext>();
+optionsBuilder.UseSqlServer(connectionString);
+
+// Docker or CI/CD sets environment variable (not visible in logs)
+// Container runtime: docker run -e ConnectionStrings__DefaultConnection=... myapp
+
+// SUMMARY:
+// ✓ Development: User Secrets (dotnet user-secrets)
+// ✓ Staging/Production: Azure Key Vault or environment variables
+// ✗ Never: hardcoded passwords in source code
+// ✗ Never: committed appsettings with production secrets</code>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Defense in Depth</strong>
+    <p>Security requires multiple layers: parameterized queries prevent injection, stored procedures add application control, proper permissions limit damage, and secret management protects credentials. No single measure is foolproof. Combine all of them for a secure system.</p>
+  </div>
+
+</div>
+
+</main>
+
+<!-- KEY TAKEAWAYS SECTION -->
+<div class="wrap">
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>SQL injection occurs when user input is concatenated into SQL strings; the database can't distinguish code from data</li>
+      <li>Parameterized queries are the universal fix: separate SQL code from data parameters, preventing injection attacks</li>
+      <li>LINQ in EF Core is automatically safe; parameterization happens behind the scenes</li>
+      <li>FromSqlInterpolated is safe; FromSqlRaw with string interpolation is dangerous—always use explicit parameters with FromSqlRaw</li>
+      <li>Dangerous patterns include string concatenation, dynamic table/column names (use whitelists), and relying on "sanitization"</li>
+      <li>Stored procedures add defense-in-depth: procedures are always parameterized, and database permissions can restrict direct table access</li>
+      <li>Connection strings contain sensitive data—never hardcode passwords; use environment variables, user secrets, or Azure Key Vault</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CHAPTER NAVIGATION -->
+<div class="wrap">
+  <nav class="chapter-nav">
+    <a href="ch29-testing.html" class="nav-item prev">
+      <span class="nav-label">Previous</span>
+      <span class="nav-title">Testing Data Access Code</span>
+    </a>
+    <a href="index.html" class="nav-item next">
+      <span class="nav-label">Next</span>
+      <span class="nav-title">Return to Index</span>
+    </a>
+  </nav>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access patterns, from SQL fundamentals to advanced EF Core and Dapper techniques. Learn how relational concepts map to object-oriented code.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Core Topics</h4>
+        <ul>
+          <li><a href="#">Data Modeling</a></li>
+          <li><a href="#">Query Patterns</a></li>
+          <li><a href="#">Performance Optimization</a></li>
+          <li><a href="#">Advanced EF Core</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">GitHub Repository</a></li>
+          <li><a href="#">Live Examples</a></li>
+          <li><a href="#">Community Forum</a></li>
+          <li><a href="#">Contact Authors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>SQL to C# — Master data access across SQL Server, Entity Framework Core, and Dapper. Published 2024.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

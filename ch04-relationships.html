@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4: Relationships — SQL to C#</title>
+<meta name="description" content="Master one-to-one, one-to-many, and many-to-many relationships in both SQL and Entity Framework with complete patterns, query examples, and a comprehensive e-commerce domain model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 750px;
+}
+
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 20px;
+  max-width: 750px;
+}
+
+.section-text em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 8px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code {
+  color: var(--ink);
+}
+
+.code-block-single {
+  border-radius: 8px;
+  padding: 24px;
+  overflow-x: auto;
+  margin-bottom: 28px;
+}
+
+.code-block-single.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block-single.sql code {
+  color: #e8e4db;
+}
+
+.code-block-single.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block-single.csharp code {
+  color: var(--ink);
+}
+
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.7;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.footer-section p,
+.footer-section a {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink2);
+  text-decoration: none;
+  line-height: 1.7;
+}
+
+.footer-section a:hover {
+  color: var(--acc);
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  padding: 4px 0;
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a href="index.html" class="nav-brand">
+      SQL to C#
+      <span class="nav-pill">Chapter 04</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">← All Chapters</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <header class="chapter-header">
+      <div class="chapter-num">Part 2: Relationship Patterns</div>
+      <h1>Relationships — Schema vs Object Graph<br>One-to-One, One-to-Many, Many-to-Many and Domain Models</h1>
+      <p class="chapter-desc">Relationships are the essence of relational databases. They model how entities connect: customers have orders, products belong to categories, students enroll in courses. This chapter explores all three cardinalities (one-to-one, one-to-many, many-to-many) in both SQL and Entity Framework, with complete patterns, real-world queries, and a comprehensive domain model you'll use throughout this book.</p>
+    </header>
+
+    <div class="in-this-chapter">
+      <h3>In This Chapter</h3>
+      <ul>
+        <li>One-to-One Relationships — Shared PK and unique FK patterns, when to use 1:1</li>
+        <li>One-to-Many Relationships — The most common pattern, ICollection navigations, LINQ queries</li>
+        <li>Many-to-Many: Junction Tables — Explicit junction entities vs EF5+ skip navigations</li>
+        <li>Many-to-Many with Payload — When the junction table has extra columns like enrollment dates</li>
+        <li>Querying Relationships — SQL JOINs, LINQ method and query syntax, Dapper multi-mapping</li>
+        <li>A Complete Domain Model — Full e-commerce schema with customers, orders, products, categories</li>
+        <li>Object-Relational Impedance Mismatch — Why mapping SQL to OOP is inherently imperfect</li>
+      </ul>
+    </div>
+
+    <section class="section">
+      <div class="section-num">01</div>
+      <h2>One-to-One Relationships</h2>
+      <p class="section-text">
+        A one-to-one relationship means each row in table A relates to at most one row in table B, and vice versa. Examples: each Employee has one UserAccount; each Customer has one Address; each User has one Profile. In SQL, you implement 1:1 with either a shared primary key (less common) or a unique foreign key (more common). In C#, both sides have nullable or non-nullable navigation properties pointing to a single object.
+      </p>
+      <p class="section-text">
+        One-to-one relationships are less common than one-to-many, but they solve specific problems. Sometimes you have a large table with optional data that you want to separate: Customer with OrderHistory, where OrderHistory is a separate table you only load when needed. Or you have a base table and derived tables: Employee and EmployeeContractDetails. This separation improves query performance and data organization.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Unique FK (Preferred)</span>
+          <code>-- Customer table
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL
+);
+
+-- Address with unique FK to Customer
+-- Each customer has exactly one address
+CREATE TABLE Addresses (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL UNIQUE,
+  Street NVARCHAR(100),
+  City NVARCHAR(50),
+  Country NVARCHAR(50),
+  FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id)
+    ON DELETE CASCADE
+);
+
+-- Query: customer with their address
+SELECT c.Name, a.Street, a.City
+FROM Customers c
+LEFT JOIN Addresses a ON c.Id = a.CustomerId
+WHERE c.Id = 5;</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: One-to-One Navigation</span>
+          <code>public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Navigation: customer has one address
+  public Address? Address { get; set; }
+}
+
+public class Address
+{
+  public int Id { get; set; }
+  public int CustomerId { get; set; }
+  public string? Street { get; set; }
+  public string? City { get; set; }
+  public string? Country { get; set; }
+
+  // Navigation: address belongs to one customer
+  public Customer Customer { get; set; }
+}
+
+// Configuration:
+modelBuilder.Entity<Address>()
+  .HasOne(a => a.Customer)
+  .WithOne(c => c.Address)
+  .HasForeignKey<Address>(a => a.CustomerId)
+  .OnDelete(DeleteBehavior.Cascade);
+
+// Usage:
+var customer = context.Customers
+  .Include(c => c.Address)
+  .FirstOrDefault(c => c.Id == 5);
+
+Console.WriteLine($"{customer.Name} lives in " +
+  $"{customer.Address?.City}");</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Use one-to-one relationships to separate optional large data or logically distinct concerns. The unique constraint ensures true 1:1 cardinality. Always decide which side holds the foreign key: the dependent table references the principal. Include both navigations (optional on the principal, non-nullable on the dependent) for natural access from both directions.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">02</div>
+      <h2>One-to-Many Relationships</h2>
+      <p class="section-text">
+        One-to-many is the most common relationship type. One customer has many orders; one category has many products; one blog has many posts. In SQL, the child table has a foreign key column. In C#, the parent has an ICollection<Child> navigation, and the child has a single-object navigation back to the parent. This is the pattern you've seen most in this book so far.
+      </p>
+      <p class="section-text">
+        Querying one-to-many relationships is where LINQ shines. You can filter parents by child properties, navigate collections with Include(), and project nested data into DTOs. This is also where the N+1 problem appears: loading 100 customers and then loading each customer's orders one-by-one results in 101 database queries. Using Include() or explicit JOINs solves this.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: One-to-Many with JOINs</span>
+          <code>-- Parent table
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL
+);
+
+-- Child table with FK
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  OrderDate DATETIME2,
+  Total DECIMAL(10,2),
+  FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id)
+    ON DELETE CASCADE
+);
+
+-- Query: customer with their orders
+SELECT c.Name, o.Id, o.OrderDate, o.Total
+FROM Customers c
+INNER JOIN Orders o ON c.Id = o.CustomerId
+WHERE c.Id = 5
+ORDER BY o.OrderDate DESC;
+
+-- Query: customer even if they have no orders
+SELECT c.Name, o.Id, o.OrderDate, o.Total
+FROM Customers c
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+ORDER BY c.Name, o.OrderDate DESC;</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: LINQ One-to-Many Queries</span>
+          <code>// Entities:
+public class Customer
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public ICollection<Order> Orders { get; set; }
+    = new List<Order>();
+}
+
+public class Order
+{
+  public int Id { get; set; }
+  public int CustomerId { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+  public Customer Customer { get; set; }
+}
+
+// Query 1: Method syntax with Include()
+var customers = context.Customers
+  .Include(c => c.Orders)
+  .ToList();
+
+foreach (var c in customers)
+  foreach (var o in c.Orders)
+    Console.WriteLine($"{c.Name}: {o.Total}");
+
+// Query 2: Method syntax filtering on child
+var customersWithOrders = context.Customers
+  .Where(c => c.Orders.Any(o => o.Total > 100))
+  .Include(c => c.Orders)
+  .ToList();
+
+// Query 3: Query syntax with join
+var orders = (from c in context.Customers
+              join o in context.Orders
+                on c.Id equals o.CustomerId
+              where c.Name.Contains("Alice")
+              orderby o.OrderDate descending
+              select new {
+                Customer = c.Name,
+                OrderId = o.Id,
+                o.OrderDate,
+                o.Total
+              }).ToList();
+
+// Query 4: Select from child with parent filter
+var expensive = (from o in context.Orders
+                 where o.Customer.Name == "Alice"
+                    && o.Total > 100
+                 select o)
+  .Include(o => o.Customer)
+  .ToList();
+
+// Query 5: Projection to avoid N+1
+var summary = context.Customers
+  .Select(c => new {
+    CustomerName = c.Name,
+    OrderCount = c.Orders.Count,
+    TotalSpent = c.Orders.Sum(o => o.Total),
+    LastOrder = c.Orders
+      .OrderByDescending(o => o.OrderDate)
+      .FirstOrDefault()
+  })
+  .ToList();</code>
+        </div>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Common One-to-Many Query Patterns</span>
+        <code>public class OrderRepository
+{
+  private readonly DbContext _context;
+
+  // Pattern 1: Load parent with children
+  public Customer GetCustomerWithOrders(int customerId)
+  {
+    return _context.Customers
+      .Include(c => c.Orders)
+      .FirstOrDefault(c => c.Id == customerId);
+  }
+
+  // Pattern 2: Load only specific children (filtered)
+  public Customer GetCustomerWithRecentOrders(
+    int customerId, int days = 30)
+  {
+    var cutoff = DateTime.UtcNow.AddDays(-days);
+
+    return _context.Customers
+      .AsNoTracking()
+      .Select(c => new Customer
+      {
+        Id = c.Id,
+        Name = c.Name,
+        Orders = c.Orders
+          .Where(o => o.OrderDate >= cutoff)
+          .ToList()
+      })
+      .FirstOrDefault(c => c.Id == customerId);
+  }
+
+  // Pattern 3: Filter parent by children (WHERE EXISTS)
+  public List<Customer> GetCustomersWithOrdersAbove(
+    decimal amount)
+  {
+    return _context.Customers
+      .Where(c => c.Orders.Any(o => o.Total > amount))
+      .Include(c => c.Orders)
+      .ToList();
+  }
+
+  // Pattern 4: Count children without loading them
+  public List<object> GetCustomerOrderCounts()
+  {
+    return _context.Customers
+      .Select(c => new
+      {
+        c.Name,
+        OrderCount = c.Orders.Count,
+        TotalSpent = c.Orders.Sum(o => (decimal?)o.Total) ?? 0
+      })
+      .ToList();
+  }
+
+  // Pattern 5: Get top customers by spending
+  public List<object> GetTopCustomersBy Spending(int top = 10)
+  {
+    return _context.Orders
+      .GroupBy(o => o.CustomerId)
+      .Select(g => new
+      {
+        CustomerId = g.Key,
+        CustomerName = g.FirstOrDefault().Customer.Name,
+        OrderCount = g.Count(),
+        TotalSpent = g.Sum(o => o.Total)
+      })
+      .OrderByDescending(x => x.TotalSpent)
+      .Take(top)
+      .ToList();
+  }
+
+  // Pattern 6: Avoid N+1: multiple Includes
+  public List<Order> GetOrdersWithDetails(int customerId)
+  {
+    return _context.Orders
+      .Where(o => o.CustomerId == customerId)
+      .Include(o => o.Customer)
+      .Include(o => o.OrderItems)  // If Orders had items
+      .OrderByDescending(o => o.OrderDate)
+      .ToList();
+  }
+}</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>One-to-many is the most common relationship. Use Include() to eager-load related data and avoid N+1 queries. When you need only summary data (counts, sums), avoid loading the collection—project to anonymous objects instead. This prevents loading thousands of unnecessary child objects into memory.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">03</div>
+      <h2>Many-to-Many: Junction Tables</h2>
+      <p class="section-text">
+        Many-to-many relationships model scenarios where either side can relate to many of the other: students take many courses, and each course has many students. To implement this in SQL, you create a junction table (also called join table or payload table) with foreign keys to both sides. In older Entity Framework, you had to create an explicit C# class for the junction table. In EF Core 5+, you can use skip navigations to hide the junction table behind the scenes.
+      </p>
+      <p class="section-text">
+        Understanding both approaches is important. Explicit junction entities give you full control and are necessary when the junction table has extra columns (like enrollment date). Skip navigations are convenient for simple many-to-many without payload. Most real-world systems have payload, so you'll see explicit entities more often.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Many-to-Many Junction</span>
+          <code>-- Parent tables
+CREATE TABLE Students (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Courses (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Title NVARCHAR(200) NOT NULL,
+  Credits INT NOT NULL
+);
+
+-- Junction table
+CREATE TABLE StudentCourses (
+  StudentId INT NOT NULL,
+  CourseId INT NOT NULL,
+  CONSTRAINT PK_StudentCourses
+    PRIMARY KEY (StudentId, CourseId),
+  FOREIGN KEY (StudentId)
+    REFERENCES Students(Id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (CourseId)
+    REFERENCES Courses(Id)
+    ON DELETE CASCADE
+);
+
+-- Query: courses for a student
+SELECT c.Title, c.Credits
+FROM Courses c
+INNER JOIN StudentCourses sc
+  ON c.Id = sc.CourseId
+WHERE sc.StudentId = 5;
+
+-- Query: students in a course
+SELECT s.Name
+FROM Students s
+INNER JOIN StudentCourses sc
+  ON s.Id = sc.StudentId
+WHERE sc.CourseId = 3;</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Skip Navigations (EF5+)</span>
+          <code>// Simple M:M without payload
+// Skip navigations hide the junction table
+public class Student
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Skip navigation: directly to Course collection
+  public ICollection<Course> Courses { get; set; }
+    = new List<Course>();
+}
+
+public class Course
+{
+  public int Id { get; set; }
+  public string Title { get; set; }
+  public int Credits { get; set; }
+
+  // Skip navigation: directly to Student collection
+  public ICollection<Student> Students { get; set; }
+    = new List<Student>();
+}
+
+// Configuration (EF Core 5+):
+modelBuilder.Entity<Student>()
+  .HasMany(s => s.Courses)
+  .WithMany(c => c.Students)
+  .UsingEntity(j => j.ToTable("StudentCourses"));
+  // EF creates junction table automatically
+
+// Usage:
+var context = new DbContext();
+
+// Add student to course
+var student = context.Students.Find(5);
+var course = context.Courses.Find(3);
+student.Courses.Add(course);
+context.SaveChanges();
+
+// Query: courses for a student
+var courses = context.Students
+  .Include(s => s.Courses)
+  .FirstOrDefault(s => s.Id == 5)
+  ?.Courses;
+
+// Query: students in a course
+var students = context.Courses
+  .Include(c => c.Students)
+  .FirstOrDefault(c => c.Id == 3)
+  ?.Students;
+
+// Filter across M:M relationship
+var advanced = context.Courses
+  .Where(c => c.Students.Any(s => s.Name.StartsWith("A")))
+  .ToList();</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>Use skip navigations (EF5+) for simple many-to-many without payload. The junction table is created and managed automatically. If you need to add data to the junction table (enrollment date, grade), use an explicit junction entity instead. Skip navigations are cleaner but less flexible.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">04</div>
+      <h2>Many-to-Many with Payload</h2>
+      <p class="section-text">
+        Real-world many-to-many relationships almost always have extra data on the junction table. A Student-Course relationship has an EnrollmentDate and Grade. An Employee-Project relationship has a Role and HoursAllocated. This extra data is the "payload." When you have payload, you must create an explicit junction entity in C#. This entity has foreign keys to both sides and additional properties for the extra data.
+      </p>
+      <p class="section-text">
+        This is more complex than skip navigations, but it's necessary for most real applications. The junction entity becomes a full domain entity in your system, with its own business logic and validation. You navigate through it to reach the other side of the relationship, or you work with the junction entity directly as a first-class concept.
+      </p>
+
+      <div class="code-comparison">
+        <div class="code-block sql">
+          <span class="code-label">SQL: Junction with Payload</span>
+          <code>CREATE TABLE Students (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Courses (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Title NVARCHAR(200) NOT NULL,
+  Credits INT NOT NULL
+);
+
+-- Junction with extra columns (payload)
+CREATE TABLE Enrollments (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  StudentId INT NOT NULL,
+  CourseId INT NOT NULL,
+  EnrollmentDate DATETIME2 NOT NULL,
+  Grade CHAR(1),  -- A, B, C, D, F
+  CONSTRAINT FK_Enrollments_Student
+    FOREIGN KEY (StudentId)
+    REFERENCES Students(Id)
+    ON DELETE CASCADE,
+  CONSTRAINT FK_Enrollments_Course
+    FOREIGN KEY (CourseId)
+    REFERENCES Courses(Id)
+    ON DELETE CASCADE,
+  CONSTRAINT UQ_Enrollment
+    UNIQUE (StudentId, CourseId)  -- Can't enroll twice
+);
+
+-- Query: courses with student grades
+SELECT c.Title, e.Grade, e.EnrollmentDate
+FROM Courses c
+INNER JOIN Enrollments e ON c.Id = e.CourseId
+WHERE e.StudentId = 5
+ORDER BY e.EnrollmentDate DESC;
+
+-- Query: average grade in a course
+SELECT c.Title, AVG(CASE e.Grade
+  WHEN 'A' THEN 4.0
+  WHEN 'B' THEN 3.0
+  WHEN 'C' THEN 2.0
+  WHEN 'D' THEN 1.0
+  ELSE 0.0
+  END) AS AvgGPA
+FROM Courses c
+INNER JOIN Enrollments e ON c.Id = e.CourseId
+GROUP BY c.Id, c.Title;</code>
+        </div>
+        <div class="code-block csharp">
+          <span class="code-label">C#: Explicit Junction Entity with Payload</span>
+          <code>// Junction entity with payload
+public class Enrollment
+{
+  public int Id { get; set; }
+
+  // Foreign keys
+  public int StudentId { get; set; }
+  public int CourseId { get; set; }
+
+  // Payload: extra data
+  public DateTime EnrollmentDate { get; set; }
+  public char? Grade { get; set; }
+
+  // Navigations
+  public Student Student { get; set; }
+  public Course Course { get; set; }
+}
+
+public class Student
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+
+  // Navigation to junction entity
+  public ICollection<Enrollment> Enrollments { get; set; }
+    = new List<Enrollment>();
+}
+
+public class Course
+{
+  public int Id { get; set; }
+  public string Title { get; set; }
+  public int Credits { get; set; }
+
+  // Navigation to junction entity
+  public ICollection<Enrollment> Enrollments { get; set; }
+    = new List<Enrollment>();
+}
+
+// Configuration:
+public class UniversityContext : DbContext
+{
+  protected override void OnModelCreating(
+    ModelBuilder modelBuilder)
+  {
+    // Configure Enrollment as the junction entity
+    modelBuilder.Entity<Enrollment>()
+      .HasOne(e => e.Student)
+      .WithMany(s => s.Enrollments)
+      .HasForeignKey(e => e.StudentId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    modelBuilder.Entity<Enrollment>()
+      .HasOne(e => e.Course)
+      .WithMany(c => c.Enrollments)
+      .HasForeignKey(e => e.CourseId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Unique constraint: student can't enroll twice
+    modelBuilder.Entity<Enrollment>()
+      .HasIndex(e => new { e.StudentId, e.CourseId })
+      .IsUnique();
+  }
+}
+
+// Usage:
+var context = new UniversityContext();
+
+// Enroll student in course
+var enrollment = new Enrollment
+{
+  StudentId = 5,
+  CourseId = 3,
+  EnrollmentDate = DateTime.UtcNow,
+  Grade = null  // No grade yet
+};
+context.Enrollments.Add(enrollment);
+context.SaveChanges();
+
+// Query: courses with grades
+var courses = context.Students
+  .Include(s => s.Enrollments)
+    .ThenInclude(e => e.Course)
+  .FirstOrDefault(s => s.Id == 5)
+  ?.Enrollments;
+
+foreach (var e in courses ?? new List<Enrollment>())
+  Console.WriteLine($"{e.Course.Title}: {e.Grade ?? '?'}");
+
+// Query: students in a course with grades
+var students = context.Courses
+  .Include(c => c.Enrollments)
+    .ThenInclude(e => e.Student)
+  .FirstOrDefault(c => c.Id == 3)
+  ?.Enrollments;
+
+// Query: top performing students
+var topStudents = context.Enrollments
+  .Where(e => e.Grade == 'A')
+  .Include(e => e.Student)
+  .Include(e => e.Course)
+  .GroupBy(e => e.Student.Name)
+  .Select(g => new
+  {
+    Student = g.Key,
+    ACount = g.Count(e => e.Course.Title.Contains("Advanced")),
+    CourseCount = g.Count()
+  })
+  .OrderByDescending(x => x.ACount)
+  .ToList();</code>
+        </div>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>When your junction table has payload (extra columns), create an explicit entity for it in C#. This entity owns the extra data and becomes a first-class part of your domain model. Use ThenInclude() to eagerly load the related data through the junction, avoiding N+1 queries. Always add a unique constraint if a record can only exist once (Student can't enroll in a Course twice).</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">05</div>
+      <h2>Querying Relationships Across Approaches</h2>
+      <p class="section-text">
+        The same data can be queried using different tools. Raw SQL with JOINs gives you maximum control. LINQ with method or query syntax is declarative and type-safe. Dapper requires you to manually map query results. Each has pros and cons. Understanding all approaches lets you choose the right tool for each situation and maintain flexibility in your architecture.
+      </p>
+
+      <div class="code-block-single sql">
+        <span class="code-label">SQL: Raw JOINs</span>
+        <code>-- Query: customers with their order count
+SELECT
+  c.Id,
+  c.Name,
+  COUNT(o.Id) AS OrderCount,
+  SUM(o.Total) AS TotalSpent
+FROM Customers c
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name
+HAVING COUNT(o.Id) > 0
+ORDER BY TotalSpent DESC;
+
+-- Query: products in stock with category
+SELECT
+  p.Id,
+  p.Name,
+  p.StockQuantity,
+  cat.Name AS CategoryName
+FROM Products p
+INNER JOIN Categories cat ON p.CategoryId = cat.Id
+WHERE p.StockQuantity > 0
+ORDER BY cat.Name, p.Name;</code>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: LINQ Method Syntax</span>
+        <code>var ctx = new AppDbContext();
+
+// Method syntax: customers with order count
+var summary = ctx.Customers
+  .GroupJoin(
+    ctx.Orders,
+    c => c.Id,
+    o => o.CustomerId,
+    (c, orders) => new
+    {
+      c.Id,
+      c.Name,
+      OrderCount = orders.Count(),
+      TotalSpent = orders.Sum(o => (decimal?)o.Total) ?? 0
+    })
+  .Where(x => x.OrderCount > 0)
+  .OrderByDescending(x => x.TotalSpent)
+  .ToList();
+
+// Method syntax: products with category
+var products = ctx.Products
+  .Where(p => p.StockQuantity > 0)
+  .Join(
+    ctx.Categories,
+    p => p.CategoryId,
+    c => c.Id,
+    (p, c) => new
+    {
+      ProductId = p.Id,
+      ProductName = p.Name,
+      p.StockQuantity,
+      CategoryName = c.Name
+    })
+  .OrderBy(x => x.CategoryName)
+  .ThenBy(x => x.ProductName)
+  .ToList();</code>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: LINQ Query Syntax</span>
+        <code>// Query syntax: customers with order count (often clearer)
+var summary = (from c in ctx.Customers
+               join o in ctx.Orders
+                 on c.Id equals o.CustomerId
+                 into orders
+               where orders.Count() > 0
+               select new
+               {
+                 c.Id,
+                 c.Name,
+                 OrderCount = orders.Count(),
+                 TotalSpent = orders.Sum(o => (decimal?)o.Total) ?? 0
+               })
+  .OrderByDescending(x => x.TotalSpent)
+  .ToList();
+
+// Query syntax: products with category (left join)
+var products = (from p in ctx.Products
+                where p.StockQuantity > 0
+                join c in ctx.Categories
+                  on p.CategoryId equals c.Id
+                  into categories
+                from cat in categories.DefaultIfEmpty()
+                select new
+                {
+                  ProductId = p.Id,
+                  ProductName = p.Name,
+                  p.StockQuantity,
+                  CategoryName = cat != null ? cat.Name : "Uncategorized"
+                })
+  .OrderBy(x => x.CategoryName)
+  .ThenBy(x => x.ProductName)
+  .ToList();</code>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Dapper Multi-Mapping</span>
+        <code>// Dapper: manual JOIN and multi-mapping
+using (var connection = new SqlConnection(connStr))
+{
+  connection.Open();
+
+  var sql = @"
+    SELECT
+      c.Id, c.Name,
+      o.Id AS OrderId, o.OrderDate, o.Total
+    FROM Customers c
+    LEFT JOIN Orders o ON c.Id = o.CustomerId
+    ORDER BY c.Id, o.OrderDate DESC
+  ";
+
+  var customerDict = new Dictionary<int, Customer>();
+
+  var customers = connection.Query<Customer, Order, Customer>(
+    sql,
+    (customer, order) =>
+    {
+      if (!customerDict.TryGetValue(customer.Id, out var entry))
+      {
+        entry = customer;
+        entry.Orders = new List<Order>();
+        customerDict.Add(customer.Id, entry);
+      }
+
+      if (order != null)
+        entry.Orders.Add(order);
+
+      return entry;
+    },
+    splitOn: "OrderId"
+  ).Distinct().ToList();
+
+  foreach (var c in customers)
+  {
+    Console.WriteLine($"{c.Name}: {c.Orders.Count} orders");
+  }
+}
+
+// Dapper doesn't load relationships automatically
+// You must write the JOIN and map results yourself</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>SQL JOINs give you full control and are efficient. LINQ query syntax is often clearer than method syntax for complex joins. LINQ method syntax is more composable for dynamic queries. Dapper requires more manual work but gives you fine-grained control. Choose based on complexity, performance, and team expertise. Most LINQ is fast enough; optimize only when measurements show you need to.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">06</div>
+      <h2>A Complete Domain Model: E-Commerce</h2>
+      <p class="section-text">
+        To understand how relationships work in a real system, let's build a complete e-commerce domain model. This model includes customers, orders, products, categories, and addresses. You'll see this model referenced throughout the rest of this book as we demonstrate queries, updates, and performance optimization. It's complex enough to be realistic, but not so large as to be overwhelming.
+      </p>
+
+      <div class="code-block-single sql">
+        <span class="code-label">SQL: E-Commerce Database Schema</span>
+        <code>-- Categories
+CREATE TABLE Categories (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL UNIQUE,
+  Description NVARCHAR(500)
+);
+
+-- Products
+CREATE TABLE Products (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(200) NOT NULL,
+  Description NVARCHAR(1000),
+  Price DECIMAL(10,2) NOT NULL,
+  StockQuantity INT NOT NULL DEFAULT 0,
+  CategoryId INT NOT NULL,
+  CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+  FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX IX_Products_CategoryId
+  ON Products(CategoryId);
+
+-- Customers
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  FirstName NVARCHAR(50) NOT NULL,
+  LastName NVARCHAR(50) NOT NULL,
+  Email NVARCHAR(100) NOT NULL UNIQUE,
+  PhoneNumber NVARCHAR(20),
+  CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+-- Addresses (1:many - customer has many addresses)
+CREATE TABLE Addresses (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  AddressType NVARCHAR(20),  -- Billing, Shipping, etc
+  Street NVARCHAR(100) NOT NULL,
+  City NVARCHAR(50) NOT NULL,
+  StateProvince NVARCHAR(50),
+  PostalCode NVARCHAR(20),
+  Country NVARCHAR(50) NOT NULL,
+  FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX IX_Addresses_CustomerId
+  ON Addresses(CustomerId);
+
+-- Orders (1:many - customer has many orders)
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  OrderDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+  ShipDate DATETIME2,
+  DeliveryDate DATETIME2,
+  Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
+  ShippingAddressId INT,
+  BillingAddressId INT,
+  TotalAmount DECIMAL(10,2) NOT NULL,
+  FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (ShippingAddressId) REFERENCES Addresses(Id)
+    ON DELETE SET NULL,
+  FOREIGN KEY (BillingAddressId) REFERENCES Addresses(Id)
+    ON DELETE SET NULL
+);
+
+CREATE INDEX IX_Orders_CustomerId
+  ON Orders(CustomerId);
+CREATE INDEX IX_Orders_Status
+  ON Orders(Status);
+
+-- OrderItems (junction with payload)
+CREATE TABLE OrderItems (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  OrderId INT NOT NULL,
+  ProductId INT NOT NULL,
+  Quantity INT NOT NULL,
+  UnitPrice DECIMAL(10,2) NOT NULL,
+  Discount DECIMAL(10,2) DEFAULT 0,
+  CONSTRAINT FK_OrderItems_Order
+    FOREIGN KEY (OrderId) REFERENCES Orders(Id)
+    ON DELETE CASCADE,
+  CONSTRAINT FK_OrderItems_Product
+    FOREIGN KEY (ProductId) REFERENCES Products(Id)
+    ON DELETE RESTRICT
+);
+
+CREATE INDEX IX_OrderItems_OrderId
+  ON OrderItems(OrderId);
+CREATE INDEX IX_OrderItems_ProductId
+  ON OrderItems(ProductId);
+
+-- Reviews (1:many - product has reviews, customer writes reviews)
+CREATE TABLE Reviews (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  ProductId INT NOT NULL,
+  CustomerId INT NOT NULL,
+  Rating INT NOT NULL CHECK (Rating >= 1 AND Rating <= 5),
+  Comment NVARCHAR(1000),
+  CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_Reviews_Product
+    FOREIGN KEY (ProductId) REFERENCES Products(Id)
+    ON DELETE CASCADE,
+  CONSTRAINT FK_Reviews_Customer
+    FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
+    ON DELETE CASCADE,
+  CONSTRAINT UQ_Reviews
+    UNIQUE (ProductId, CustomerId)  -- One review per product per customer
+);
+
+CREATE INDEX IX_Reviews_ProductId ON Reviews(ProductId);
+CREATE INDEX IX_Reviews_CustomerId ON Reviews(CustomerId);</code>
+      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: E-Commerce Domain Entities</span>
+        <code>// Categories
+public class Category
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public string Description { get; set; }
+
+  public ICollection<Product> Products { get; set; }
+    = new List<Product>();
+}
+
+// Products
+public class Product
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public string Description { get; set; }
+  public decimal Price { get; set; }
+  public int StockQuantity { get; set; }
+
+  public int CategoryId { get; set; }
+  public Category Category { get; set; }
+
+  public DateTime CreatedAt { get; set; }
+
+  public ICollection<OrderItem> OrderItems { get; set; }
+    = new List<OrderItem>();
+
+  public ICollection<Review> Reviews { get; set; }
+    = new List<Review>();
+}
+
+// Customers
+public class Customer
+{
+  public int Id { get; set; }
+  public string FirstName { get; set; }
+  public string LastName { get; set; }
+  public string Email { get; set; }
+  public string PhoneNumber { get; set; }
+  public DateTime CreatedAt { get; set; }
+
+  public ICollection<Address> Addresses { get; set; }
+    = new List<Address>();
+
+  public ICollection<Order> Orders { get; set; }
+    = new List<Order>();
+
+  public ICollection<Review> Reviews { get; set; }
+    = new List<Review>();
+}
+
+// Addresses
+public class Address
+{
+  public int Id { get; set; }
+  public int CustomerId { get; set; }
+  public string AddressType { get; set; }
+  public string Street { get; set; }
+  public string City { get; set; }
+  public string StateProvince { get; set; }
+  public string PostalCode { get; set; }
+  public string Country { get; set; }
+
+  public Customer Customer { get; set; }
+}
+
+// Orders
+public class Order
+{
+  public int Id { get; set; }
+  public int CustomerId { get; set; }
+  public DateTime OrderDate { get; set; }
+  public DateTime? ShipDate { get; set; }
+  public DateTime? DeliveryDate { get; set; }
+  public string Status { get; set; }
+  public int? ShippingAddressId { get; set; }
+  public int? BillingAddressId { get; set; }
+  public decimal TotalAmount { get; set; }
+
+  public Customer Customer { get; set; }
+  public Address ShippingAddress { get; set; }
+  public Address BillingAddress { get; set; }
+
+  public ICollection<OrderItem> Items { get; set; }
+    = new List<OrderItem>();
+}
+
+// OrderItems (junction with payload)
+public class OrderItem
+{
+  public int Id { get; set; }
+  public int OrderId { get; set; }
+  public int ProductId { get; set; }
+  public int Quantity { get; set; }
+  public decimal UnitPrice { get; set; }
+  public decimal Discount { get; set; }
+
+  public Order Order { get; set; }
+  public Product Product { get; set; }
+}
+
+// Reviews
+public class Review
+{
+  public int Id { get; set; }
+  public int ProductId { get; set; }
+  public int CustomerId { get; set; }
+  public int Rating { get; set; }
+  public string Comment { get; set; }
+  public DateTime CreatedAt { get; set; }
+
+  public Product Product { get; set; }
+  public Customer Customer { get; set; }
+}
+
+// DbContext with all configurations
+public class ECommerceContext : DbContext
+{
+  protected override void OnModelCreating(ModelBuilder mb)
+  {
+    // Product -> Category (1:many)
+    mb.Entity<Product>()
+      .HasOne(p => p.Category)
+      .WithMany(c => c.Products)
+      .HasForeignKey(p => p.CategoryId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Customer -> Address (1:many)
+    mb.Entity<Address>()
+      .HasOne(a => a.Customer)
+      .WithMany(c => c.Addresses)
+      .HasForeignKey(a => a.CustomerId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Customer -> Order (1:many)
+    mb.Entity<Order>()
+      .HasOne(o => o.Customer)
+      .WithMany(c => c.Orders)
+      .HasForeignKey(o => o.CustomerId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Order -> Address (optional 1:many)
+    mb.Entity<Order>()
+      .HasOne(o => o.ShippingAddress)
+      .WithMany()
+      .HasForeignKey(o => o.ShippingAddressId)
+      .OnDelete(DeleteBehavior.SetNull);
+
+    // Order -> OrderItem (1:many)
+    mb.Entity<OrderItem>()
+      .HasOne(oi => oi.Order)
+      .WithMany(o => o.Items)
+      .HasForeignKey(oi => oi.OrderId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Product -> OrderItem (1:many, but RESTRICT deletion)
+    mb.Entity<OrderItem>()
+      .HasOne(oi => oi.Product)
+      .WithMany(p => p.OrderItems)
+      .HasForeignKey(oi => oi.ProductId)
+      .OnDelete(DeleteBehavior.Restrict);
+
+    // Review (1:many both ways)
+    mb.Entity<Review>()
+      .HasOne(r => r.Product)
+      .WithMany(p => p.Reviews)
+      .HasForeignKey(r => r.ProductId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    mb.Entity<Review>()
+      .HasOne(r => r.Customer)
+      .WithMany(c => c.Reviews)
+      .HasForeignKey(r => r.CustomerId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    // Unique index: one review per product per customer
+    mb.Entity<Review>()
+      .HasIndex(r => new { r.ProductId, r.CustomerId })
+      .IsUnique();
+  }
+}</code>
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>A well-designed domain model reflects your business requirements through relationships and constraints. The e-commerce model shows 1:many (Category-Product, Customer-Order), multiple navigations from the same entity (Order has ShippingAddress and BillingAddress), and a junction entity with payload (OrderItem). Study this model—you'll see it throughout the rest of the book.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-num">07</div>
+      <h2>Object-Relational Impedance Mismatch</h2>
+      <p class="section-text">
+        There's a fundamental tension between SQL and C# that no ORM can fully eliminate. Relational databases think in terms of normalized tables and data. Object-oriented programming thinks in terms of hierarchical object graphs. The "impedance mismatch" is the gap between these two worldviews. Understanding this gap makes you a better architect and helps you make intelligent trade-offs.
+      </p>
+      <p class="section-text">
+        <em>Identity mismatch:</em> In SQL, two rows are equal if all columns match. In C#, two objects are equal if they're the same reference (by default). EF uses primary keys as identity, but this can cause confusion. <em>Granularity mismatch:</em> SQL tables are flat; C# objects can have complex nested properties. Mapping an Order with an OrderItem collection to relational tables requires denormalization or junction tables. <em>Inheritance mismatch:</em> SQL has no inheritance; C# does. You must choose a mapping strategy (table per hierarchy, table per type, table per concrete class). <em>Navigation mismatch:</em> C# navigations are one-way; databases are symmetric. An Order navigates to Customer, and Customer navigates to Orders, but the FK column is only in Orders.
+      </p>
+      <p class="section-text">
+        ORMs exist because of this mismatch. They translate between the two worlds, handling the gaps. But perfect translation is impossible. Sometimes you need to drop to raw SQL for performance. Sometimes your C# model can't perfectly match your SQL schema without awkward mappings. This is why hybrid approaches (Entity Framework for simple queries, Dapper for complex ones) are common in production systems.
+      </p>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Identity Mismatch Example</span>
+        <code>// Identity mismatch: reference vs data equality
+
+// Two different instances, same data
+var customer1 = new Customer { Id = 5, Name = "Alice" };
+var customer2 = new Customer { Id = 5, Name = "Alice" };
+
+Console.WriteLine(ReferenceEquals(customer1, customer2)); // false
+Console.WriteLine(customer1 == customer2); // false (by default)
+Console.WriteLine(customer1.Id == customer2.Id); // true
+
+// After loading from database, EF uses change tracking
+var context = new DbContext();
+var loaded1 = context.Customers.Find(5);
+var loaded2 = context.Customers.Find(5);
+
+Console.WriteLine(ReferenceEquals(loaded1, loaded2)); // true!
+// EF returns the same instance from its identity map
+
+// But outside the context, identity is lost
+var detached1 = loaded1;
+context.DetachAll();  // Detach from tracking
+var detached2 = loaded2;
+
+Console.WriteLine(ReferenceEquals(detached1, detached2)); // false
+
+// SQL sees it simply as data
+// SELECT * FROM Customers WHERE Id = 5
+// Always returns the same row data, but different Result objects      </div>
+
+      <div class="code-block-single csharp">
+        <span class="code-label">C#: Granularity and Inheritance Mismatch</span>
+        <code>// Granularity mismatch: flat tables vs nested objects
+// SQL is flat:
+CREATE TABLE Employees (
+  Id INT,
+  Name NVARCHAR(100),
+  Street NVARCHAR(100),
+  City NVARCHAR(50),
+  Country NVARCHAR(50)
+);
+
+// C# can be hierarchical:
+public class Address
+{
+  public string Street { get; set; }
+  public string City { get; set; }
+  public string Country { get; set; }
+}
+
+public class Employee
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public Address HomeAddress { get; set; }  // Nested object
+}
+
+// EF maps the nested object back to flat columns
+// This is convenient in C# but requires careful mapping
+
+// Inheritance mismatch: no inheritance in SQL
+// C#:
+public abstract class Animal
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+}
+
+public class Dog : Animal
+{
+  public string Breed { get; set; }
+}
+
+public class Cat : Animal
+{
+  public string FurColor { get; set; }
+}
+
+// SQL has no inheritance. You must choose a mapping:
+
+// Option 1: Table per hierarchy (one Animals table with discriminator)
+CREATE TABLE Animals (
+  Id INT PRIMARY KEY,
+  Name NVARCHAR(100),
+  Discriminator NVARCHAR(20),  -- 'Dog' or 'Cat'
+  Breed NVARCHAR(100),           -- NULL for cats
+  FurColor NVARCHAR(100)         -- NULL for dogs
+);
+
+// Option 2: Table per type (one Animals + one Dogs + one Cats)
+CREATE TABLE Animals (
+  Id INT PRIMARY KEY,
+  Name NVARCHAR(100)
+);
+
+CREATE TABLE Dogs (
+  Id INT PRIMARY KEY,
+  Breed NVARCHAR(100),
+  FOREIGN KEY (Id) REFERENCES Animals(Id)
+);
+
+// Option 3: Table per concrete type (Dogs and Cats only, no Animals)
+CREATE TABLE Dogs (
+  Id INT PRIMARY KEY,
+  Name NVARCHAR(100),
+  Breed NVARCHAR(100)
+);
+
+CREATE TABLE Cats (
+  Id INT PRIMARY KEY,
+  Name NVARCHAR(100),
+  FurColor NVARCHAR(100)
+);
+
+// Each has tradeoffs: storage, query efficiency, complexity
+
+// Each has tradeoffs: storage, query efficiency, complexity
+      </div>
+
+      <div class="key-insight">
+        <strong>Key Insight:</strong>
+        <p>The impedance mismatch is why ORMs exist and why they're imperfect. SQL and C# have fundamentally different paradigms. Accept that perfect mapping is impossible. Use ORMs for typical CRUD operations, drop to raw SQL when needed for performance or complex queries. Hybrid approaches are the norm in mature systems, not a failure of your ORM.</p>
+      </div>
+
+      <p class="section-text">
+        The most important insight is this: there's no such thing as a "perfect" mapping between SQL and C#. Every mapping strategy involves trade-offs. A well-designed system acknowledges this and uses the right tool for each job. For simple entity CRUD, Entity Framework's conventions and Fluent API shine. For complex queries, reporting, or performance-critical code, raw SQL or Dapper might be better. The best developers think in both worlds and move fluidly between them.
+      </p>
+    </section>
+
+    <div class="key-takeaways">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>One-to-one relationships separate concerns or optional data. Use a unique foreign key in the dependent table. Include navigations on both sides for natural access.</li>
+        <li>One-to-many is the most common relationship. Use Include() to eager-load collections and avoid N+1 queries. Project to DTOs when you only need summary data.</li>
+        <li>Many-to-many without payload use skip navigations (EF5+). The junction table is created automatically. Skip navigations provide the simplest API.</li>
+        <li>Many-to-many with payload requires an explicit junction entity in C#. The junction entity becomes a first-class domain model with its own business logic and properties.</li>
+        <li>Use ThenInclude() to eagerly load related data through junction entities. This avoids N+1 queries when you need deeply nested data.</li>
+        <li>Always add a unique constraint to prevent duplicate records in many-to-many relationships (e.g., a student can't enroll in the same course twice).</li>
+        <li>Query relationships using the approach that fits: SQL JOINs for raw control, LINQ method syntax for composability, LINQ query syntax for clarity, Dapper for fine-grained control.</li>
+        <li>The e-commerce model (Category, Product, Customer, Order, OrderItem, Review) demonstrates real-world relationships. Study this model and adapt it for your domain.</li>
+        <li>The object-relational impedance mismatch is fundamental. No ORM eliminates it. Use the right tool for each job: EF for typical CRUD, raw SQL for complex queries, Dapper for control.</li>
+        <li>Hybrid approaches are standard in production systems. Don't force every query through the ORM. Use Dapper or raw SQL when needed. Flexibility is more important than purity.</li>
+      </ul>
+    </div>
+
+    <div class="chapter-nav">
+      <a href="ch03-foreign-keys-vs-references.html" class="nav-item prev">
+        <span class="nav-label">← Previous Chapter</span>
+        <span class="nav-title">Foreign Keys vs Object References</span>
+      </a>
+      <a href="ch05-select-projections.html" class="nav-item next">
+        <span class="nav-label">Next Chapter →</span>
+        <span class="nav-title">SELECT & Projections</span>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access in .NET. Learn to think in both SQL and object-oriented programming, and master LINQ, Entity Framework, and Dapper.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#chapters">All Chapters</a></li>
+          <li><a href="https://github.com/yousafzainasir9">GitHub</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Topics Covered</h4>
+        <ul>
+          <li><a href="#">LINQ & Lambda Expressions</a></li>
+          <li><a href="#">Entity Framework Core</a></li>
+          <li><a href="#">Dapper & Micro-ORMs</a></li>
+          <li><a href="#">Query Optimization</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 SQL to C#. Built for developers who think in both SQL and C#.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

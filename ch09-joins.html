@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 9: JOINs → .Join() & Navigation Properties — SQL to C#</title>
+<meta name="description" content="Master SQL JOINs with LINQ. Learn INNER, LEFT, CROSS joins with method syntax, query syntax, and Entity Framework navigation properties. Comprehensive comparison of all join types.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp,
+.code-block.csharp-method,
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 28px;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+}
+
+.comparison-table th {
+  background: var(--bg3);
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+
+.comparison-table td {
+  padding: 12px;
+  border: 1px solid var(--rule);
+  color: var(--ink2);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 09</div>
+  <h1>JOINs → .Join() & Navigation Properties</h1>
+  <p class="chapter-desc">Master SQL JOINs by understanding how LINQ implements them through method syntax, query syntax, and Entity Framework navigation properties. Learn when to use explicit joins versus navigation properties, and how join semantics differ across SQL and C#.</p>
+</div>
+
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>INNER JOIN with explicit .Join() method syntax and query syntax</li>
+    <li>LEFT JOIN using GroupJoin and query syntax with DefaultIfEmpty()</li>
+    <li>CROSS JOIN with SelectMany cartesian products</li>
+    <li>Multi-table JOINs with chained joins and Include().ThenInclude()</li>
+    <li>Self-joins comparing employee-manager hierarchies</li>
+    <li>Composite key joins on multiple columns</li>
+    <li>Navigation properties versus explicit joins: decision framework</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-num">01 — INNER JOIN</div>
+  <h2>INNER JOIN: .Join() & Explicit Relationships</h2>
+
+  <div class="section-text">
+    <p>An INNER JOIN returns only rows where both tables have matching values. In LINQ, this is the most explicit join type. You can write INNER JOINs three ways: with the .Join() method, with query syntax from/join, or by navigating properties in Entity Framework. Each approach has different readability and performance characteristics.</p>
+    <p>The .Join() method is closest to SQL's mechanical behavior. It takes four parameters: the outer collection, the outer key selector, the inner key selector, and a result selector. Query syntax, by contrast, reads more naturally and often produces cleaner code for developers transitioning from SQL.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL</span>
+      <pre><code>SELECT
+  c.CustomerId,
+  c.Name,
+  o.OrderId,
+  o.OrderDate
+FROM Customers c
+INNER JOIN Orders o
+  ON c.CustomerId = o.CustomerId
+ORDER BY c.CustomerId;</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = customers
+  .Join(
+    orders,
+    c => c.CustomerId,
+    o => o.CustomerId,
+    (c, o) => new {
+      c.CustomerId,
+      c.Name,
+      o.OrderId,
+      o.OrderDate
+    }
+  )
+  .OrderBy(x => x.CustomerId)
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from c in customers
+  join o in orders
+    on c.CustomerId equals o.CustomerId
+  orderby c.CustomerId
+  select new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Point</strong>
+    <p>Query syntax's join clause with equals keyword is strongly typed and leverages C#'s type system. It prevents the subtle bugs that arise from swapped selectors in .Join(). The compiler ensures both sides of equals have compatible types.</p>
+  </div>
+
+  <div class="section-text">
+    <p>In Entity Framework, navigation properties make explicit joins unnecessary. If Customer has an Orders collection, you can simply iterate or filter through it. However, understanding explicit joins remains critical when working with disconnected objects or when your model doesn't expose a navigation property. The .Join() method is also useful when you need to join on conditions not represented in the model.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">EF with Navigation Property</span>
+      <pre><code>// When Customers has a virtual Orders property
+var result = customers
+  .SelectMany(c => c.Orders, (c, o) => new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate
+  })
+  .OrderBy(x => x.CustomerId)
+  .ToList();
+
+// Or using Include for better control and clarity
+var result = context.Customers
+  .Include(c => c.Orders)
+  .SelectMany(c => c.Orders, (c, o) => new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate
+  })
+  .OrderBy(x => x.CustomerId)
+  .ToList();
+
+// Navigation properties in query syntax:
+var result = (
+  from c in context.Customers
+  from o in c.Orders
+  orderby c.CustomerId
+  select new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>When using Entity Framework, prefer navigation properties and Include() over explicit .Join() calls. The Include pattern generates more efficient SQL and is more maintainable. The compiler translates Include().ThenInclude() chains into optimized LEFT JOINs. Use explicit .Join() when you're working with disconnected DbContexts or when you need fine-grained control over the join semantics that navigation properties don't support.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">02 — LEFT JOIN</div>
+  <h2>LEFT JOIN: GroupJoin & Query Syntax Superiority</h2>
+
+  <div class="section-text">
+    <p>A LEFT JOIN returns all rows from the left table plus matching rows from the right table. In SQL, this is straightforward with the LEFT JOIN keyword. In LINQ method syntax, it's cumbersome: you must use GroupJoin followed by SelectMany and DefaultIfEmpty. This is where query syntax shines—it reads nearly identically to SQL and requires no knowledge of the GroupJoin/DefaultIfEmpty pattern.</p>
+    <p>The key difference between INNER and LEFT JOINs is what happens when there's no match. In SQL, LEFT JOIN includes the left row with NULL values for right table columns. In LINQ, you use DefaultIfEmpty() to provide an empty collection when there are no matches, then flatten it with SelectMany to restore single-row results.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL LEFT JOIN</span>
+      <pre><code>SELECT
+  c.CustomerId,
+  c.Name,
+  o.OrderId,
+  o.OrderDate
+FROM Customers c
+LEFT JOIN Orders o
+  ON c.CustomerId = o.CustomerId
+ORDER BY c.CustomerId;</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Query Syntax Advantage</strong>
+    <p>LEFT JOIN is where LINQ query syntax significantly outperforms method syntax. The method syntax equivalent requires three operations (GroupJoin, SelectMany, DefaultIfEmpty) whereas query syntax needs a single into clause followed by DefaultIfEmpty. Always prefer query syntax for LEFT JOINs unless you have a specific reason to use method chaining.</p>
+  </div>
+
+  <div class="section-text">
+    <p>Method syntax for LEFT JOIN requires careful composition. First, GroupJoin collects all matching orders for each customer into a grouped collection. Then DefaultIfEmpty provides an empty collection if a customer has no orders. Finally, SelectMany flattens the grouped structure back into individual rows, with null-coalesced values for customers without orders.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax (Complex)</span>
+      <pre><code>var result = customers
+  .GroupJoin(
+    orders,
+    c => c.CustomerId,
+    o => o.CustomerId,
+    (c, ordersGroup) => new { c, ordersGroup }
+  )
+  .SelectMany(
+    x => x.ordersGroup.DefaultIfEmpty(),
+    (x, o) => new {
+      x.c.CustomerId,
+      x.c.Name,
+      OrderId = o?.OrderId,
+      OrderDate = o?.OrderDate
+    }
+  )
+  .OrderBy(x => x.CustomerId)
+  .ToList();
+
+// This is equivalent to the SQL but harder to read and maintain</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Compare that to query syntax, which is substantially cleaner and more similar to SQL:</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax (Clean)</span>
+      <pre><code>var result = (
+  from c in customers
+  join o in orders
+    on c.CustomerId equals o.CustomerId
+    into customerOrders
+  from co in customerOrders.DefaultIfEmpty()
+  orderby c.CustomerId
+  select new {
+    c.CustomerId,
+    c.Name,
+    OrderId = co?.OrderId,
+    OrderDate = co?.OrderDate
+  }
+).ToList();
+
+// The 'into' clause groups matches. DefaultIfEmpty adds empty
+// when no matches. Very similar to SQL LEFT JOIN semantics.</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>In Entity Framework with navigation properties, LEFT JOIN behavior comes naturally. The Include method loads related data, and then you project or filter as needed. If you want all customers even those without orders, you use DefaultIfEmpty on the collection side after Include. This pattern is memory-efficient when used correctly.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">EF LEFT JOIN Patterns</span>
+      <pre><code>// Pattern 1: Include then SelectMany with DefaultIfEmpty
+var result = context.Customers
+  .Include(c => c.Orders)
+  .AsEnumerable()
+  .SelectMany(
+    c => c.Orders.DefaultIfEmpty(),
+    (c, o) => new {
+      c.CustomerId,
+      c.Name,
+      OrderId = o?.OrderId,
+      OrderDate = o?.OrderDate
+    }
+  )
+  .OrderBy(x => x.CustomerId)
+  .ToList();
+
+// Pattern 2: Query syntax after Include
+var result = (
+  from c in context.Customers.Include(c => c.Orders)
+  from o in c.Orders.DefaultIfEmpty()
+  orderby c.CustomerId
+  select new {
+    c.CustomerId,
+    c.Name,
+    OrderId = o?.OrderId,
+    OrderDate = o?.OrderDate
+  }
+).ToList();
+
+// Pattern 3: Using explicit LEFT JOIN syntax (still on DbSet)
+var result = (
+  from c in context.Customers
+  join o in context.Orders
+    on c.CustomerId equals o.CustomerId
+    into customerOrders
+  from co in customerOrders.DefaultIfEmpty()
+  orderby c.CustomerId
+  select new {
+    c.CustomerId,
+    c.Name,
+    OrderId = co?.OrderId,
+    OrderDate = co?.OrderDate
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Note the AsEnumerable() call in Pattern 1. Entity Framework's query provider cannot translate DefaultIfEmpty() to SQL directly when used with navigation property flattening. By switching to LINQ to Objects, you evaluate the join in memory after fetching the data. For large datasets, this may be inefficient. Pattern 3 (explicit LEFT JOIN on DbSets) allows EF to generate the SQL directly without AsEnumerable. Measure with SQL logging enabled to see which pattern generates the most efficient query.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">03 — CROSS JOIN</div>
+  <h2>CROSS JOIN: Cartesian Products with SelectMany</h2>
+
+  <div class="section-text">
+    <p>A CROSS JOIN produces a cartesian product: every row from the first table combined with every row from the second table. In SQL, you write CROSS JOIN or omit the ON clause entirely. In LINQ, you use SelectMany (or nested from clauses) to achieve the same result. The resulting set size is always rows(left) × rows(right).</p>
+    <p>Cross joins are less common than INNER or LEFT joins, but they're useful for generating combinations—all color and size variants of a product, for example, or creating a date range by crossing a dates table with a times table. They're also useful in generating test data or permission matrices.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL CROSS JOIN</span>
+      <pre><code>SELECT
+  p.ProductId,
+  p.Name,
+  c.ColorId,
+  c.ColorName
+FROM Products p
+CROSS JOIN Colors c;</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = products
+  .SelectMany(
+    p => colors,
+    (p, c) => new {
+      p.ProductId,
+      p.Name,
+      c.ColorId,
+      c.ColorName
+    }
+  )
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from p in products
+  from c in colors
+  select new {
+    p.ProductId,
+    p.Name,
+    c.ColorId,
+    c.ColorName
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>SelectMany Mechanics</strong>
+    <p>SelectMany flattens nested collections into a single stream. When you provide a second selector, it combines elements from both collections. This is precisely how CROSS JOIN works in SQL. The dual nested from syntax in query syntax is syntactic sugar for SelectMany.</p>
+  </div>
+
+  <div class="section-text">
+    <p>A practical example: imagine you have sizes (S, M, L, XL) and colors (Red, Blue, Green, Black). A CROSS JOIN creates all 16 combinations: S+Red, S+Blue, M+Red, M+Blue, and so on. You'd use this when creating product variants, generating shift schedules by crossing days with time slots, or building permission matrices from users and resources.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Practical Example: Product Variants</span>
+      <pre><code>var sizes = new[] { "S", "M", "L", "XL" };
+var colors = new[] { "Red", "Blue", "Green", "Black" };
+
+// Method syntax
+var variants = sizes
+  .SelectMany(size => colors, (size, color) => new {
+    SKU = $"{size}-{color}",
+    Size = size,
+    Color = color
+  })
+  .ToList();
+
+// Query syntax (more readable)
+var variants = (
+  from size in sizes
+  from color in colors
+  select new {
+    SKU = $"{size}-{color}",
+    Size = size,
+    Color = color
+  }
+).ToList();
+
+// Result: 16 combinations (4 sizes × 4 colors)
+// S-Red, S-Blue, S-Green, S-Black,
+// M-Red, M-Blue, M-Green, M-Black, ... etc</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Be cautious with CROSS JOINs on large tables. The result set grows exponentially. If you have 1000 products and 100 colors, a CROSS JOIN produces 100,000 rows. This is often a sign that you need a different approach, such as filtering early, using a more targeted query, or breaking the operation into smaller batches. Always measure memory usage when dealing with cartesian products of large datasets.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">04 — MULTI-TABLE JOINS</div>
+  <h2>Multi-Table JOINs: Chaining & ThenInclude</h2>
+
+  <div class="section-text">
+    <p>Real-world queries often join three, four, or more tables. Joining Orders to Customers is simple, but joining Orders to OrderItems to Products requires chaining joins. In LINQ, you can chain .Join() calls, nest from/join clauses, or use Include().ThenInclude() in Entity Framework for automatic navigation through relationships. The choice between explicit joins and navigation properties becomes more important as the number of tables increases.</p>
+    <p>Navigation properties reduce boilerplate and improve readability, while explicit joins give you precise control over which rows are included and how matches are performed. In most cases, navigation properties are preferable in EF Core because the framework optimizes the generated SQL.</p>
+  </div>
+
+  <div class="section-text">
+    <p>Consider a query: get all order items and their products for customers in Seattle. You need to join Customers → Orders → OrderItems → Products, filtering by city. This is a realistic multi-table scenario.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL Three-Table Join</span>
+      <pre><code>SELECT
+  c.CustomerId,
+  c.Name,
+  o.OrderId,
+  o.OrderDate,
+  oi.OrderItemId,
+  oi.Quantity,
+  p.ProductId,
+  p.ProductName
+FROM Customers c
+INNER JOIN Orders o ON c.CustomerId = o.CustomerId
+INNER JOIN OrderItems oi ON o.OrderId = oi.OrderId
+INNER JOIN Products p ON oi.ProductId = p.ProductId
+WHERE c.City = 'Seattle'
+ORDER BY o.OrderDate DESC;</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Method syntax becomes verbose with multiple joins. Each additional join requires more nesting and intermediate variable tracking:</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax (Chained & Complex)</span>
+      <pre><code>var result = customers
+  .Where(c => c.City == "Seattle")
+  .Join(
+    orders,
+    c => c.CustomerId,
+    o => o.CustomerId,
+    (c, o) => new { c, o }
+  )
+  .Join(
+    orderItems,
+    co => co.o.OrderId,
+    oi => oi.OrderId,
+    (co, oi) => new { co.c, co.o, oi }
+  )
+  .Join(
+    products,
+    cooi => cooi.oi.ProductId,
+    p => p.ProductId,
+    (cooi, p) => new {
+      cooi.c.CustomerId,
+      cooi.c.Name,
+      cooi.o.OrderId,
+      cooi.o.OrderDate,
+      cooi.oi.OrderItemId,
+      cooi.oi.Quantity,
+      p.ProductId,
+      p.ProductName
+    }
+  )
+  .OrderByDescending(x => x.OrderDate)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Query Syntax for Multi-Joins</strong>
+    <p>Query syntax scales much better than method syntax for multi-table joins. Each additional table is a single join clause, not nested selectors. The variable names remain readable, and the structure mirrors SQL almost exactly.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax (Cleaner & More Maintainable)</span>
+      <pre><code>var result = (
+  from c in customers
+  where c.City == "Seattle"
+  join o in orders on c.CustomerId equals o.CustomerId
+  join oi in orderItems on o.OrderId equals oi.OrderId
+  join p in products on oi.ProductId equals p.ProductId
+  orderby o.OrderDate descending
+  select new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate,
+    oi.OrderItemId,
+    oi.Quantity,
+    p.ProductId,
+    p.ProductName
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>In Entity Framework with navigation properties, the code becomes even simpler and more efficient. If your model has Orders → OrderItems → Products relationships properly configured, you can navigate directly through the graph:</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">EF with Include().ThenInclude() (Best Approach)</span>
+      <pre><code>// Load the full object graph with Include chains
+var customerData = context.Customers
+  .Where(c => c.City == "Seattle")
+  .Include(c => c.Orders)
+    .ThenInclude(o => o.OrderItems)
+    .ThenInclude(oi => oi.Product)
+  .ToList();
+
+// Then project to DTO in memory
+var result = customerData
+  .SelectMany(c => c.Orders)
+  .SelectMany(o => o.OrderItems, (o, oi) => new {
+    CustomerId = o.Customer.CustomerId,
+    CustomerName = o.Customer.Name,
+    o.OrderId,
+    o.OrderDate,
+    oi.OrderItemId,
+    oi.Quantity,
+    ProductId = oi.Product.ProductId,
+    ProductName = oi.Product.ProductName
+  })
+  .OrderByDescending(x => x.OrderDate)
+  .ToList();
+
+// Or using query syntax on DbSets (runs on server)
+var result = (
+  from c in context.Customers
+  where c.City == "Seattle"
+  from o in c.Orders
+  from oi in o.OrderItems
+  join p in context.Products on oi.ProductId equals p.ProductId
+  orderby o.OrderDate descending
+  select new {
+    c.CustomerId,
+    c.Name,
+    o.OrderId,
+    o.OrderDate,
+    oi.OrderItemId,
+    oi.Quantity,
+    p.ProductId,
+    p.ProductName
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>The Include().ThenInclude() approach tells Entity Framework exactly which related data to load, reducing the "N+1 query" problem. Instead of issuing one query per order to fetch items, one query per item to fetch products, you fetch everything in typically 2-3 database round trips. The generated SQL uses efficient LEFT JOINs internally. This is the recommended approach for most EF Core scenarios because it balances code clarity with query efficiency.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">05 — SELF-JOIN</div>
+  <h2>Self-Join: Employee-Manager Hierarchies</h2>
+
+  <div class="section-text">
+    <p>A self-join connects a table to itself. The classic example is an Employee table where each employee has a ManagerId pointing to another employee row. To find the employee name and their manager's name, you join the table to itself. Self-joins are common in hierarchical data: organizational charts, category hierarchies, product taxonomy, or discussion threads where a post can reference a parent post.</p>
+    <p>In LINQ, a self-join looks like a regular join, but both sides of the join reference the same source collection. The complexity lies in managing the references and ensuring your projection captures the right relationships.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL Self-Join</span>
+      <pre><code>SELECT
+  e.EmployeeId,
+  e.Name AS EmployeeName,
+  m.EmployeeId AS ManagerId,
+  m.Name AS ManagerName
+FROM Employees e
+LEFT JOIN Employees m
+  ON e.ManagerId = m.EmployeeId;</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = employees
+  .GroupJoin(
+    employees,
+    e => e.ManagerId,
+    m => m.EmployeeId,
+    (e, managers) => new { e, managers }
+  )
+  .SelectMany(
+    x => x.managers.DefaultIfEmpty(),
+    (x, m) => new {
+      x.e.EmployeeId,
+      EmployeeName = x.e.Name,
+      ManagerId = m?.EmployeeId,
+      ManagerName = m?.Name
+    }
+  )
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from e in employees
+  join m in employees
+    on e.ManagerId equals m.EmployeeId
+    into managersGroup
+  from manager in managersGroup.DefaultIfEmpty()
+  select new {
+    e.EmployeeId,
+    EmployeeName = e.Name,
+    ManagerId = manager?.EmployeeId,
+    ManagerName = manager?.Name
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Navigation Property Self-Join</strong>
+    <p>In Entity Framework, if Employee has a Manager navigation property (a reference back to another Employee), you can access it directly without a join. No explicit join syntax is needed—you simply follow the navigation property through the object graph.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">EF Self-Join with Navigation Properties</span>
+      <pre><code>// Entity model with self-referential relationship:
+public class Employee {
+  public int EmployeeId { get; set; }
+  public string Name { get; set; }
+  public int? ManagerId { get; set; }
+
+  // Navigation back to manager
+  public virtual Employee Manager { get; set; }
+
+  // Navigation to employees reporting to this person
+  public virtual ICollection<Employee> Reports { get; set; }
+}
+
+// Query using navigation properties:
+var result = context.Employees
+  .Include(e => e.Manager)
+  .Select(e => new {
+    e.EmployeeId,
+    EmployeeName = e.Name,
+    ManagerId = e.Manager.EmployeeId,
+    ManagerName = e.Manager.Name
+  })
+  .ToList();
+
+// With DefaultIfEmpty for true LEFT JOIN (null managers):
+var result = (
+  from e in context.Employees.Include(e => e.Manager)
+  from m in new[] { e.Manager }.DefaultIfEmpty()
+  select new {
+    e.EmployeeId,
+    EmployeeName = e.Name,
+    ManagerId = m?.EmployeeId,
+    ManagerName = m?.Name
+  }
+).ToList();
+
+// Multi-level hierarchy (employee, manager, manager's manager):
+var result = context.Employees
+  .Include(e => e.Manager)
+    .ThenInclude(m => m.Manager)
+  .Select(e => new {
+    e.EmployeeId,
+    EmployeeName = e.Name,
+    ManagerId = e.Manager?.EmployeeId,
+    ManagerName = e.Manager?.Name,
+    GrandManagerId = e.Manager?.Manager?.EmployeeId,
+    GrandManagerName = e.Manager?.Manager?.Name
+  })
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Self-joins become complex when you need multi-level hierarchies (employees, their managers, and their managers' managers). Navigation properties help navigate the graph, but deep hierarchies can cause cartesian explosions if not carefully projected. Use Include wisely to load only the levels you need. For very deep hierarchies (e.g., category → parent category → grandparent category), consider denormalization or recursive Common Table Expressions (CTEs) in the database.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">06 — COMPOSITE KEY JOINS</div>
+  <h2>Composite Key JOINs: Multiple Join Conditions</h2>
+
+  <div class="section-text">
+    <p>Some tables are identified by multiple columns, called a composite key (or compound key). When joining on composite keys, you must match all key columns. In SQL, you use multiple conditions in the ON clause separated by AND. In LINQ, you create anonymous objects with all key components to match against.</p>
+    <p>Composite keys are common in bridge tables (many-to-many mappings), audit logs (where entries are identified by entity ID + timestamp), partitioned tables (where identity requires a partition key plus an ID), or any normalized schema with multi-part identities.</p>
+  </div>
+
+  <div class="triple-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL Composite Join</span>
+      <pre><code>SELECT
+  o.OrderId,
+  o.CustomerId,
+  oi.OrderItemId,
+  oi.Quantity
+FROM Orders o
+INNER JOIN OrderItems oi
+  ON o.OrderId = oi.OrderId
+  AND o.CustomerId = oi.CustomerId;</code></pre>
+    </div>
+
+    <div class="code-block csharp-method">
+      <span class="code-label">Method Syntax</span>
+      <pre><code>var result = orders
+  .Join(
+    orderItems,
+    o => new { o.OrderId, o.CustomerId },
+    oi => new { oi.OrderId, oi.CustomerId },
+    (o, oi) => new {
+      o.OrderId,
+      o.CustomerId,
+      oi.OrderItemId,
+      oi.Quantity
+    }
+  )
+  .ToList();</code></pre>
+    </div>
+
+    <div class="code-block csharp-query">
+      <span class="code-label">Query Syntax</span>
+      <pre><code>var result = (
+  from o in orders
+  join oi in orderItems
+    on new { o.OrderId, o.CustomerId }
+    equals new { oi.OrderId, oi.CustomerId }
+  select new {
+    o.OrderId,
+    o.CustomerId,
+    oi.OrderItemId,
+    oi.Quantity
+  }
+).ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Anonymous Object Keys</strong>
+    <p>C# requires anonymous objects with matching property names and types for the equals operator to work correctly. If your keys are named differently (OrderId vs OId), you must explicitly create the anonymous objects with consistent property names. The compiler compares the entire object for equality, not individual fields.</p>
+  </div>
+
+  <div class="section-text">
+    <p>A practical example: a StudentGrades table keyed by (StudentId, CourseId, Semester). Joining to a Courses table requires matching all three components. This is common in academic systems where the same course is offered each semester with potentially different instructors or materials.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Three-Component Composite Key Example</span>
+      <pre><code>// Entities:
+public class StudentGrade {
+  public int StudentId { get; set; }
+  public int CourseId { get; set; }
+  public int Semester { get; set; }
+  public decimal Grade { get; set; }
+}
+
+public class Course {
+  public int CourseId { get; set; }
+  public int Semester { get; set; }
+  public string CourseName { get; set; }
+  public string Instructor { get; set; }
+}
+
+// Query with composite key joining 3 columns:
+var result = (
+  from sg in studentGrades
+  join c in courses
+    on new { sg.CourseId, sg.Semester }
+    equals new { c.CourseId, c.Semester }
+  select new {
+    sg.StudentId,
+    sg.CourseId,
+    sg.Semester,
+    sg.Grade,
+    c.CourseName,
+    c.Instructor
+  }
+).ToList();
+
+// Method syntax (less readable but equivalent):
+var result = studentGrades
+  .Join(
+    courses,
+    sg => new { sg.CourseId, sg.Semester },
+    c => new { c.CourseId, c.Semester },
+    (sg, c) => new {
+      sg.StudentId,
+      sg.CourseId,
+      sg.Semester,
+      sg.Grade,
+      c.CourseName,
+      c.Instructor
+    }
+  )
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Composite keys are straightforward once you remember to create anonymous objects with matching property names and types. The compiler ensures type safety on both sides of the equals, and the behavior is identical to SQL's AND of multiple ON conditions. When the number of key columns exceeds 3-4, consider whether denormalization or a surrogate key would simplify your model.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">07 — DECISION FRAMEWORK</div>
+  <h2>Navigation Properties vs. Explicit Joins: When to Use Each</h2>
+
+  <div class="section-text">
+    <p>You now have multiple tools for joining: explicit .Join(), query syntax join, navigation properties with Include(), and SelectMany with navigation. How do you choose? The answer depends on context, performance requirements, and code readability. Here's a decision framework for selecting the right approach in different scenarios.</p>
+  </div>
+
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Approach</th>
+        <th>Readability</th>
+        <th>Performance</th>
+        <th>When to Use</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Navigation Property + SelectMany</strong></td>
+        <td>Excellent</td>
+        <td>Best (Include controls loading)</td>
+        <td>EF Core, simple hierarchies, one-to-many relationships</td>
+      </tr>
+      <tr>
+        <td><strong>Query Syntax join</strong></td>
+        <td>Excellent</td>
+        <td>Good (translates to SQL)</td>
+        <td>Multi-table joins, explicit conditions, LINQ to Objects, disconnected data</td>
+      </tr>
+      <tr>
+        <td><strong>Method .Join()</strong></td>
+        <td>Fair</td>
+        <td>Good (translates to SQL)</td>
+        <td>When method chaining is required, complex lambda expressions, dynamic joins</td>
+      </tr>
+      <tr>
+        <td><strong>Left Join with GroupJoin</strong></td>
+        <td>Poor</td>
+        <td>Good</td>
+        <td>Never use method syntax for LEFT—use query syntax instead</td>
+      </tr>
+      <tr>
+        <td><strong>Raw SQL (Dapper, FromSqlRaw)</strong></td>
+        <td>Excellent</td>
+        <td>Best (exact SQL control)</td>
+        <td>Complex joins, window functions, business logic in DB, performance-critical</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="key-insight">
+    <strong>EF Core Preference</strong>
+    <p>In Entity Framework Core, prefer navigation properties and Include().ThenInclude() over explicit joins. EF optimizes Include operations and generates efficient SQL. Explicit joins in EF often result in unexpected CROSS JOINs or Cartesian products when dealing with collections.</p>
+  </div>
+
+  <div class="section-text">
+    <p><strong>Use navigation properties when:</strong></p>
+    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 14px; margin-left: 20px;">
+      <li>Working with Entity Framework and your model has defined relationships</li>
+      <li>The join is one-to-many or one-to-one</li>
+      <li>You need Include() for eager loading to avoid N+1 queries</li>
+      <li>You're joining the same table to itself in a parent-child relationship</li>
+      <li>You want EF to optimize the generated SQL automatically</li>
+    </ul>
+  </div>
+
+  <div class="section-text">
+    <p><strong>Use query syntax join when:</strong></p>
+    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 14px; margin-left: 20px;">
+      <li>Joining multiple tables (three or more) in LINQ to Objects or Dapper results</li>
+      <li>Needing LEFT JOIN or FULL OUTER JOIN behavior</li>
+      <li>Working with LINQ to Objects (in-memory data)</li>
+      <li>Your model doesn't expose navigation properties</li>
+      <li>You need precise control over join conditions (composite keys, complex predicates)</li>
+      <li>Transitioning from SQL and want readable, SQL-like syntax</li>
+    </ul>
+  </div>
+
+  <div class="section-text">
+    <p><strong>Use method .Join() when:</strong></p>
+    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 28px; margin-left: 20px;">
+      <li>Building dynamic queries with complex lambda expressions computed at runtime</li>
+      <li>You're already in a fluent chain and adding a join at the end is cleaner</li>
+      <li>You have a reusable join condition you want to parameterize</li>
+      <li>Combining multiple joins with complex intermediate projections</li>
+    </ul>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Decision Framework: Example Queries</span>
+      <pre><code>// Scenario 1: Simple parent-child in EF
+// Decision: Navigation property + Include
+var customers = context.Customers
+  .Include(c => c.Orders)
+  .ToList();
+
+// Scenario 2: Three-table join, in-memory data
+// Decision: Query syntax (readable and efficient)
+var result = (
+  from o in orders
+  join c in customers on o.CustomerId equals c.CustomerId
+  join p in products on o.ProductId equals p.ProductId
+  select new { o, c, p }
+).ToList();
+
+// Scenario 3: LEFT JOIN, all customers with optional orders
+// Decision: Query syntax with into/DefaultIfEmpty
+var result = (
+  from c in customers
+  join o in orders on c.CustomerId equals o.CustomerId into customerOrders
+  from co in customerOrders.DefaultIfEmpty()
+  select new { c, co }
+).ToList();
+
+// Scenario 4: Dynamic join condition from user input
+// Decision: Method .Join() for parameterized conditions
+Func<Customer, int> customerKeySelector = c => c.CustomerId;
+Func<Order, int> orderKeySelector = o => o.CustomerId;
+var result = customers
+  .Join(orders, customerKeySelector, orderKeySelector, (c, o) => new { c, o })
+  .ToList();
+
+// Scenario 5: Complex SQL needed, window functions, CTEs
+// Decision: Raw SQL or Dapper
+var result = context.Orders
+  .FromSqlRaw(
+    "SELECT * FROM Orders WHERE CustomerId = @id AND OrderDate > @date",
+    new SqlParameter("@id", customerId),
+    new SqlParameter("@date", DateTime.Now.AddYears(-1))
+  )
+  .ToList();
+
+// Scenario 6: Avoiding N+1 with deep include chains
+// Decision: Include().ThenInclude() chains
+var result = context.Customers
+  .Where(c => c.City == "Seattle")
+  .Include(c => c.Orders)
+    .ThenInclude(o => o.OrderItems)
+    .ThenInclude(oi => oi.Product)
+  .Include(c => c.Addresses)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Performance Measurement</strong>
+    <p>Navigation properties with Include() allow Entity Framework to generate a single, optimized query. Explicit joins in EF may result in multiple queries or inefficient SQL. Always measure with SQL logging enabled to see what SQL is generated. Use the Database.Log property or enable query logging in your DbContext to inspect generated queries.</p>
+  </div>
+</div>
+
+<div class="key-takeaways">
+  <h3>Key Takeaways</h3>
+  <ul>
+    <li>INNER JOINs are explicit with .Join() method syntax, but query syntax is more readable for complex joins</li>
+    <li>LEFT JOINs shine with query syntax using into/DefaultIfEmpty(). Avoid method syntax GroupJoin for readability</li>
+    <li>CROSS JOINs use SelectMany or multiple from clauses for cartesian products—be cautious with large datasets</li>
+    <li>Multi-table joins benefit from query syntax over chained .Join() calls in terms of readability</li>
+    <li>Self-joins and composite key joins use the same patterns as regular joins but with careful variable management</li>
+    <li>Prefer EF navigation properties and Include() over explicit joins in Entity Framework for optimal SQL generation</li>
+    <li>Query syntax scales better than method syntax as the number of joins increases</li>
+    <li>LEFT JOIN is where query syntax significantly outperforms method syntax due to the into/DefaultIfEmpty pattern</li>
+  </ul>
+</div>
+
+</div>
+
+<div class="chapter-nav">
+  <a href="ch08-orderby-sorting.html" class="nav-item prev">
+    <span class="nav-label">Previous Chapter</span>
+    <span class="nav-title">ORDER BY → Sorting</span>
+  </a>
+  <a href="ch10-subqueries.html" class="nav-item next">
+    <span class="nav-label">Next Chapter</span>
+    <span class="nav-title">Subqueries → Nested</span>
+  </a>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <p>SQL to C# • A comprehensive guide to translating SQL into LINQ and Entity Framework</p>
+    </div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 11: Window Functions → LINQ Workarounds — SQL to C#</title>
+<meta name="description" content="Master SQL window functions. Learn ROW_NUMBER, RANK, LAG/LEAD, running totals, and when to use raw SQL or Dapper because LINQ lacks native window function support.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp,
+.code-block.csharp-method,
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 11</div>
+  <h1>Window Functions → LINQ Workarounds</h1>
+  <p class="chapter-desc">Master SQL window functions and understand their limitations in LINQ. Learn ROW_NUMBER, RANK, LAG/LEAD, running totals, and when to drop to raw SQL because native window function support is unavailable in LINQ to SQL and EF.</p>
+</div>
+
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>What are window functions: OVER clause, PARTITION BY, ORDER BY semantics</li>
+    <li>ROW_NUMBER() — assigning unique sequence numbers within partitions</li>
+    <li>ROW_NUMBER with PARTITION BY — grouping and numbering logic</li>
+    <li>RANK and DENSE_RANK — handling ties and gaps in rankings</li>
+    <li>LAG and LEAD — accessing previous/next row values</li>
+    <li>Running totals and cumulative aggregates with scan patterns</li>
+    <li>Decision framework: when to use raw SQL versus LINQ workarounds</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-num">01 — WINDOW FUNCTIONS FUNDAMENTALS</div>
+  <h2>What Are Window Functions: Theory & OVER Clause</h2>
+
+  <div class="section-text">
+    <p>Window functions compute values over a set of rows related to the current row, without collapsing the result set. They execute a function (SUM, COUNT, RANK, ROW_NUMBER) over a "window" of rows defined by PARTITION BY and ORDER BY clauses. This is fundamentally different from GROUP BY, which collapses rows into groups.</p>
+    <p>The syntax is: FUNCTION() OVER (PARTITION BY column ORDER BY column). The PARTITION BY defines logical groups (like GROUP BY), and ORDER BY orders within each partition. The window function computes across rows that remain in the result set—no collapsing.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL Window Function Anatomy</span>
+      <pre><code>-- Core syntax: function OVER (PARTITION BY ... ORDER BY ...)
+SELECT
+  EmployeeId,
+  Name,
+  Salary,
+  Department,
+  SUM(Salary) OVER (PARTITION BY Department) AS DepartmentTotal,
+  SUM(Salary) OVER (PARTITION BY Department ORDER BY Salary) AS CumulativeSum,
+  ROW_NUMBER() OVER (PARTITION BY Department ORDER BY Salary DESC) AS RankInDept,
+  LAG(Salary) OVER (PARTITION BY Department ORDER BY HireDate) AS PreviousSalary
+FROM Employees;
+
+-- Example output:
+-- EmployeeId | Name   | Salary | Department | DepartmentTotal | CumulativeSum | RankInDept | PreviousSalary
+-- 1          | Alice  | 60000  | Sales      | 180000          | 60000         | 1          | NULL
+-- 2          | Bob    | 70000  | Sales      | 180000          | 130000        | 2          | 60000
+-- 3          | Carol  | 50000  | Sales      | 180000          | 180000        | 3          | 70000
+-- 4          | Dave   | 65000  | IT         | 140000          | 65000         | 1          | NULL
+-- 5          | Eve    | 75000  | IT         | 140000          | 140000        | 2          | 65000</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Critical Limitation: LINQ Has No Native Window Function Support</strong>
+    <p>LINQ to SQL and Entity Framework do NOT have native equivalents for window functions. There is no .RowNumber(), .Rank(), .LAG(), or .LEAD() method. When you need window functions, you must either use raw SQL with FromSqlRaw or Dapper, or implement approximations in C# (LINQ to Objects). This is a hard boundary of LINQ's expressiveness.</p>
+  </div>
+
+  <div class="section-text">
+    <p>Window functions are powerful because they allow side-by-side ranking, running totals, and neighbor access without the complexity of self-joins. Without them, you'd need multiple JOINs, GROUP BY with subqueries, or post-processing in memory.</p>
+    <p>The PARTITION BY clause creates logical groups without collapsing rows. The ORDER BY defines the sequence within each partition. Frame specifications (ROWS BETWEEN ...) further refine which rows are included in the function calculation.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">Window Function Concepts Illustrated</span>
+      <pre><code>-- PARTITION BY creates logical groups
+-- ORDER BY orders rows within partitions
+-- ROWS BETWEEN defines the window frame
+
+SELECT
+  OrderDate,
+  Amount,
+  -- Partition by month, compute running total within that month
+  SUM(Amount) OVER (
+    PARTITION BY MONTH(OrderDate)
+    ORDER BY OrderDate
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) AS MonthlyRunningTotal,
+
+  -- No partition, company-wide running total
+  SUM(Amount) OVER (
+    ORDER BY OrderDate
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+  ) AS CompanyRunningTotal,
+
+  -- Rank within region
+  RANK() OVER (
+    PARTITION BY Region
+    ORDER BY Amount DESC
+  ) AS RegionalRank
+FROM Orders;</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Understanding window functions is essential because many business requirements naturally map to them: "rank products by sales within each category", "show cumulative expenses by month", "compare each employee's salary to their predecessor's", "find the first and last order dates". Without window functions or their workarounds, these queries become complex and inefficient.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">02 — ROW_NUMBER</div>
+  <h2>ROW_NUMBER: Sequential Numbering Without LINQ</h2>
+
+  <div class="section-text">
+    <p>ROW_NUMBER() assigns a unique sequential number to each row within a partition, starting at 1. It's used for pagination, deduplication, and identifying "top N per group" scenarios. Unlike RANK or DENSE_RANK, ROW_NUMBER generates no ties—each row gets a unique number.</p>
+    <p>LINQ has no direct equivalent. You must use raw SQL (FromSqlRaw) or post-process in memory with Select(x => x, index) patterns.</p>
+  </div>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL ROW_NUMBER()</span>
+      <pre><code>SELECT
+  CustomerId,
+  Name,
+  OrderDate,
+  Amount,
+  ROW_NUMBER() OVER (
+    ORDER BY OrderDate DESC
+  ) AS OrderSequence
+FROM Orders;</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">Raw SQL (EF Core)</span>
+      <pre><code>var result = context.Orders
+  .FromSqlRaw(@"
+    SELECT CustomerId, Name, OrderDate, Amount,
+      ROW_NUMBER() OVER (ORDER BY OrderDate DESC) AS OrderSequence
+    FROM Orders
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Why No LINQ Equivalent?</strong>
+    <p>LINQ's .Select(x => x, index) provides index-based numbering in LINQ to Objects, but it runs client-side and requires loading all data into memory first. This defeats the purpose of window functions, which compute efficiently at the server level with indexing. Raw SQL is the correct approach here.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">ROW_NUMBER Approximation in LINQ to Objects</span>
+      <pre><code>// INEFFICIENT: Loads all orders into memory, then numbers them
+var orders = context.Orders.ToList(); // All data loaded
+var result = orders
+  .OrderByDescending(o => o.OrderDate)
+  .Select((o, index) => new {
+    o.CustomerId,
+    o.Name,
+    o.OrderDate,
+    o.Amount,
+    OrderSequence = index + 1
+  })
+  .ToList();
+
+// BETTER: Use raw SQL if available
+var result = context.Orders
+  .FromSqlRaw(@"
+    SELECT CustomerId, Name, OrderDate, Amount,
+      ROW_NUMBER() OVER (ORDER BY OrderDate DESC) AS OrderSequence
+    FROM Orders
+  ")
+  .ToList();
+
+// WORKAROUND with Dapper (if not using EF):
+using (var conn = new SqlConnection(connectionString)) {
+  var sql = @"
+    SELECT CustomerId, Name, OrderDate, Amount,
+      ROW_NUMBER() OVER (ORDER BY OrderDate DESC) AS OrderSequence
+    FROM Orders
+  ";
+  var result = conn.Query<OrderWithSequence>(sql).ToList();
+}</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>ROW_NUMBER is commonly used for pagination ("get rows 1-10 per category") or finding duplicates ("delete all but the first occurrence"). These use cases are better solved at the database layer where ROW_NUMBER is natively efficient.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">03 — ROW_NUMBER WITH PARTITION BY</div>
+  <h2>ROW_NUMBER with PARTITION BY: Grouping & Numbering</h2>
+
+  <div class="section-text">
+    <p>Adding PARTITION BY to ROW_NUMBER resets the sequence number for each partition. This pattern is common for "top N per group" queries: "the 3 highest-paid employees per department", "the top 5 products by category", "the first order for each customer".</p>
+    <p>In SQL, this is a single efficient query. In LINQ, you'd need to post-process with GroupBy and Select with index, which is memory-intensive for large datasets.</p>
+  </div>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL PARTITION BY</span>
+      <pre><code>SELECT
+  DepartmentId,
+  Name,
+  Salary,
+  ROW_NUMBER() OVER (
+    PARTITION BY DepartmentId
+    ORDER BY Salary DESC
+  ) AS RankInDept
+FROM Employees
+WHERE RankInDept <= 3;  -- Use CTE or subquery</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">Raw SQL with CTE</span>
+      <pre><code>var result = context.Employees
+  .FromSqlRaw(@"
+    WITH RankedEmps AS (
+      SELECT DepartmentId, Name, Salary,
+        ROW_NUMBER() OVER (
+          PARTITION BY DepartmentId
+          ORDER BY Salary DESC
+        ) AS RankInDept
+      FROM Employees
+    )
+    SELECT * FROM RankedEmps WHERE RankInDept <= 3
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>Top N Per Group</strong>
+    <p>PARTITION BY enables "top N per group" patterns efficiently. Without window functions, you'd need a self-join or a complex GROUP BY with HAVING, which is slower and harder to read. This is a classic use case where raw SQL is the right tool.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">LINQ Approximation: Memory-Based Solution</span>
+      <pre><code>// Load all employees into memory and group
+var result = context.Employees
+  .ToList()  // Load all data
+  .GroupBy(e => e.DepartmentId)
+  .SelectMany(dept => dept
+    .OrderByDescending(e => e.Salary)
+    .Select((e, index) => new {
+      e.DepartmentId,
+      e.Name,
+      e.Salary,
+      RankInDept = index + 1
+    })
+    .Where(x => x.RankInDept <= 3)
+  )
+  .ToList();
+
+// This works but requires loading ALL employees before filtering
+// Raw SQL filters at the database, which is much more efficient
+</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>This illustrates the fundamental limitation: without database-level window functions, you must load data into memory and process it client-side. For large datasets, this is impractical and slow.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">04 — RANK AND DENSE_RANK</div>
+  <h2>RANK vs DENSE_RANK: Handling Ties & Gaps</h2>
+
+  <div class="section-text">
+    <p>RANK() and DENSE_RANK() assign ranks to rows within partitions. The difference: RANK produces gaps when values tie, while DENSE_RANK produces no gaps. For example, if two employees tie for first place, RANK gives them both 1 and the next rank is 3, but DENSE_RANK gives them 1 and the next is 2.</p>
+    <p>Choosing between them depends on your business logic. Leaderboards often use DENSE_RANK (no gaps), while competition rankings use RANK (with gaps for ties).</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block sql">
+      <span class="code-label">SQL RANK vs DENSE_RANK</span>
+      <pre><code>SELECT
+  Name,
+  Score,
+  RANK() OVER (ORDER BY Score DESC) AS RankWithGaps,
+  DENSE_RANK() OVER (ORDER BY Score DESC) AS RankNoDenseGaps
+FROM Competitors;
+
+-- Output with ties:
+-- Name  | Score | RankWithGaps | RankNoDenseGaps
+-- Alice | 100   | 1            | 1
+-- Bob   | 100   | 1            | 1
+-- Carol | 90    | 3            | 2  (gap in RANK, no gap in DENSE_RANK)
+-- Dave  | 85    | 4            | 3</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>No LINQ Equivalent</strong>
+    <p>LINQ has no .Rank() or .DenseRank() methods. You must use raw SQL. The gap/no-gap logic is part of the window function specification, not something you can easily replicate in C#.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Raw SQL for RANK/DENSE_RANK</span>
+      <pre><code>// Using RANK (with gaps for ties)
+var result = context.Competitors
+  .FromSqlRaw(@"
+    SELECT Name, Score,
+      RANK() OVER (ORDER BY Score DESC) AS RankWithGaps
+    FROM Competitors
+  ")
+  .ToList();
+
+// Using DENSE_RANK (no gaps)
+var result = context.Competitors
+  .FromSqlRaw(@"
+    SELECT Name, Score,
+      DENSE_RANK() OVER (ORDER BY Score DESC) AS RankNoDenseGaps
+    FROM Competitors
+  ")
+  .ToList();
+
+// With Dapper
+using (var conn = new SqlConnection(connectionString)) {
+  var sql = @"
+    SELECT Name, Score,
+      RANK() OVER (ORDER BY Score DESC) AS RankWithGaps,
+      DENSE_RANK() OVER (ORDER BY Score DESC) AS RankNoDenseGaps
+    FROM Competitors
+  ";
+  var result = conn.Query<CompetitorRank>(sql).ToList();
+}
+</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>RANK and DENSE_RANK are critical for any ranking requirement. The choice between them is a business decision. For public-facing leaderboards, DENSE_RANK preserves sequential positions. For official records with ties, RANK reflects that multiple entities occupy the same position.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Practical RANK/DENSE_RANK Examples</span>
+      <pre><code>// Leaderboard with DENSE_RANK
+var leaderboard = context.Players
+  .FromSqlRaw(@"
+    SELECT PlayerId, Name, Score,
+      DENSE_RANK() OVER (ORDER BY Score DESC) AS Position
+    FROM Players WHERE IsActive = 1
+    ORDER BY Position
+  ")
+  .ToList();
+
+// Sales ranking per region with RANK
+var regional = context.SalesReps
+  .FromSqlRaw(@"
+    SELECT SalesRepId, Name, Region, TotalSales,
+      RANK() OVER (PARTITION BY Region ORDER BY TotalSales DESC)
+        AS RegionalRank
+    FROM SalesReps
+  ")
+  .ToList();
+
+// Find all gold medalists (tied for first)
+var gold = context.Athletes
+  .FromSqlRaw(@"
+    SELECT AthleteId, Name, Time,
+      DENSE_RANK() OVER (ORDER BY Time ASC) AS Rank
+    FROM RaceResults WHERE RaceId = @raceId
+  ", new SqlParameter("@raceId", raceId))
+  .Where(a => a.Rank == 1)
+  .ToList();</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">05 — LAG AND LEAD</div>
+  <h2>LAG and LEAD: Accessing Previous/Next Row Values</h2>
+
+  <div class="section-text">
+    <p>LAG() and LEAD() access values from previous or following rows within a partition, without requiring self-joins. LAG returns the previous row's value; LEAD returns the next row's value. Common uses: "show each employee's salary change", "compare daily sales to prior day", "identify sequence gaps".</p>
+    <p>These functions have NO direct LINQ equivalent. You must use raw SQL or Dapper without compromise.</p>
+  </div>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL LAG and LEAD</span>
+      <pre><code>SELECT
+  EmployeeId,
+  Name,
+  Salary,
+  LAG(Salary) OVER (ORDER BY HireDate) AS PreviousSalary,
+  LEAD(Salary) OVER (ORDER BY HireDate) AS NextSalary,
+  Salary - LAG(Salary) OVER (ORDER BY HireDate)
+    AS SalaryIncrease
+FROM Employees;</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">Raw SQL (No LINQ Alternative)</span>
+      <pre><code>var result = context.Employees
+  .FromSqlRaw(@"
+    SELECT EmployeeId, Name, Salary,
+      LAG(Salary) OVER (ORDER BY HireDate) AS PreviousSalary,
+      LEAD(Salary) OVER (ORDER BY HireDate) AS NextSalary,
+      Salary - LAG(Salary) OVER (ORDER BY HireDate)
+        AS SalaryIncrease
+    FROM Employees
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <strong>LAG/LEAD: Impossible in LINQ</strong>
+    <p>There is no way to access "the previous row" in LINQ without raw SQL. This is a fundamental limitation of the LINQ model. You must use raw SQL (FromSqlRaw) or Dapper. No workarounds, no approximations.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">LAG/LEAD with Dapper & Business Logic</span>
+      <pre><code>using (var conn = new SqlConnection(connectionString)) {
+  var sql = @"
+    SELECT EmployeeId, Name, Salary, HireDate,
+      LAG(Salary) OVER (ORDER BY HireDate) AS PreviousSalary,
+      LEAD(Salary) OVER (ORDER BY HireDate) AS NextSalary,
+      Salary - LAG(Salary) OVER (ORDER BY HireDate) AS SalaryIncrease
+    FROM Employees
+    ORDER BY HireDate
+  ";
+
+  var employees = conn.Query<EmployeeSalaryChange>(sql).ToList();
+
+  // Business logic on the results
+  var promotions = employees
+    .Where(e => e.SalaryIncrease.HasValue && e.SalaryIncrease > 0)
+    .OrderByDescending(e => e.SalaryIncrease)
+    .ToList();
+
+  var largePay Raises = promotions
+    .Where(e => e.SalaryIncrease.Value > 5000)
+    .ToList();
+}</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>LAG and LEAD are essential for time-series analysis, change tracking, and sequential logic. They eliminate expensive self-joins and make comparisons trivial. Whenever you need to compare a row to its neighbors, LAG/LEAD is the answer, and that answer requires raw SQL.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-num">06 — RUNNING TOTALS & CUMULATIVE SUMS</div>
+  <h2>Running Totals: SUM with ROWS BETWEEN</h2>
+
+  <div class="section-text">
+    <p>Running totals use SUM with a ROWS BETWEEN frame specification. SUM(amount) OVER (ORDER BY date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) computes cumulative sums from the first row to current. Essential for accounting reports, inventory tracking, and financial statements.</p>
+    <p>You can approximate in LINQ by loading data and iterating, but server-side computation is far more efficient for large datasets.</p>
+  </div>
+
+  <div class="code-comparison">
+    <div class="code-block sql">
+      <span class="code-label">SQL Running Total</span>
+      <pre><code>SELECT
+  TransactionDate,
+  Amount,
+  SUM(Amount) OVER (
+    ORDER BY TransactionDate, TransactionId
+    ROWS BETWEEN UNBOUNDED PRECEDING
+      AND CURRENT ROW
+  ) AS RunningTotal
+FROM Transactions
+ORDER BY TransactionDate;</code></pre>
+    </div>
+
+    <div class="code-block csharp">
+      <span class="code-label">Raw SQL (Efficient)</span>
+      <pre><code>var result = context.Transactions
+  .FromSqlRaw(@"
+    SELECT TransactionDate, Amount,
+      SUM(Amount) OVER (
+        ORDER BY TransactionDate, TransactionId
+        ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS RunningTotal
+    FROM Transactions
+    ORDER BY TransactionDate
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">LINQ Approximation: Running Total in Memory</span>
+      <pre><code>// Less efficient: load all data, compute in memory
+var transactions = context.Transactions
+  .OrderBy(t => t.TransactionDate)
+  .ThenBy(t => t.TransactionId)
+  .ToList();
+
+var result = new List<dynamic>();
+decimal runningTotal = 0;
+
+foreach (var t in transactions) {
+  runningTotal += t.Amount;
+  result.Add(new {
+    t.TransactionDate,
+    t.Amount,
+    RunningTotal = runningTotal
+  });
+}
+
+// This works but requires loading ALL transactions first
+// Raw SQL scales efficiently with database indexes
+
+// Monthly running total example
+var monthlyRunning = context.Expenses
+  .FromSqlRaw(@"
+    SELECT ExpenseDate, Amount, Category,
+      SUM(Amount) OVER (
+        PARTITION BY MONTH(ExpenseDate), YEAR(ExpenseDate)
+        ORDER BY ExpenseDate
+        ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS MonthlyRunningTotal,
+      SUM(Amount) OVER (
+        ORDER BY ExpenseDate
+        ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS CompanyRunningTotal
+    FROM Expenses
+    WHERE ExpenseDate >= DATEADD(YEAR, -1, GETDATE())
+    ORDER BY ExpenseDate
+  ")
+  .ToList();
+
+// Department budget tracking with running totals
+var budgetStatus = context.DepartmentBudget
+  .FromSqlRaw(@"
+    SELECT DepartmentId, Department, Amount, TransactionDate,
+      SUM(Amount) OVER (
+        PARTITION BY DepartmentId
+        ORDER BY TransactionDate
+        ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS DeptRunningTotal,
+      1000000 - SUM(Amount) OVER (
+        PARTITION BY DepartmentId
+        ORDER BY TransactionDate
+        ROWS BETWEEN UNBOUNDED PRECEDING
+          AND CURRENT ROW
+      ) AS RemainingBudget
+    FROM DepartmentBudget
+    WHERE YEAR(TransactionDate) = YEAR(GETDATE())
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Running totals are fundamental to financial reporting, inventory management, and progress tracking. They allow you to show cumulative progress alongside individual transactions. Window functions make this trivial; without them, you'd need complex GROUP BY logic or repeated loops in C#.</p>
+  </div>
+  <h2>When to Drop to Raw SQL: Decision Framework</h2>
+
+  <div class="section-text">
+    <p>Window functions have no native LINQ equivalent. You must use raw SQL (FromSqlRaw in EF Core) or Dapper. The decision is simple: if your query requires window functions, use raw SQL. Period. Don't try to approximate in LINQ—it's inefficient and unreliable for large datasets.</p>
+  </div>
+
+  <div class="key-insight">
+    <strong>Window Functions = Raw SQL</strong>
+    <p>This is a hard rule. LINQ to SQL and Entity Framework have no support for ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, or framed aggregates. Attempting to approximate them in C# requires loading data into memory, which defeats the purpose of window functions' efficiency.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Decision Framework: Examples</span>
+      <pre><code>// Scenario 1: Pagination with ROW_NUMBER
+// Decision: Raw SQL (FromSqlRaw)
+var result = context.Orders
+  .FromSqlRaw(@"
+    WITH Ranked AS (
+      SELECT *,
+        ROW_NUMBER() OVER (ORDER BY OrderDate DESC) AS RowNum
+      FROM Orders
+    )
+    SELECT * FROM Ranked WHERE RowNum BETWEEN @skip AND @skip + @take
+  ", new SqlParameter("@skip", 20), new SqlParameter("@take", 10))
+  .ToList();
+
+// Scenario 2: Top 5 products per category
+// Decision: Raw SQL with PARTITION BY
+var result = context.Products
+  .FromSqlRaw(@"
+    WITH Ranked AS (
+      SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY CategoryId ORDER BY Sales DESC) AS Rank
+      FROM Products
+    )
+    SELECT * FROM Ranked WHERE Rank <= 5
+  ")
+  .ToList();
+
+// Scenario 3: Year-over-year comparison (LAG)
+// Decision: Raw SQL (no LINQ workaround)
+var result = context.MonthlySales
+  .FromSqlRaw(@"
+    SELECT *,
+      LAG(Amount) OVER (PARTITION BY Region ORDER BY YearMonth) AS PriorMonthAmount,
+      Amount - LAG(Amount) OVER (PARTITION BY Region ORDER BY YearMonth) AS MoMChange
+    FROM MonthlySales
+  ")
+  .ToList();
+
+// Scenario 4: Cumulative expense tracking
+// Decision: Raw SQL with SUM OVER
+var result = context.Expenses
+  .FromSqlRaw(@"
+    SELECT *,
+      SUM(Amount) OVER (
+        PARTITION BY DepartmentId
+        ORDER BY ExpenseDate
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      ) AS CumulativeExpense
+    FROM Expenses
+    ORDER BY DepartmentId, ExpenseDate
+  ")
+  .ToList();
+
+// Scenario 5: Duplicate detection
+// Decision: Raw SQL with ROW_NUMBER
+var result = context.Customers
+  .FromSqlRaw(@"
+    WITH Duplicates AS (
+      SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY Email ORDER BY CreatedDate) AS DupNum
+      FROM Customers
+    )
+    SELECT * FROM Duplicates WHERE DupNum > 1
+  ")
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>When you encounter a requirement that screams "window function" (pagination, ranking, running totals, lag/lead comparisons), immediately write the SQL directly. Using FromSqlRaw or Dapper is the correct approach. Don't waste time trying to approximate it in LINQ—you'll either produce inefficient code or give up and use raw SQL anyway.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Advanced: Complex Window Function Example with EF Core</span>
+      <pre><code>// Multiple window functions in a single query
+var result = context.Orders
+  .FromSqlRaw(@"
+    SELECT
+      o.OrderId,
+      o.CustomerId,
+      c.Name,
+      o.OrderDate,
+      o.Total,
+      -- Cumulative spending per customer
+      SUM(o.Total) OVER (
+        PARTITION BY o.CustomerId
+        ORDER BY o.OrderDate
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      ) AS CustomerRunningTotal,
+
+      -- Rank by amount within customer
+      RANK() OVER (
+        PARTITION BY o.CustomerId
+        ORDER BY o.Total DESC
+      ) AS OrderRankByAmount,
+
+      -- Previous order date for customer
+      LAG(o.OrderDate) OVER (
+        PARTITION BY o.CustomerId
+        ORDER BY o.OrderDate
+      ) AS PreviousOrderDate,
+
+      -- Days since last order
+      DATEDIFF(DAY,
+        LAG(o.OrderDate) OVER (PARTITION BY o.CustomerId ORDER BY o.OrderDate),
+        o.OrderDate
+      ) AS DaysSinceLast,
+
+      -- Row number for pagination
+      ROW_NUMBER() OVER (ORDER BY o.OrderDate DESC) AS GlobalRowNum
+
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerId = c.CustomerId
+  ")
+  .ToList();
+
+// Process results in C#
+var topOrdersPerCustomer = result
+  .Where(r => r.OrderRankByAmount <= 3)
+  .GroupBy(r => r.CustomerId)
+  .ToList();
+
+// Identify dormant customers
+var dormantCustomers = result
+  .Where(r => r.DaysSinceLast.HasValue && r.DaysSinceLast > 90)
+  .DistinctBy(r => r.CustomerId)
+  .ToList();</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>This example uses multiple window functions simultaneously, computing cumulative totals, rankings, neighbor access, and row numbering in a single efficient server-side query. In pure LINQ, you'd need multiple round trips to the database or load massive datasets into memory. Window functions excel at these scenarios.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Dapper Alternative for Window Functions</span>
+      <pre><code>public class OrderAnalysis {
+  public int OrderId { get; set; }
+  public int CustomerId { get; set; }
+  public string Name { get; set; }
+  public DateTime OrderDate { get; set; }
+  public decimal Total { get; set; }
+  public decimal CustomerRunningTotal { get; set; }
+  public int OrderRankByAmount { get; set; }
+  public DateTime? PreviousOrderDate { get; set; }
+  public int? DaysSinceLast { get; set; }
+  public int GlobalRowNum { get; set; }
+}
+
+using (var conn = new SqlConnection(connectionString)) {
+  var sql = @"
+    SELECT o.OrderId, o.CustomerId, c.Name, o.OrderDate, o.Total,
+      SUM(o.Total) OVER (
+        PARTITION BY o.CustomerId
+        ORDER BY o.OrderDate
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      ) AS CustomerRunningTotal,
+      RANK() OVER (PARTITION BY o.CustomerId ORDER BY o.Total DESC)
+        AS OrderRankByAmount,
+      LAG(o.OrderDate) OVER (PARTITION BY o.CustomerId ORDER BY o.OrderDate)
+        AS PreviousOrderDate,
+      DATEDIFF(DAY,
+        LAG(o.OrderDate) OVER (PARTITION BY o.CustomerId ORDER BY o.OrderDate),
+        o.OrderDate
+      ) AS DaysSinceLast,
+      ROW_NUMBER() OVER (ORDER BY o.OrderDate DESC) AS GlobalRowNum
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerId = c.CustomerId
+  ";
+
+  var orders = conn.Query<OrderAnalysis>(sql).ToList();
+  var highValueDormant = orders
+    .Where(o => o.CustomerRunningTotal > 5000 && o.DaysSinceLast > 90)
+    .ToList();
+}</code></pre>
+    </div>
+  </div>
+
+  <div class="section-text">
+    <p>Dapper provides a clean mapping layer while maintaining the efficiency of raw SQL. For applications that heavily use window functions, Dapper often becomes preferable to Entity Framework because it eliminates the translation layer and gives you direct SQL control.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Performance Comparison: SQL vs LINQ Approximation</span>
+      <pre><code>// TERRIBLE PERFORMANCE: Load all 1M orders, rank in memory
+var allOrders = context.Orders.Include(o => o.Customer).ToList(); // 1M rows!
+var result = allOrders
+  .GroupBy(o => o.CustomerId)
+  .SelectMany(g => g
+    .OrderByDescending(o => o.Total)
+    .Select((o, index) => new {
+      o.OrderId,
+      o.CustomerId,
+      o.Total,
+      RankInCustomer = index + 1
+    })
+  )
+  .ToList();
+// Memory usage: ~500MB, Time: 5+ seconds
+
+// EXCELLENT PERFORMANCE: SQL with window function
+var result = context.Orders
+  .FromSqlRaw(@"
+    SELECT OrderId, CustomerId, Total,
+      RANK() OVER (PARTITION BY CustomerId ORDER BY Total DESC)
+        AS RankInCustomer
+    FROM Orders
+  ")
+  .ToList();
+// Memory usage: ~10MB, Time: <100ms
+
+// The difference is dramatic. Always use raw SQL for window functions.
+
+// Benchmarking data (typical results):
+// LINQ in-memory: 1M rows, 500ms+ processing, 300MB RAM
+// SQL window function: 1M rows, <50ms execution, 5MB RAM
+// The database engine is purpose-built for this work.</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="key-takeaways">
+  <h3>Key Takeaways</h3>
+  <ul>
+    <li>Window functions compute values over sets of rows without collapsing results—fundamentally different from GROUP BY</li>
+    <li>LINQ has NO native window function support: no .RowNumber(), .Rank(), .LAG(), .LEAD(), or framed aggregates</li>
+    <li>ROW_NUMBER() is used for pagination and duplicate detection—use raw SQL with FromSqlRaw</li>
+    <li>PARTITION BY resets functions within groups—critical for "top N per group" patterns</li>
+    <li>RANK and DENSE_RANK handle ties differently—choose based on your semantics (gaps vs no gaps)</li>
+    <li>LAG and LEAD access previous/next rows—have no LINQ equivalent, use raw SQL or Dapper</li>
+    <li>Running totals with SUM OVER are more efficient at the database than LINQ approximations</li>
+    <li>Always use raw SQL (FromSqlRaw or Dapper) for window function requirements—don't try to approximate in C#</li>
+    <li>Measure: window functions in SQL are far more efficient than loading data into memory and processing in C#</li>
+  </ul>
+</div>
+
+<div class="section">
+  <div class="section-text">
+    <p>Window functions are a cornerstone of SQL that have no equivalent in LINQ. Recognizing when your query needs them and switching to raw SQL is a critical skill. The performance benefits are dramatic—often 10x faster with 10x less memory than approximations in C#. Master window functions at the SQL level, use raw SQL or Dapper to access them, and your applications will be faster and more scalable. This chapter establishes a firm boundary: when you need window functions, step outside LINQ and into raw SQL. That's the correct choice, and it's what professional database developers do daily. From here, we move on to Entity Framework Core configuration, migrations, and best practices for managing database connections and state.</p>
+  </div>
+
+  <div class="code-single">
+    <div class="code-block csharp">
+      <span class="code-label">Window Functions Decision Tree</span>
+      <pre><code>// Ask yourself these questions:
+
+// 1. Do I need to assign sequence numbers?
+//    → Use ROW_NUMBER() with FromSqlRaw
+
+// 2. Do I need to rank with gaps for ties?
+//    → Use RANK() with FromSqlRaw
+
+// 3. Do I need to rank without gaps?
+//    → Use DENSE_RANK() with FromSqlRaw
+
+// 4. Do I need the previous/next row value?
+//    → Use LAG()/LEAD() with FromSqlRaw or Dapper
+
+// 5. Do I need running totals?
+//    → Use SUM() OVER () with ROWS BETWEEN and FromSqlRaw
+
+// 6. Can I approximate this with LINQ?
+//    → Only for small datasets in memory (poor practice)
+//    → Always prefer raw SQL for correctness and performance
+
+// Rule: If you're asking "How do I do this in LINQ?",
+// and the answer involves window functions,
+// the real answer is: "Use raw SQL."</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="chapter-nav">
+  <a href="ch10-subqueries.html" class="nav-item prev">
+    <span class="nav-label">Previous Chapter</span>
+    <span class="nav-title">Subqueries → Nested</span>
+  </a>
+  <a href="ch12-dbcontext.html" class="nav-item next">
+    <span class="nav-label">Next Chapter</span>
+    <span class="nav-title">DbContext & Configuration</span>
+  </a>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <p>SQL to C# • A comprehensive guide to translating SQL into LINQ and Entity Framework</p>
+    </div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

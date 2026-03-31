@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 33: Real-World E-Commerce API Walkthrough — SQL to C#</title>
+<meta name="description" content="Complete walkthrough of an e-commerce API using clean architecture, EF Core, Dapper, repositories, and CQRS. Domain models, database schema, infrastructure, and API endpoints.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── CHAPTER HEADER ── */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ── IN THIS CHAPTER BOX ── */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* ── CONTENT SECTIONS ── */
+main {
+  padding-bottom: 40px;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+/* ── CODE COMPARISON ── */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code {
+  color: var(--ink);
+}
+
+/* ── FULL WIDTH CODE ── */
+.code-block.full {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+  margin-bottom: 28px;
+}
+
+.code-block.full code {
+  color: #e8e4db;
+}
+
+/* ── KEY INSIGHT CALLOUT ── */
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink2);
+}
+
+/* ── KEY TAKEAWAYS ── */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 40px;
+  margin-bottom: 60px;
+}
+
+.key-takeaways h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 10px 0;
+  padding-left: 24px;
+  position: relative;
+  line-height: 1.65;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ── CHAPTER NAVIGATION ── */
+.chapter-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 80px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all .2s;
+}
+
+.nav-item:hover {
+  border-color: var(--acc);
+  background: var(--acc-l);
+}
+
+.nav-item.prev {
+  text-align: left;
+}
+
+.nav-item.next {
+  text-align: right;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink4);
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--white);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 80px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.footer-section p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section ul li {
+  margin-bottom: 12px;
+}
+
+.footer-section ul li a {
+  font-size: 14px;
+  color: var(--ink2);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.footer-section ul li a:hover {
+  color: var(--acc);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .code-comparison {
+    grid-template-columns: 1fr;
+  }
+  .chapter-nav {
+    grid-template-columns: 1fr;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+  .chapter-header h1 {
+    font-size: 28px;
+  }
+  .section h2 {
+    font-size: 22px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+    <a href="index.html" class="nav-brand">SQL to C#</a>
+    <span class="nav-pill">Chapter 33</span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+
+<!-- CHAPTER HEADER -->
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 33</div>
+  <h1>Real-World E-Commerce API<br>Complete Walkthrough</h1>
+  <p class="chapter-desc">A comprehensive real-world example of building an e-commerce API using clean architecture, EF Core for writes, Dapper for reads, repositories, and CQRS. See domain models, database schema, infrastructure setup, and API endpoints working together.</p>
+</div>
+
+<!-- IN THIS CHAPTER -->
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>E-commerce domain: customers, products, categories, orders, reviews, and addresses</li>
+    <li>Complete database schema showing all tables, relationships, and constraints</li>
+    <li>Full C# domain model with entities and value objects</li>
+    <li>Clean architecture project structure: Domain, Application, Infrastructure, API layers</li>
+    <li>Write side: EF Core with change tracking, transactions, and business logic</li>
+    <li>Read side: Dapper with complex JOINs and DTOs for performance</li>
+    <li>Repository and Unit of Work patterns for abstraction</li>
+    <li>Complete API endpoints showing how all pieces fit together</li>
+  </ul>
+</div>
+
+<!-- Section 01 -->
+<div class="section" id="section-01">
+  <div class="section-num">01 — Project Overview: The E-Commerce Domain</div>
+  <h2>Entities, Relationships, and Database Schema</h2>
+
+  <p class="section-text">
+    Our e-commerce system manages customers, products organized by category, orders with line items, customer reviews, and shipping addresses. The domain is complex enough to showcase EF Core and Dapper patterns, but focused enough to understand completely. Let's start with the database schema.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">SQL — Complete E-Commerce Schema</span>
+    <code>-- ════════════════════════════════════════
+-- CUSTOMERS
+-- ════════════════════════════════════════
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  FirstName NVARCHAR(100) NOT NULL,
+  LastName NVARCHAR(100) NOT NULL,
+  Email NVARCHAR(255) NOT NULL UNIQUE,
+  Phone NVARCHAR(20),
+  Status NVARCHAR(20) NOT NULL DEFAULT 'Active',
+  -- Active, Suspended, Deleted
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  ModifiedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  INDEX idx_email (Email),
+  INDEX idx_status (Status)
+);
+
+-- ════════════════════════════════════════
+-- ADDRESSES
+-- ════════════════════════════════════════
+CREATE TABLE Addresses (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  Street NVARCHAR(200) NOT NULL,
+  City NVARCHAR(100) NOT NULL,
+  StateProvince NVARCHAR(50),
+  PostalCode NVARCHAR(20),
+  Country NVARCHAR(100) NOT NULL,
+  IsDefault BIT NOT NULL DEFAULT 0,
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_Addresses_Customers
+    FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id) ON DELETE CASCADE,
+  INDEX idx_customer (CustomerId)
+);
+
+-- ════════════════════════════════════════
+-- CATEGORIES
+-- ════════════════════════════════════════
+CREATE TABLE Categories (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(100) NOT NULL UNIQUE,
+  Description NVARCHAR(500),
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE()
+);
+
+-- ════════════════════════════════════════
+-- PRODUCTS
+-- ════════════════════════════════════════
+CREATE TABLE Products (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  Name NVARCHAR(200) NOT NULL,
+  Description NVARCHAR(MAX),
+  CategoryId INT NOT NULL,
+  Price DECIMAL(10,2) NOT NULL,
+  StockLevel INT NOT NULL DEFAULT 0,
+  Sku NVARCHAR(50) NOT NULL UNIQUE,
+  IsActive BIT NOT NULL DEFAULT 1,
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  ModifiedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_Products_Categories
+    FOREIGN KEY (CategoryId)
+    REFERENCES Categories(Id),
+  INDEX idx_category (CategoryId),
+  INDEX idx_sku (Sku),
+  INDEX idx_active (IsActive)
+);
+
+-- ════════════════════════════════════════
+-- ORDERS
+-- ════════════════════════════════════════
+CREATE TABLE Orders (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  CustomerId INT NOT NULL,
+  OrderNumber NVARCHAR(50) NOT NULL UNIQUE,
+  OrderDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  DeliveryAddressId INT,
+  Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
+  -- Pending, Confirmed, Shipped, Delivered,
+  -- Cancelled, Refunded
+  TotalAmount DECIMAL(10,2) NOT NULL,
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  ModifiedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_Orders_Customers
+    FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id),
+  CONSTRAINT FK_Orders_Addresses
+    FOREIGN KEY (DeliveryAddressId)
+    REFERENCES Addresses(Id),
+  INDEX idx_customer (CustomerId),
+  INDEX idx_status (Status),
+  INDEX idx_orderdate (OrderDate)
+);
+
+-- ════════════════════════════════════════
+-- ORDER ITEMS
+-- ════════════════════════════════════════
+CREATE TABLE OrderItems (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  OrderId INT NOT NULL,
+  ProductId INT NOT NULL,
+  Quantity INT NOT NULL,
+  UnitPrice DECIMAL(10,2) NOT NULL,
+  -- Captured at order time (price history)
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_OrderItems_Orders
+    FOREIGN KEY (OrderId)
+    REFERENCES Orders(Id) ON DELETE CASCADE,
+  CONSTRAINT FK_OrderItems_Products
+    FOREIGN KEY (ProductId)
+    REFERENCES Products(Id),
+  INDEX idx_order (OrderId)
+);
+
+-- ════════════════════════════════════════
+-- REVIEWS
+-- ════════════════════════════════════════
+CREATE TABLE Reviews (
+  Id INT PRIMARY KEY IDENTITY(1,1),
+  ProductId INT NOT NULL,
+  CustomerId INT NOT NULL,
+  Rating INT NOT NULL, -- 1-5
+  Title NVARCHAR(200),
+  Comment NVARCHAR(2000),
+  HelpfulCount INT NOT NULL DEFAULT 0,
+  CreatedDate DATETIME2 NOT NULL
+    DEFAULT GETUTCDATE(),
+  CONSTRAINT FK_Reviews_Products
+    FOREIGN KEY (ProductId)
+    REFERENCES Products(Id) ON DELETE CASCADE,
+  CONSTRAINT FK_Reviews_Customers
+    FOREIGN KEY (CustomerId)
+    REFERENCES Customers(Id),
+  CONSTRAINT ck_rating
+    CHECK (Rating >= 1 AND Rating <= 5),
+  INDEX idx_product (ProductId),
+  INDEX idx_customer (CustomerId)
+);</code>
+  </div>
+
+  <div class="code-block full">
+    <span class="code-label">C# Domain Model — All Entities</span>
+    <code>// ════════════════════════════════════════
+// DOMAIN LAYER: Core Business Logic
+// ════════════════════════════════════════
+
+namespace EcommerceDomain
+{
+  // Value Object for Money
+  public record Money
+  {
+    public decimal Amount { get; init; }
+    public string Currency { get; init; } = "USD";
+
+    public Money(decimal amount)
+    {
+      if (amount < 0)
+        throw new ArgumentException(
+          "Amount cannot be negative");
+      Amount = amount;
+    }
+  }
+
+  public class Customer
+  {
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Email { get; set; }
+    public string Phone { get; set; }
+    public string Status { get; set; } = "Active";
+    public DateTime CreatedDate { get; set; }
+    public DateTime ModifiedDate { get; set; }
+
+    // Navigation properties
+    public ICollection<Address> Addresses
+      { get; set; } = new List<Address>();
+    public ICollection<Order> Orders
+      { get; set; } = new List<Order>();
+    public ICollection<Review> Reviews
+      { get; set; } = new List<Review>();
+  }
+
+  public class Address
+  {
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public string Street { get; set; }
+    public string City { get; set; }
+    public string StateProvince { get; set; }
+    public string PostalCode { get; set; }
+    public string Country { get; set; }
+    public bool IsDefault { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    // Navigation
+    public Customer Customer { get; set; }
+  }
+
+  public class Category
+  {
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    public ICollection<Product> Products
+      { get; set; } = new List<Product>();
+  }
+
+  public class Product
+  {
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public int CategoryId { get; set; }
+    public Money Price { get; set; }
+    public int StockLevel { get; set; }
+    public string Sku { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedDate { get; set; }
+    public DateTime ModifiedDate { get; set; }
+
+    // Navigation
+    public Category Category { get; set; }
+    public ICollection<OrderItem> OrderItems
+      { get; set; } = new List<OrderItem>();
+    public ICollection<Review> Reviews
+      { get; set; } = new List<Review>();
+
+    // Business methods
+    public bool CanFulfill(int quantity)
+      => StockLevel >= quantity;
+
+    public void ReduceStock(int quantity)
+    {
+      if (!CanFulfill(quantity))
+        throw new InvalidOperationException(
+          "Insufficient stock");
+      StockLevel -= quantity;
+    }
+  }
+
+  public class Order
+  {
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public string OrderNumber { get; set; }
+    public DateTime OrderDate { get; set; }
+    public int? DeliveryAddressId { get; set; }
+    public string Status { get; set; } = "Pending";
+    public Money TotalAmount { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public DateTime ModifiedDate { get; set; }
+
+    // Navigation
+    public Customer Customer { get; set; }
+    public Address DeliveryAddress { get; set; }
+    public ICollection<OrderItem> Items
+      { get; set; } = new List<OrderItem>();
+
+    // Business methods
+    public void Cancel()
+    {
+      if (Status != "Pending")
+        throw new InvalidOperationException(
+          "Only pending orders can be cancelled");
+      Status = "Cancelled";
+    }
+
+    public void Ship()
+    {
+      if (Status != "Confirmed")
+        throw new InvalidOperationException(
+          "Order must be confirmed before shipping");
+      Status = "Shipped";
+    }
+  }
+
+  public class OrderItem
+  {
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public int ProductId { get; set; }
+    public int Quantity { get; set; }
+    public Money UnitPrice { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    // Navigation
+    public Order Order { get; set; }
+    public Product Product { get; set; }
+
+    // Computed property
+    public Money Subtotal =>
+      new(UnitPrice.Amount * Quantity);
+  }
+
+  public class Review
+  {
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int CustomerId { get; set; }
+    public int Rating { get; set; }
+    public string Title { get; set; }
+    public string Comment { get; set; }
+    public int HelpfulCount { get; set; }
+    public DateTime CreatedDate { get; set; }
+
+    // Navigation
+    public Product Product { get; set; }
+    public Customer Customer { get; set; }
+
+    // Validation
+    public Review()
+    {
+      ValidateRating();
+    }
+
+    private void ValidateRating()
+    {
+      if (Rating < 1 || Rating > 5)
+        throw new ArgumentException(
+          "Rating must be 1-5");
+    }
+  }
+}</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Value Objects vs Entities</strong>
+    <p>Money is a value object (immutable record) because it's defined by its values, not by an identity. Money(100) equals Money(100). Product and Order are entities because they have unique identities (Id). This distinction drives how you map to the database and how EF tracks changes.</p>
+  </div>
+</div>
+
+<!-- Section 02 -->
+<div class="section" id="section-02">
+  <div class="section-num">02 — Project Structure: Clean Architecture Layout</div>
+  <h2>Organizing Code Across Layers</h2>
+
+  <p class="section-text">
+    Clean architecture separates concerns across layers. Domain contains business logic, Application contains use cases, Infrastructure contains data access, and API exposes endpoints. This structure allows independent testing and swapping implementations.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">Solution Structure</span>
+    <code>ecommerce-api/
+├── src/
+│   │
+│   ├── Domain/
+│   │   ├── Entities/
+│   │   │   ├── Customer.cs
+│   │   │   ├── Product.cs
+│   │   │   ├── Order.cs
+│   │   │   └── ... (other entities)
+│   │   ├── ValueObjects/
+│   │   │   └── Money.cs
+│   │   └── Domain.csproj
+│   │
+│   ├── Application/
+│   │   ├── Commands/
+│   │   │   ├── CreateOrderCommand.cs
+│   │   │   ├── CancelOrderCommand.cs
+│   │   │   └── CreateOrderHandler.cs
+│   │   ├── Queries/
+│   │   │   ├── GetOrdersQuery.cs
+│   │   │   └── GetOrdersHandler.cs
+│   │   ├── Dtos/
+│   │   │   ├── OrderDto.cs
+│   │   │   ├── ProductDto.cs
+│   │   │   └── OrderSummaryDto.cs
+│   │   ├── Repositories/
+│   │   │   ├── ICustomerRepository.cs
+│   │   │   ├── IOrderRepository.cs
+│   │   │   └── IProductRepository.cs
+│   │   └── Application.csproj
+│   │
+│   ├── Infrastructure/
+│   │   ├── Persistence/
+│   │   │   ├── EcommerceContext.cs
+│   │   │   ├── Repositories/
+│   │   │   │   ├── CustomerRepository.cs
+│   │   │   │   ├── OrderRepository.cs
+│   │   │   │   └── ProductRepository.cs
+│   │   │   ├── QueryHandlers/
+│   │   │   │   └── OrderQueryHandler.cs
+│   │   │   └── UnitOfWork.cs
+│   │   ├── Configuration/
+│   │   │   ├── CustomerConfig.cs
+│   │   │   ├── ProductConfig.cs
+│   │   │   └── OrderConfig.cs
+│   │   └── Infrastructure.csproj
+│   │
+│   └── Api/
+│       ├── Controllers/
+│       │   ├── CustomersController.cs
+│       │   ├── OrdersController.cs
+│       │   └── ProductsController.cs
+│       ├── Extensions/
+│       │   └── ServiceCollectionExtensions.cs
+│       ├── Program.cs
+│       └── Api.csproj
+│
+└── tests/
+    ├── Application.Tests/
+    ├── Infrastructure.Tests/
+    └── Integration.Tests/</code>
+  </div>
+
+  <div class="code-block full">
+    <span class="code-label">Repository and Unit of Work Setup</span>
+    <code>// ════════════════════════════════════════
+// APPLICATION LAYER: Abstraction
+// ════════════════════════════════════════
+
+namespace Ecommerce.Application.Repositories
+{
+  public interface IOrderRepository
+  {
+    Task<Order> GetByIdAsync(int id);
+    Task<List<Order>> GetByCustomerAsync(int customerId);
+    Task AddAsync(Order order);
+    void Update(Order order);
+    void Remove(Order order);
+  }
+
+  public interface IProductRepository
+  {
+    Task<Product> GetByIdAsync(int id);
+    Task<List<Product>> GetByCategoryAsync(int categoryId);
+    void Update(Product product);
+  }
+
+  public interface ICustomerRepository
+  {
+    Task<Customer> GetByIdAsync(int id);
+    Task<Customer> GetByEmailAsync(string email);
+    Task AddAsync(Customer customer);
+    void Update(Customer customer);
+  }
+
+  public interface IUnitOfWork : IAsyncDisposable
+  {
+    IOrderRepository Orders { get; }
+    IProductRepository Products { get; }
+    ICustomerRepository Customers { get; }
+
+    Task<int> SaveChangesAsync();
+    Task<bool> BeginTransactionAsync();
+    Task<bool> CommitAsync();
+    Task<bool> RollbackAsync();
+  }
+}
+
+// ════════════════════════════════════════
+// INFRASTRUCTURE LAYER: Implementation
+// ════════════════════════════════════════
+
+namespace Ecommerce.Infrastructure.Persistence
+{
+  public class EcommerceContext : DbContext
+  {
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Address> Addresses { get; set; }
+    public DbSet<Review> Reviews { get; set; }
+
+    public EcommerceContext(
+      DbContextOptions<EcommerceContext> options)
+      : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(
+      ModelBuilder modelBuilder)
+    {
+      // Apply entity configurations
+      modelBuilder.ApplyConfigurationsFromAssembly(
+        typeof(EcommerceContext).Assembly);
+
+      // Configure Money value object
+      modelBuilder.Entity<Product>()
+        .OwnsOne(p => p.Price);
+
+      modelBuilder.Entity<Order>()
+        .OwnsOne(o => o.TotalAmount);
+
+      modelBuilder.Entity<OrderItem>()
+        .OwnsOne(oi => oi.UnitPrice);
+    }
+  }
+
+  // ════════════════════════════════════════
+  // ORDER REPOSITORY IMPLEMENTATION
+  // ════════════════════════════════════════
+
+  public class OrderRepository : IOrderRepository
+  {
+    private readonly EcommerceContext _context;
+
+    public OrderRepository(EcommerceContext context)
+    {
+      _context = context;
+    }
+
+    public async Task<Order> GetByIdAsync(int id)
+    {
+      return await _context.Orders
+        .Include(o => o.Items)
+        .ThenInclude(oi => oi.Product)
+        .Include(o => o.DeliveryAddress)
+        .FirstOrDefaultAsync(o => o.Id == id);
+    }
+
+    public async Task<List<Order>>
+      GetByCustomerAsync(int customerId)
+    {
+      return await _context.Orders
+        .Where(o => o.CustomerId == customerId)
+        .Include(o => o.Items)
+        .OrderByDescending(o => o.OrderDate)
+        .ToListAsync();
+    }
+
+    public async Task AddAsync(Order order)
+    {
+      await _context.Orders.AddAsync(order);
+    }
+
+    public void Update(Order order)
+    {
+      _context.Orders.Update(order);
+    }
+
+    public void Remove(Order order)
+    {
+      _context.Orders.Remove(order);
+    }
+  }
+
+  // ════════════════════════════════════════
+  // UNIT OF WORK PATTERN
+  // ════════════════════════════════════════
+
+  public class UnitOfWork : IUnitOfWork
+  {
+    private readonly EcommerceContext _context;
+    private IDbContextTransaction _transaction;
+
+    public IOrderRepository Orders { get; }
+    public IProductRepository Products { get; }
+    public ICustomerRepository Customers { get; }
+
+    public UnitOfWork(EcommerceContext context)
+    {
+      _context = context;
+      Orders = new OrderRepository(context);
+      Products = new ProductRepository(context);
+      Customers = new CustomerRepository(context);
+    }
+
+    public async Task<int> SaveChangesAsync()
+    {
+      return await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> BeginTransactionAsync()
+    {
+      _transaction = await _context
+        .Database.BeginTransactionAsync();
+      return true;
+    }
+
+    public async Task<bool> CommitAsync()
+    {
+      try
+      {
+        await _context.SaveChangesAsync();
+        await _transaction.CommitAsync();
+        return true;
+      }
+      catch
+      {
+        await RollbackAsync();
+        throw;
+      }
+    }
+
+    public async Task<bool> RollbackAsync()
+    {
+      try
+      {
+        await _transaction.RollbackAsync();
+        return true;
+      }
+      finally
+      {
+        await _transaction.DisposeAsync();
+      }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+      if (_transaction is not null)
+        await _transaction.DisposeAsync();
+      await _context.DisposeAsync();
+    }
+  }
+}</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Repository Abstraction Enables CQRS</strong>
+    <p>By defining repositories as interfaces in Application, Infrastructure can provide two implementations: EF-based for writes (with change tracking) and Dapper-based for reads (with complex queries). The API doesn't know which implementation is used, and you can switch them independently.</p>
+  </div>
+</div>
+
+<!-- Section 03 -->
+<div class="section" id="section-03">
+  <div class="section-num">03 — Write Side: EF Core for Commands</div>
+  <h2>Creating Orders with Change Tracking and Transactions</h2>
+
+  <p class="section-text">
+    The write side handles business operations. EF Core excels here because it tracks changes, manages relationships, and enforces domain constraints. A CreateOrderHandler demonstrates validation, change tracking, and transaction handling.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">Create Order Command with EF Core</span>
+    <code>using MediatR;
+using Ecommerce.Domain;
+using Ecommerce.Application.Repositories;
+
+namespace Ecommerce.Application.Commands
+{
+  public class CreateOrderCommand : IRequest<OrderResult>
+  {
+    public int CustomerId { get; set; }
+    public int DeliveryAddressId { get; set; }
+    public List<CreateOrderItemDto> Items { get; set; }
+  }
+
+  public class CreateOrderItemDto
+  {
+    public int ProductId { get; set; }
+    public int Quantity { get; set; }
+  }
+
+  public class OrderResult
+  {
+    public int Id { get; set; }
+    public string OrderNumber { get; set; }
+    public decimal TotalAmount { get; set; }
+  }
+
+  // ════════════════════════════════════════
+  // HANDLER: Orchestrates Write Operations
+  // ════════════════════════════════════════
+
+  public class CreateOrderHandler
+    : IRequestHandler<CreateOrderCommand, OrderResult>
+  {
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CreateOrderHandler> _logger;
+
+    public CreateOrderHandler(
+      IUnitOfWork unitOfWork,
+      ILogger<CreateOrderHandler> logger)
+    {
+      _unitOfWork = unitOfWork;
+      _logger = logger;
+    }
+
+    public async Task<OrderResult> Handle(
+      CreateOrderCommand request,
+      CancellationToken cancellationToken)
+    {
+      try
+      {
+        // ─────────────────────────────────
+        // STEP 1: Validate prerequisites
+        // ─────────────────────────────────
+
+        var customer = await _unitOfWork.Customers
+          .GetByIdAsync(request.CustomerId);
+
+        if (customer == null)
+          throw new InvalidOperationException(
+            $"Customer {request.CustomerId} not found");
+
+        if (customer.Status == "Suspended")
+          throw new InvalidOperationException(
+            "Customer account is suspended");
+
+        // Verify delivery address belongs to customer
+        var address = customer.Addresses
+          .FirstOrDefault(a => a.Id ==
+            request.DeliveryAddressId);
+
+        if (address == null)
+          throw new InvalidOperationException(
+            "Invalid delivery address");
+
+        // ─────────────────────────────────
+        // STEP 2: Validate and reserve inventory
+        // ─────────────────────────────────
+
+        var items = new List<OrderItem>();
+        decimal totalAmount = 0;
+
+        foreach (var itemRequest in request.Items)
+        {
+          var product = await _unitOfWork.Products
+            .GetByIdAsync(itemRequest.ProductId);
+
+          if (product == null)
+            throw new InvalidOperationException(
+              $"Product {itemRequest.ProductId} not found");
+
+          if (!product.CanFulfill(itemRequest.Quantity))
+            throw new InvalidOperationException(
+              $"Insufficient stock for {product.Name}");
+
+          if (!product.IsActive)
+            throw new InvalidOperationException(
+              $"Product {product.Name} is not available");
+
+          // Create order item
+          var item = new OrderItem
+          {
+            ProductId = product.Id,
+            Quantity = itemRequest.Quantity,
+            UnitPrice = product.Price
+          };
+
+          items.Add(item);
+          totalAmount += item.Subtotal.Amount;
+        }
+
+        // ─────────────────────────────────
+        // STEP 3: Create order
+        // ─────────────────────────────────
+
+        var order = new Order
+        {
+          CustomerId = customer.Id,
+          OrderNumber = GenerateOrderNumber(),
+          OrderDate = DateTime.UtcNow,
+          DeliveryAddressId = address.Id,
+          Status = "Pending",
+          TotalAmount = new Money(totalAmount)
+        };
+
+        // Add items to order
+        // (EF tracks this relationship)
+        foreach (var item in items)
+        {
+          order.Items.Add(item);
+        }
+
+        // ─────────────────────────────────
+        // STEP 4: Reduce product stock
+        // ─────────────────────────────────
+
+        foreach (var item in items)
+        {
+          var product = await _unitOfWork.Products
+            .GetByIdAsync(item.ProductId);
+          product.ReduceStock(item.Quantity);
+          _unitOfWork.Products.Update(product);
+        }
+
+        // ─────────────────────────────────
+        // STEP 5: Persist with transaction
+        // ─────────────────────────────────
+
+        await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+          await _unitOfWork.Orders.AddAsync(order);
+          var rowsAffected =
+            await _unitOfWork.SaveChangesAsync();
+
+          if (rowsAffected == 0)
+            throw new InvalidOperationException(
+              "Failed to save order");
+
+          await _unitOfWork.CommitAsync();
+
+          _logger.LogInformation(
+            "Order {OrderNumber} created for customer " +
+            "{CustomerId}",
+            order.OrderNumber, customer.Id);
+
+          return new OrderResult
+          {
+            Id = order.Id,
+            OrderNumber = order.OrderNumber,
+            TotalAmount = totalAmount
+          };
+        }
+        catch (Exception ex)
+        {
+          await _unitOfWork.RollbackAsync();
+          _logger.LogError(ex,
+            "Failed to create order for customer " +
+            "{CustomerId}", request.CustomerId);
+          throw;
+        }
+      }
+      finally
+      {
+        await _unitOfWork.DisposeAsync();
+      }
+    }
+
+    // ════════════════════════════════════════
+    // HELPER: Generate unique order number
+    // ════════════════════════════════════════
+
+    private string GenerateOrderNumber()
+    {
+      // Format: ORD-YYYYMMDD-XXXXXX
+      var timestamp = DateTime.UtcNow
+        .ToString("yyyyMMdd");
+      var random = Random.Shared.Next(100000, 999999);
+      return $"ORD-{timestamp}-{random}";
+    }
+  }
+}</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: EF Change Tracking Manages Complexity</strong>
+    <p>When you add items to order.Items, EF tracks that relationship. When you call SaveChangesAsync(), EF generates appropriate INSERT statements for Order, OrderItem, and UPDATE for Products. You don't write SQL; EF manages the transaction and relationships automatically.</p>
+  </div>
+</div>
+
+<!-- Section 04 -->
+<div class="section" id="section-04">
+  <div class="section-num">04 — Read Side: Dapper for Queries</div>
+  <h2>Complex Joins and Performance-Optimized Reads</h2>
+
+  <p class="section-text">
+    The read side doesn't need change tracking. Dapper excels here because it's lightweight and you control the SQL. A GetOrdersSummaryHandler shows how to fetch orders with related data, project to DTOs, and handle pagination efficiently.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">Dapper Query Handler with Multi-Mapping</span>
+    <code>using System.Data;
+using Dapper;
+
+namespace Ecommerce.Infrastructure.Persistence.Queries
+{
+  public class OrderSummaryDto
+  {
+    public int Id { get; set; }
+    public string OrderNumber { get; set; }
+    public DateTime OrderDate { get; set; }
+    public string CustomerName { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; }
+    public int ItemCount { get; set; }
+  }
+
+  public class OrderDetailDto
+  {
+    public int Id { get; set; }
+    public string OrderNumber { get; set; }
+    public DateTime OrderDate { get; set; }
+    public string CustomerEmail { get; set; }
+    public string DeliveryAddress { get; set; }
+    public string Status { get; set; }
+    public decimal TotalAmount { get; set; }
+    public List<OrderLineItemDto> Items { get; set; }
+      = new();
+  }
+
+  public class OrderLineItemDto
+  {
+    public int ProductId { get; set; }
+    public string ProductName { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal Subtotal
+      => Quantity * UnitPrice;
+  }
+
+  // ════════════════════════════════════════
+  // QUERY HANDLER: Get Orders with Pagination
+  // ════════════════════════════════════════
+
+  public class OrderQueryHandler
+  {
+    private readonly IDbConnection _connection;
+    private readonly ILogger<OrderQueryHandler> _logger;
+
+    public OrderQueryHandler(
+      IDbConnection connection,
+      ILogger<OrderQueryHandler> logger)
+    {
+      _connection = connection;
+      _logger = logger;
+    }
+
+    // ─────────────────────────────────────
+    // Get paginated order summaries
+    // ─────────────────────────────────────
+
+    public async Task<List<OrderSummaryDto>>
+      GetOrdersSummaryAsync(
+        int customerId, int pageNumber = 1,
+        int pageSize = 10)
+    {
+      var offset = (pageNumber - 1) * pageSize;
+
+      const string sql = @"
+        SELECT
+          o.Id,
+          o.OrderNumber,
+          o.OrderDate,
+          CONCAT(c.FirstName, ' ', c.LastName)
+            AS CustomerName,
+          o.TotalAmount,
+          o.Status,
+          COUNT(oi.Id) AS ItemCount
+        FROM Orders o
+        INNER JOIN Customers c
+          ON o.CustomerId = c.Id
+        LEFT JOIN OrderItems oi
+          ON o.Id = oi.OrderId
+        WHERE o.CustomerId = @CustomerId
+        GROUP BY
+          o.Id, o.OrderNumber, o.OrderDate,
+          c.FirstName, c.LastName,
+          o.TotalAmount, o.Status
+        ORDER BY o.OrderDate DESC
+        OFFSET @Offset ROWS
+        FETCH NEXT @PageSize ROWS ONLY
+      ";
+
+      try
+      {
+        var orders = await _connection
+          .QueryAsync<OrderSummaryDto>(
+            sql,
+            new
+            {
+              CustomerId = customerId,
+              Offset = offset,
+              PageSize = pageSize
+            });
+
+        return orders.ToList();
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch orders for customer " +
+          "{CustomerId}", customerId);
+        throw;
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Get detailed order with items
+    // ─────────────────────────────────────
+
+    public async Task<OrderDetailDto>
+      GetOrderDetailAsync(int orderId)
+    {
+      const string sql = @"
+        SELECT
+          o.Id,
+          o.OrderNumber,
+          o.OrderDate,
+          c.Email AS CustomerEmail,
+          CONCAT(a.Street, ', ', a.City, ', ',
+            a.StateProvince, ' ', a.PostalCode)
+            AS DeliveryAddress,
+          o.Status,
+          o.TotalAmount
+        FROM Orders o
+        INNER JOIN Customers c ON o.CustomerId = c.Id
+        LEFT JOIN Addresses a
+          ON o.DeliveryAddressId = a.Id
+        WHERE o.Id = @OrderId
+      ";
+
+      try
+      {
+        var order = await _connection
+          .QueryFirstOrDefaultAsync<OrderDetailDto>(
+            sql,
+            new { OrderId = orderId });
+
+        if (order == null)
+          return null;
+
+        // ─────────────────────────────────
+        // Fetch order items
+        // ─────────────────────────────────
+
+        const string itemsSql = @"
+          SELECT
+            oi.ProductId,
+            p.Name AS ProductName,
+            oi.Quantity,
+            oi.UnitPrice
+          FROM OrderItems oi
+          INNER JOIN Products p
+            ON oi.ProductId = p.Id
+          WHERE oi.OrderId = @OrderId
+          ORDER BY oi.Id
+        ";
+
+        var items = await _connection
+          .QueryAsync<OrderLineItemDto>(
+            itemsSql,
+            new { OrderId = orderId });
+
+        order.Items = items.ToList();
+
+        return order;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch order {OrderId}",
+          orderId);
+        throw;
+      }
+    }
+
+    // ─────────────────────────────────────
+    // Get orders with complex filtering
+    // ─────────────────────────────────────
+
+    public async Task<List<OrderSummaryDto>>
+      GetOrdersByStatusAsync(
+        string status,
+        DateTime startDate,
+        DateTime endDate,
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+      var offset = (pageNumber - 1) * pageSize;
+
+      // Build dynamic SQL based on filters
+      var sql = @"
+        SELECT
+          o.Id,
+          o.OrderNumber,
+          o.OrderDate,
+          CONCAT(c.FirstName, ' ', c.LastName)
+            AS CustomerName,
+          o.TotalAmount,
+          o.Status,
+          COUNT(oi.Id) AS ItemCount
+        FROM Orders o
+        INNER JOIN Customers c ON o.CustomerId = c.Id
+        LEFT JOIN OrderItems oi ON o.Id = oi.OrderId
+        WHERE 1=1
+      ";
+
+      var parameters = new DynamicParameters();
+
+      if (!string.IsNullOrEmpty(status))
+      {
+        sql += " AND o.Status = @Status";
+        parameters.Add("@Status", status);
+      }
+
+      if (startDate != default)
+      {
+        sql += " AND o.OrderDate >= @StartDate";
+        parameters.Add("@StartDate", startDate);
+      }
+
+      if (endDate != default)
+      {
+        sql += " AND o.OrderDate <= @EndDate";
+        parameters.Add("@EndDate", endDate);
+      }
+
+      sql += @"
+        GROUP BY
+          o.Id, o.OrderNumber, o.OrderDate,
+          c.FirstName, c.LastName,
+          o.TotalAmount, o.Status
+        ORDER BY o.OrderDate DESC
+        OFFSET @Offset ROWS
+        FETCH NEXT @PageSize ROWS ONLY
+      ";
+
+      parameters.Add("@Offset", offset);
+      parameters.Add("@PageSize", pageSize);
+
+      try
+      {
+        var orders = await _connection
+          .QueryAsync<OrderSummaryDto>(
+            sql, parameters);
+
+        return orders.ToList();
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch filtered orders");
+        throw;
+      }
+    }
+  }
+}</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Dapper Gives You Control Over Performance</strong>
+    <p>Notice how the SQL uses GROUP BY with COUNT to efficiently aggregate, and OFFSET/FETCH for pagination. With Dapper, you write optimized SQL directly. With EF, you'd have to be careful that LINQ translates to efficient SQL. For complex reads, Dapper's control is valuable.</p>
+  </div>
+</div>
+
+<!-- Section 05 -->
+<div class="section" id="section-05">
+  <div class="section-num">05 — Dependency Injection and Service Configuration</div>
+  <h2>Registering Repositories, DbContext, and Handlers</h2>
+
+  <p class="section-text">
+    Clean architecture requires proper dependency injection. The Composition Root (Program.cs) wires up all the components: DbContext, repositories, handlers, and business logic. This is where the magic of abstraction becomes reality.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">Program.cs: Full Dependency Injection Setup</span>
+    <code>using Microsoft.EntityFrameworkCore;
+using Ecommerce.Application.Repositories;
+using Ecommerce.Infrastructure.Persistence;
+using MediatR;
+
+var builder = WebApplicationBuilder.CreateBuilder(args);
+
+// ════════════════════════════════════════
+// Add database context
+// ════════════════════════════════════════
+
+var connectionString = builder.Configuration
+  .GetConnectionString("DefaultConnection")
+  ?? throw new InvalidOperationException(
+    "Connection string not configured");
+
+builder.Services.AddDbContext<EcommerceContext>(
+  options => options
+    .UseSqlServer(connectionString)
+    .LogTo(Console.WriteLine,
+      LogLevel.Information)
+    .EnableDetailedErrors());
+
+// ════════════════════════════════════════
+// Add Unit of Work and Repositories
+// ════════════════════════════════════════
+
+builder.Services.AddScoped<IUnitOfWork,
+  UnitOfWork>();
+
+builder.Services.AddScoped<IOrderRepository,
+  OrderRepository>();
+
+builder.Services.AddScoped<IProductRepository,
+  ProductRepository>();
+
+builder.Services.AddScoped<ICustomerRepository,
+  CustomerRepository>();
+
+// ════════════════════════════════════════
+// Add Query Handlers (Dapper-based)
+// ════════════════════════════════════════
+
+builder.Services.AddScoped<OrderQueryHandler>();
+
+// For Dapper, register DbConnection
+builder.Services.AddScoped<IDbConnection>(
+  sp =>
+  {
+    var connString = builder.Configuration
+      .GetConnectionString("DefaultConnection");
+    return new SqlConnection(connString);
+  });
+
+// ════════════════════════════════════════
+// Add MediatR for CQRS pattern
+// ════════════════════════════════════════
+
+builder.Services.AddMediatR(cfg =>
+  cfg.RegisterServicesFromAssemblyContaining(
+    typeof(CreateOrderCommand)));
+
+// ════════════════════════════════════════
+// Add controllers and logging
+// ════════════════════════════════════════
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddLogging(config =>
+{
+  config.AddConsole();
+  config.AddDebug();
+});
+
+var app = builder.Build();
+
+// ════════════════════════════════════════
+// Middleware pipeline
+// ════════════════════════════════════════
+
+if (app.Environment.IsDevelopment())
+{
+  app.UseSwagger();
+  app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+// ════════════════════════════════════════
+// Run migrations on startup
+// ════════════════════════════════════════
+
+using (var scope = app.Services.CreateScope())
+{
+  var context = scope.ServiceProvider
+    .GetRequiredService<EcommerceContext>();
+  await context.Database.MigrateAsync();
+}
+
+app.Run();</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Scoped Lifetime for DbContext</strong>
+    <p>Register DbContext with AddScoped, not Singleton. Each HTTP request gets its own DbContext instance, ensuring isolated change tracking. If you used Singleton, concurrent requests would interfere with each other's change tracking.</p>
+  </div>
+</div>
+
+<!-- Section 06 -->
+<div class="section" id="section-06">
+  <div class="section-num">06 — Putting It All Together: API Endpoints</div>
+  <h2>Complete Request Flow from API to Database</h2>
+
+  <p class="section-text">
+    The API endpoints are the glue tying everything together. They receive requests, dispatch commands/queries, and return responses. Let's trace a complete request through all layers.
+  </p>
+
+  <div class="code-block full">
+    <span class="code-label">Orders API Controller: Complete Implementation</span>
+    <code>using Microsoft.AspNetCore.Mvc;
+using MediatR;
+using Ecommerce.Application.Commands;
+using Ecommerce.Infrastructure.Persistence.Queries;
+
+namespace Ecommerce.Api.Controllers
+{
+  [ApiController]
+  [Route("api/[controller]")]
+  public class OrdersController : ControllerBase
+  {
+    private readonly IMediator _mediator;
+    private readonly OrderQueryHandler _queryHandler;
+    private readonly ILogger<OrdersController> _logger;
+
+    public OrdersController(
+      IMediator mediator,
+      OrderQueryHandler queryHandler,
+      ILogger<OrdersController> logger)
+    {
+      _mediator = mediator;
+      _queryHandler = queryHandler;
+      _logger = logger;
+    }
+
+    // ════════════════════════════════════════
+    // GET /api/orders — Dapper Query
+    // ════════════════════════════════════════
+    // Read Side: Fast, lean, complex joins
+    // ════════════════════════════════════════
+
+    [HttpGet]
+    public async Task<ActionResult<List<OrderSummaryDto>>>
+      GetOrders(
+        [FromQuery] int customerId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+      try
+      {
+        var orders = await _queryHandler
+          .GetOrdersSummaryAsync(
+            customerId,
+            pageNumber,
+            pageSize);
+
+        // Return 200 OK with orders
+        return Ok(new
+        {
+          total = orders.Count,
+          pageNumber,
+          pageSize,
+          orders
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch orders for customer");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+
+    // ════════════════════════════════════════
+    // GET /api/orders/{id} — Dapper Query
+    // ════════════════════════════════════════
+    // Read Side: Fetch with all related data
+    // ════════════════════════════════════════
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<OrderDetailDto>>
+      GetOrderDetail([FromRoute] int id)
+    {
+      try
+      {
+        var order = await _queryHandler
+          .GetOrderDetailAsync(id);
+
+        if (order == null)
+          return NotFound();
+
+        return Ok(order);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch order detail");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+
+    // ════════════════════════════════════════
+    // GET /api/orders/status/{status}
+    // — Dapper Query with Filtering
+    // ════════════════════════════════════════
+    // Read Side: Complex filters, dynamic SQL
+    // ════════════════════════════════════════
+
+    [HttpGet("status/{status}")]
+    public async Task<ActionResult<List<OrderSummaryDto>>>
+      GetOrdersByStatus(
+        [FromRoute] string status,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+      try
+      {
+        var orders = await _queryHandler
+          .GetOrdersByStatusAsync(
+            status,
+            startDate ?? DateTime.MinValue,
+            endDate ?? DateTime.UtcNow,
+            pageNumber,
+            pageSize);
+
+        return Ok(new
+        {
+          total = orders.Count,
+          pageNumber,
+          pageSize,
+          orders
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to fetch orders by status");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+
+    // ════════════════════════════════════════
+    // POST /api/orders — EF Core Command
+    // ════════════════════════════════════════
+    // Write Side: Validation, transactions,
+    // change tracking, inventory reduction
+    // ════════════════════════════════════════
+
+    [HttpPost]
+    public async Task<ActionResult<OrderResult>>
+      CreateOrder(
+        [FromBody] CreateOrderCommand command)
+    {
+      try
+      {
+        // Dispatch command to handler
+        // Handler uses EF Core Unit of Work
+        // Transactions, validation, all automatic
+        var result = await _mediator
+          .Send(command);
+
+        // Return 201 Created
+        return CreatedAtAction(
+          nameof(GetOrderDetail),
+          new { id = result.Id },
+          result);
+      }
+      catch (InvalidOperationException ex)
+      {
+        _logger.LogWarning(ex,
+          "Validation failed for order creation");
+        return BadRequest(new { error = ex.Message });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to create order");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+
+    // ════════════════════════════════════════
+    // PUT /api/orders/{id}/cancel
+    // — EF Core Command
+    // ════════════════════════════════════════
+    // Write Side: Entity state modification
+    // ════════════════════════════════════════
+
+    [HttpPut("{id}/cancel")]
+    public async Task<IActionResult> CancelOrder(
+      [FromRoute] int id)
+    {
+      try
+      {
+        var command = new CancelOrderCommand
+        {
+          OrderId = id
+        };
+
+        var result = await _mediator.Send(command);
+
+        if (!result)
+          return NotFound();
+
+        return Ok(new
+        {
+          message = "Order cancelled successfully"
+        });
+      }
+      catch (InvalidOperationException ex)
+      {
+        _logger.LogWarning(ex,
+          "Cannot cancel order {OrderId}", id);
+        return BadRequest(new { error = ex.Message });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to cancel order");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+
+    // ════════════════════════════════════════
+    // PUT /api/orders/{id}/ship
+    // — EF Core Command
+    // ════════════════════════════════════════
+    // Write Side: State transition
+    // ════════════════════════════════════════
+
+    [HttpPut("{id}/ship")]
+    public async Task<IActionResult> ShipOrder(
+      [FromRoute] int id)
+    {
+      try
+      {
+        var command = new ShipOrderCommand
+        {
+          OrderId = id
+        };
+
+        var result = await _mediator.Send(command);
+
+        if (!result)
+          return NotFound();
+
+        return Ok(new
+        {
+          message = "Order shipped successfully"
+        });
+      }
+      catch (InvalidOperationException ex)
+      {
+        _logger.LogWarning(ex,
+          "Cannot ship order {OrderId}", id);
+        return BadRequest(new { error = ex.Message });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex,
+          "Failed to ship order");
+        return StatusCode(500,
+          "Internal server error");
+      }
+    }
+  }
+}</code>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Clean Request Routing</strong>
+    <p>Notice how the controller is thin. GET requests delegate to Dapper handlers for speed. POST/PUT requests dispatch to MediatR handlers, which use EF Core's Unit of Work for complex business logic. This separation of concerns—reads via Dapper, writes via EF—is the essence of CQRS in practice.</p>
+  </div>
+</div>
+
+  </div>
+</main>
+
+<!-- KEY TAKEAWAYS SECTION -->
+<div class="wrap">
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>The domain model (entities, value objects) is independent of data access tools; it encodes business logic and constraints</li>
+      <li>Clean architecture separates Domain, Application, Infrastructure, and API layers; each can be developed and tested independently</li>
+      <li>Repository pattern abstracts data access; interface definitions live in Application, implementations in Infrastructure</li>
+      <li>Unit of Work pattern ensures atomic transactions across multiple repositories; EF Core's DbContext provides built-in implementation</li>
+      <li>EF Core excels for writes: change tracking, relationships, transactions, and validation all work together seamlessly</li>
+      <li>Dapper excels for reads: you control the SQL, get lean objects, and can optimize complex queries with JOINs and aggregations</li>
+      <li>CQRS (Command Query Responsibility Segregation) maps naturally: EF Core for commands, Dapper for queries; they don't compete, they complement</li>
+      <li>MediatR provides a dispatch mechanism for CQRS; handlers encapsulate business logic and keep controllers thin and testable</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CHAPTER NAVIGATION -->
+<div class="wrap">
+  <nav class="chapter-nav">
+    <a href="ch32-cheat-sheet.html" class="nav-item prev">
+      <span class="nav-label">Previous</span>
+      <span class="nav-title">SQL ↔ LINQ Quick Reference</span>
+    </a>
+    <a href="index.html" class="nav-item next">
+      <span class="nav-label">Next</span>
+      <span class="nav-title">Return to Index</span>
+    </a>
+  </nav>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access patterns, from SQL fundamentals to advanced EF Core and Dapper techniques. Learn how relational concepts map to object-oriented code.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Core Topics</h4>
+        <ul>
+          <li><a href="#">Data Modeling</a></li>
+          <li><a href="#">Query Patterns</a></li>
+          <li><a href="#">Performance Optimization</a></li>
+          <li><a href="#">Advanced EF Core</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">GitHub Repository</a></li>
+          <li><a href="#">Live Examples</a></li>
+          <li><a href="#">Community Forum</a></li>
+          <li><a href="#">Contact Authors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>SQL to C# — Master data access across SQL Server, Entity Framework Core, and Dapper. Published 2024.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

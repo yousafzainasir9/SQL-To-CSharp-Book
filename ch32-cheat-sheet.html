@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 32: SQL ↔ LINQ ↔ EF ↔ Dapper Quick Reference — SQL to C#</title>
+<meta name="description" content="Quick reference guide for CRUD operations, query translations, type mappings, EF Core fluent API, Dapper methods, and common data access patterns.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+  --amber: #7a5200;
+  --amber-l: #fdf8ec;
+  --amber-b: #e8d08a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* ── CHAPTER HEADER ── */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* ── IN THIS CHAPTER BOX ── */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* ── CONTENT SECTIONS ── */
+main {
+  padding-bottom: 40px;
+}
+
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+/* ── COMPARISON TABLE ── */
+.comparison-wrap {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.comparison-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.comparison-wrap th {
+  background: var(--acc-l);
+  color: var(--acc);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 700;
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 2px solid var(--acc-b);
+}
+
+.comparison-wrap td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink2);
+  line-height: 1.5;
+}
+
+.comparison-wrap tr:nth-child(even) td { background: var(--bg); }
+.comparison-wrap tr:last-child td { border-bottom: none; }
+
+.comparison-wrap td:first-child {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+code.inline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+/* ── KEY INSIGHT CALLOUT ── */
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink2);
+}
+
+/* ── KEY TAKEAWAYS ── */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 40px;
+  margin-bottom: 60px;
+}
+
+.key-takeaways h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 10px 0;
+  padding-left: 24px;
+  position: relative;
+  line-height: 1.65;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ── CHAPTER NAVIGATION ── */
+.chapter-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 80px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all .2s;
+}
+
+.nav-item:hover {
+  border-color: var(--acc);
+  background: var(--acc-l);
+}
+
+.nav-item.prev {
+  text-align: left;
+}
+
+.nav-item.next {
+  text-align: right;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink4);
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+}
+
+/* ── FOOTER ── */
+footer {
+  background: var(--white);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 80px;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.footer-section p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink2);
+  line-height: 1.6;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section ul li {
+  margin-bottom: 12px;
+}
+
+.footer-section ul li a {
+  font-size: 14px;
+  color: var(--ink2);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.footer-section ul li a:hover {
+  color: var(--acc);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--rule);
+  padding-top: 30px;
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .chapter-nav {
+    grid-template-columns: 1fr;
+  }
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+  .chapter-header h1 {
+    font-size: 28px;
+  }
+  .section h2 {
+    font-size: 22px;
+  }
+  .comparison-wrap table {
+    font-size: 12px;
+  }
+  .comparison-wrap td {
+    padding: 10px 14px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+    <a href="index.html" class="nav-brand">SQL to C#</a>
+    <span class="nav-pill">Chapter 32</span>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+
+<!-- CHAPTER HEADER -->
+<div class="chapter-header">
+  <div class="chapter-num">Chapter 32</div>
+  <h1>SQL ↔ LINQ ↔ EF ↔ Dapper<br>Quick Reference</h1>
+  <p class="chapter-desc">A comprehensive cheat sheet for CRUD operations, query translations, type mappings, EF Core fluent API, Dapper methods, and common patterns. Keep this chapter bookmarked for quick lookup while coding.</p>
+</div>
+
+<!-- IN THIS CHAPTER -->
+<div class="in-this-chapter">
+  <h3>In This Chapter</h3>
+  <ul>
+    <li>CRUD operations in raw SQL, EF Core, and Dapper side-by-side</li>
+    <li>SQL clause to LINQ method translation with examples</li>
+    <li>SQL type to C# type mapping for all common types</li>
+    <li>EF Core fluent API reference for schema configuration</li>
+    <li>Dapper method reference with return types and use cases</li>
+    <li>Common data access patterns and when to use each tool</li>
+  </ul>
+</div>
+
+<!-- Section 01 -->
+<div class="section" id="section-01">
+  <div class="section-num">01 — CRUD Operations Cheat Sheet</div>
+  <h2>Create, Read, Update, Delete Patterns</h2>
+
+  <p class="section-text">
+    The four fundamental database operations: Create (INSERT), Read (SELECT), Update (UPDATE), and Delete (DELETE). This table shows how to perform each in raw SQL, EF Core, and Dapper. Understanding these patterns is foundational to all data access work.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Operation</th>
+          <th>Raw SQL</th>
+          <th>EF Core</th>
+          <th>Dapper</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SELECT ALL</td>
+          <td><code class="inline">SELECT * FROM Products</code></td>
+          <td><code class="inline">context.Products.ToList()</code></td>
+          <td><code class="inline">conn.Query<Product>("SELECT * FROM Products")</code></td>
+        </tr>
+        <tr>
+          <td>SELECT BY ID</td>
+          <td><code class="inline">SELECT * FROM Products WHERE Id = @id</code></td>
+          <td><code class="inline">context.Products.Find(id)</code></td>
+          <td><code class="inline">conn.QueryFirstOrDefault<Product>("SELECT * FROM Products WHERE Id = @Id", new { Id = id })</code></td>
+        </tr>
+        <tr>
+          <td>SELECT WITH FILTER</td>
+          <td><code class="inline">SELECT * FROM Products WHERE Price < @price</code></td>
+          <td><code class="inline">context.Products.Where(p => p.Price < price).ToList()</code></td>
+          <td><code class="inline">conn.Query<Product>("SELECT * FROM Products WHERE Price < @Price", new { Price = price })</code></td>
+        </tr>
+        <tr>
+          <td>INSERT</td>
+          <td><code class="inline">INSERT INTO Products VALUES (@name, @price)</code></td>
+          <td><code class="inline">context.Products.Add(product); context.SaveChanges()</code></td>
+          <td><code class="inline">conn.Execute("INSERT INTO Products (Name, Price) VALUES (@Name, @Price)", product)</code></td>
+        </tr>
+        <tr>
+          <td>INSERT RETURNING ID</td>
+          <td><code class="inline">INSERT ... OUTPUT INSERTED.Id</code></td>
+          <td><code class="inline">context.Products.Add(product); context.SaveChanges(); return product.Id</code></td>
+          <td><code class="inline">conn.QuerySingle<int>("INSERT INTO Products ... RETURNING Id", product)</code></td>
+        </tr>
+        <tr>
+          <td>UPDATE</td>
+          <td><code class="inline">UPDATE Products SET Name = @name WHERE Id = @id</code></td>
+          <td><code class="inline">product.Name = "new"; context.SaveChanges()</code></td>
+          <td><code class="inline">conn.Execute("UPDATE Products SET Name = @Name WHERE Id = @Id", product)</code></td>
+        </tr>
+        <tr>
+          <td>DELETE</td>
+          <td><code class="inline">DELETE FROM Products WHERE Id = @id</code></td>
+          <td><code class="inline">context.Products.Remove(product); context.SaveChanges()</code></td>
+          <td><code class="inline">conn.Execute("DELETE FROM Products WHERE Id = @Id", new { Id = id })</code></td>
+        </tr>
+        <tr>
+          <td>BULK INSERT (1000+ rows)</td>
+          <td><code class="inline">INSERT INTO ... SELECT ... (multi-row)</code></td>
+          <td><code class="inline">context.Products.AddRange(products); context.SaveChanges()</code> (Slow!)</td>
+          <td><code class="inline">conn.Execute("INSERT ...", products) in loop, or use SqlBulkCopy</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: EF Change Tracking vs Explicit Updates</strong>
+    <p>EF Core tracks changes automatically—fetch an entity, modify it in memory, and SaveChanges() generates the UPDATE. Dapper is explicit—you write the UPDATE SQL. This makes EF easier for simple scenarios but requires understanding change tracking behavior.</p>
+  </div>
+</div>
+
+<!-- Section 02 -->
+<div class="section" id="section-02">
+  <div class="section-num">02 — Query Operations Translation</div>
+  <h2>SQL Clauses to LINQ Methods Mapping</h2>
+
+  <p class="section-text">
+    SQL and LINQ both express queries, but with different syntax. This reference maps SQL clauses to LINQ methods, showing how to express the same operations in both languages. Mastering this translation is essential for switching between raw SQL and LINQ.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SQL Clause</th>
+          <th>LINQ Method</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SELECT</td>
+          <td>.Select()</td>
+          <td><code class="inline">.Select(p => p.Name)</code></td>
+        </tr>
+        <tr>
+          <td>WHERE</td>
+          <td>.Where()</td>
+          <td><code class="inline">.Where(p => p.Price > 100)</code></td>
+        </tr>
+        <tr>
+          <td>ORDER BY</td>
+          <td>.OrderBy()</td>
+          <td><code class="inline">.OrderBy(p => p.Name)</code></td>
+        </tr>
+        <tr>
+          <td>ORDER BY DESC</td>
+          <td>.OrderByDescending()</td>
+          <td><code class="inline">.OrderByDescending(p => p.Price)</code></td>
+        </tr>
+        <tr>
+          <td>GROUP BY</td>
+          <td>.GroupBy()</td>
+          <td><code class="inline">.GroupBy(p => p.Category)</code></td>
+        </tr>
+        <tr>
+          <td>HAVING</td>
+          <td>.Where() after GroupBy</td>
+          <td><code class="inline">.GroupBy(...).Where(g => g.Count() > 5)</code></td>
+        </tr>
+        <tr>
+          <td>INNER JOIN</td>
+          <td>.Join()</td>
+          <td><code class="inline">.Join(ctx.Categories, p => p.CategoryId, c => c.Id, (p,c) => ...)</code></td>
+        </tr>
+        <tr>
+          <td>LEFT JOIN</td>
+          <td>.GroupJoin() + .DefaultIfEmpty()</td>
+          <td><code class="inline">.GroupJoin(...).SelectMany(g => g.DefaultIfEmpty())</code></td>
+        </tr>
+        <tr>
+          <td>DISTINCT</td>
+          <td>.Distinct()</td>
+          <td><code class="inline">.Select(p => p.Category).Distinct()</code></td>
+        </tr>
+        <tr>
+          <td>TOP / LIMIT</td>
+          <td>.Take()</td>
+          <td><code class="inline">.Take(10)</code></td>
+        </tr>
+        <tr>
+          <td>OFFSET</td>
+          <td>.Skip()</td>
+          <td><code class="inline">.Skip(20).Take(10)</code></td>
+        </tr>
+        <tr>
+          <td>EXISTS</td>
+          <td>.Any()</td>
+          <td><code class="inline">.Any(p => p.Price > 100)</code></td>
+        </tr>
+        <tr>
+          <td>IN (@list)</td>
+          <td>.Contains()</td>
+          <td><code class="inline">.Where(p => ids.Contains(p.Id))</code></td>
+        </tr>
+        <tr>
+          <td>COUNT(*)</td>
+          <td>.Count()</td>
+          <td><code class="inline">.Count()</code> or <code class="inline">.Count(p => p.Price > 100)</code></td>
+        </tr>
+        <tr>
+          <td>SUM()</td>
+          <td>.Sum()</td>
+          <td><code class="inline">.Sum(p => p.Price)</code></td>
+        </tr>
+        <tr>
+          <td>AVG()</td>
+          <td>.Average()</td>
+          <td><code class="inline">.Average(p => p.Price)</code></td>
+        </tr>
+        <tr>
+          <td>MIN() / MAX()</td>
+          <td>.Min() / .Max()</td>
+          <td><code class="inline">.Min(p => p.Price)</code> or <code class="inline">.Max(p => p.Price)</code></td>
+        </tr>
+        <tr>
+          <td>CASE WHEN</td>
+          <td>Ternary ? :</td>
+          <td><code class="inline">.Select(p => p.Price > 500 ? "Expensive" : "Cheap")</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Some SQL Concepts Don't Translate</strong>
+    <p>Not all SQL features have LINQ equivalents. Window functions (ROW_NUMBER, DENSE_RANK) have limited LINQ support. Set operations (UNION, INTERSECT) are available but cumbersome. For complex SQL, raw SQL with .FromSqlRaw() is clearer than forcing it into LINQ.</p>
+  </div>
+</div>
+
+<!-- Section 03 -->
+<div class="section" id="section-03">
+  <div class="section-num">03 — SQL to C# Type Mapping</div>
+  <h2>Database Types and Their CLR Equivalents</h2>
+
+  <p class="section-text">
+    When mapping database columns to C# properties, you need the correct type. This table shows standard SQL types and their C# equivalents, including nullable versions and edge cases.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SQL Type</th>
+          <th>C# Type</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline">INT</code></td>
+          <td><code class="inline">int</code> or <code class="inline">int?</code></td>
+          <td>NULL → use int?</td>
+        </tr>
+        <tr>
+          <td><code class="inline">BIGINT</code></td>
+          <td><code class="inline">long</code> or <code class="inline">long?</code></td>
+          <td>64-bit integer</td>
+        </tr>
+        <tr>
+          <td><code class="inline">SMALLINT</code></td>
+          <td><code class="inline">short</code> or <code class="inline">short?</code></td>
+          <td>16-bit integer</td>
+        </tr>
+        <tr>
+          <td><code class="inline">TINYINT</code></td>
+          <td><code class="inline">byte</code> or <code class="inline">byte?</code></td>
+          <td>0-255</td>
+        </tr>
+        <tr>
+          <td><code class="inline">BIT</code></td>
+          <td><code class="inline">bool</code> or <code class="inline">bool?</code></td>
+          <td>True/False</td>
+        </tr>
+        <tr>
+          <td><code class="inline">DECIMAL(p,s)</code></td>
+          <td><code class="inline">decimal</code> or <code class="inline">decimal?</code></td>
+          <td>Financial data</td>
+        </tr>
+        <tr>
+          <td><code class="inline">NUMERIC(p,s)</code></td>
+          <td><code class="inline">decimal</code> or <code class="inline">decimal?</code></td>
+          <td>Same as DECIMAL</td>
+        </tr>
+        <tr>
+          <td><code class="inline">FLOAT</code></td>
+          <td><code class="inline">double</code> or <code class="inline">double?</code></td>
+          <td>Floating point (precision loss)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">REAL</code></td>
+          <td><code class="inline">float</code> or <code class="inline">float?</code></td>
+          <td>Single precision</td>
+        </tr>
+        <tr>
+          <td><code class="inline">MONEY</code></td>
+          <td><code class="inline">decimal</code></td>
+          <td>SQL Server specific</td>
+        </tr>
+        <tr>
+          <td><code class="inline">VARCHAR(n)</code></td>
+          <td><code class="inline">string</code></td>
+          <td>Variable-length text</td>
+        </tr>
+        <tr>
+          <td><code class="inline">NVARCHAR(n)</code></td>
+          <td><code class="inline">string</code></td>
+          <td>Unicode text (SQL Server)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">CHAR(n)</code></td>
+          <td><code class="inline">string</code></td>
+          <td>Fixed-length text</td>
+        </tr>
+        <tr>
+          <td><code class="inline">TEXT</code></td>
+          <td><code class="inline">string</code></td>
+          <td>Large text</td>
+        </tr>
+        <tr>
+          <td><code class="inline">DATETIME</code></td>
+          <td><code class="inline">DateTime</code> or <code class="inline">DateTime?</code></td>
+          <td>Date and time</td>
+        </tr>
+        <tr>
+          <td><code class="inline">DATETIME2</code></td>
+          <td><code class="inline">DateTime</code> or <code class="inline">DateTime?</code></td>
+          <td>Higher precision</td>
+        </tr>
+        <tr>
+          <td><code class="inline">DATE</code></td>
+          <td><code class="inline">DateOnly</code> or <code class="inline">DateOnly?</code></td>
+          <td>.NET 6+</td>
+        </tr>
+        <tr>
+          <td><code class="inline">TIME</code></td>
+          <td><code class="inline">TimeOnly</code> or <code class="inline">TimeOnly?</code></td>
+          <td>.NET 6+</td>
+        </tr>
+        <tr>
+          <td><code class="inline">TIMESTAMP</code></td>
+          <td><code class="inline">byte[]</code></td>
+          <td>Concurrency token</td>
+        </tr>
+        <tr>
+          <td><code class="inline">UNIQUEIDENTIFIER</code></td>
+          <td><code class="inline">Guid</code> or <code class="inline">Guid?</code></td>
+          <td>UUID</td>
+        </tr>
+        <tr>
+          <td><code class="inline">VARBINARY(n)</code></td>
+          <td><code class="inline">byte[]</code></td>
+          <td>Binary data</td>
+        </tr>
+        <tr>
+          <td><code class="inline">IMAGE</code></td>
+          <td><code class="inline">byte[]</code></td>
+          <td>Large binary</td>
+        </tr>
+        <tr>
+          <td><code class="inline">JSON</code></td>
+          <td><code class="inline">string</code> or custom class</td>
+          <td>Value conversion needed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: NULL Handling with Nullable Types</strong>
+    <p>If a SQL column allows NULL, use nullable C# types (int?, DateTime?, string). Note that string is already nullable in C#. Use non-nullable types only if you're certain the column is NOT NULL and you want EF to enforce this in migrations.</p>
+  </div>
+</div>
+
+<!-- Section 04 -->
+<div class="section" id="section-04">
+  <div class="section-num">04 — EF Core Fluent API Quick Reference</div>
+  <h2>Schema Configuration with HasKey, HasOne, etc.</h2>
+
+  <p class="section-text">
+    The Fluent API is how you configure EF Core entities beyond attributes. This table shows the most common methods for defining keys, relationships, constraints, and mappings.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SQL Constraint</th>
+          <th>Fluent API</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PRIMARY KEY</td>
+          <td>.HasKey()</td>
+          <td><code class="inline">.HasKey(p => p.Id)</code></td>
+        </tr>
+        <tr>
+          <td>Composite Key</td>
+          <td>.HasKey()</td>
+          <td><code class="inline">.HasKey(p => new { p.CompanyId, p.EmployeeId })</code></td>
+        </tr>
+        <tr>
+          <td>FOREIGN KEY</td>
+          <td>.HasOne().WithMany().HasForeignKey()</td>
+          <td><code class="inline">.HasOne(o => o.Customer).WithMany(c => c.Orders).HasForeignKey(o => o.CustomerId)</code></td>
+        </tr>
+        <tr>
+          <td>One-to-One</td>
+          <td>.HasOne().WithOne().HasForeignKey()</td>
+          <td><code class="inline">.HasOne(p => p.Address).WithOne(a => a.Person).HasForeignKey<Address>(a => a.PersonId)</code></td>
+        </tr>
+        <tr>
+          <td>Many-to-Many</td>
+          <td>.HasMany().WithMany()</td>
+          <td><code class="inline">.HasMany(s => s.Courses).WithMany(c => c.Students)</code></td>
+        </tr>
+        <tr>
+          <td>INDEX</td>
+          <td>.HasIndex()</td>
+          <td><code class="inline">.HasIndex(p => p.Email)</code></td>
+        </tr>
+        <tr>
+          <td>UNIQUE constraint</td>
+          <td>.HasIndex().IsUnique()</td>
+          <td><code class="inline">.HasIndex(p => p.Email).IsUnique()</code></td>
+        </tr>
+        <tr>
+          <td>Composite Index</td>
+          <td>.HasIndex()</td>
+          <td><code class="inline">.HasIndex(p => new { p.CategoryId, p.Name })</code></td>
+        </tr>
+        <tr>
+          <td>DEFAULT value</td>
+          <td>.HasDefaultValue() or .HasDefaultValueSql()</td>
+          <td><code class="inline">.HasDefaultValue(DateTime.UtcNow)</code></td>
+        </tr>
+        <tr>
+          <td>NOT NULL</td>
+          <td>.IsRequired()</td>
+          <td><code class="inline">.IsRequired()</code></td>
+        </tr>
+        <tr>
+          <td>nullable</td>
+          <td>.IsRequired(false)</td>
+          <td><code class="inline">.IsRequired(false)</code></td>
+        </tr>
+        <tr>
+          <td>MAX LENGTH</td>
+          <td>.HasMaxLength()</td>
+          <td><code class="inline">.HasMaxLength(100)</code></td>
+        </tr>
+        <tr>
+          <td>PRECISION / SCALE</td>
+          <td>.HasPrecision()</td>
+          <td><code class="inline">.HasPrecision(10, 2)</code> (decimal)</td>
+        </tr>
+        <tr>
+          <td>Column Name</td>
+          <td>.HasColumnName()</td>
+          <td><code class="inline">.HasColumnName("product_name")</code></td>
+        </tr>
+        <tr>
+          <td>Column Type</td>
+          <td>.HasColumnType()</td>
+          <td><code class="inline">.HasColumnType("nvarchar(max)")</code></td>
+        </tr>
+        <tr>
+          <td>Table Name</td>
+          <td>.ToTable()</td>
+          <td><code class="inline">.ToTable("product_table")</code></td>
+        </tr>
+        <tr>
+          <td>Schema</td>
+          <td>.ToTable(name, schema)</td>
+          <td><code class="inline">.ToTable("products", "dbo")</code></td>
+        </tr>
+        <tr>
+          <td>Inheritance Mapping</td>
+          <td>.HasDiscriminator()</td>
+          <td><code class="inline">.HasDiscriminator<string>("type").HasValue<Product>("product")</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Fluent API Chains</strong>
+    <p>The Fluent API uses method chaining. Each method returns an object allowing you to call the next method. This creates readable, declarative configurations. Break chains at logical points for readability: property config, then relationship config, then table config.</p>
+  </div>
+</div>
+
+<!-- Section 05 -->
+<div class="section" id="section-05">
+  <div class="section-num">05 — Dapper Method Reference</div>
+  <h2>Query, Execute, and QueryMultiple Methods</h2>
+
+  <p class="section-text">
+    Dapper provides a small set of extension methods on IDbConnection. These six methods cover all data access scenarios. Understanding their return types and when to use each is essential for effective Dapper usage.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Returns</th>
+          <th>Use For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline">Query<T></code></td>
+          <td><code class="inline">IEnumerable<T></code></td>
+          <td>Multiple rows, eager evaluation</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QueryAsync<T></code></td>
+          <td><code class="inline">Task<IEnumerable<T>></code></td>
+          <td>Multiple rows (async)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QueryFirst<T></code></td>
+          <td><code class="inline">T</code></td>
+          <td>First row, throws if empty</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QueryFirstOrDefault<T></code></td>
+          <td><code class="inline">T</code> or <code class="inline">null</code></td>
+          <td>First row or null</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QuerySingle<T></code></td>
+          <td><code class="inline">T</code></td>
+          <td>Exactly one row, throws otherwise</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QuerySingleOrDefault<T></code></td>
+          <td><code class="inline">T</code> or <code class="inline">null</code></td>
+          <td>Exactly one row or null</td>
+        </tr>
+        <tr>
+          <td><code class="inline">Execute</code></td>
+          <td><code class="inline">int</code> (rows affected)</td>
+          <td>INSERT, UPDATE, DELETE</td>
+        </tr>
+        <tr>
+          <td><code class="inline">ExecuteAsync</code></td>
+          <td><code class="inline">Task<int></code></td>
+          <td>INSERT, UPDATE, DELETE (async)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">ExecuteScalar<T></code></td>
+          <td><code class="inline">T</code></td>
+          <td>Single value (COUNT, SUM, etc)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">ExecuteScalarAsync<T></code></td>
+          <td><code class="inline">Task<T></code></td>
+          <td>Single value (async)</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QueryMultiple</code></td>
+          <td><code class="inline">GridReader</code></td>
+          <td>Multiple result sets in one call</td>
+        </tr>
+        <tr>
+          <td><code class="inline">QueryMultipleAsync</code></td>
+          <td><code class="inline">Task<GridReader></code></td>
+          <td>Multiple result sets (async)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Query vs QueryFirst Distinction</strong>
+    <p>Query<T>() returns IEnumerable and is lazy—the database isn't queried until you iterate. QueryFirst<T>() executes immediately and returns the first row. Use Query() for filtering/projecting in LINQ; use QueryFirst() when you know you want only one row.</p>
+  </div>
+</div>
+
+<!-- Section 06 -->
+<div class="section" id="section-06">
+  <div class="section-num">06 — Common Patterns Quick Reference</div>
+  <h2>Repository, Unit of Work, CQRS, and Bulk Operations</h2>
+
+  <p class="section-text">
+    Beyond CRUD, architectural patterns guide how you organize data access code. This table shows the four most common patterns, when to use them, and which tools fit each best.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>When to Use</th>
+          <th>Best Tool</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Repository</strong><br>Abstract data access behind interfaces</td>
+          <td>Always. Decouples domain logic from data access. Easier testing.</td>
+          <td>EF Core or Dapper. Both work with Repository pattern.</td>
+        </tr>
+        <tr>
+          <td><strong>Unit of Work</strong><br>Atomic transactions across multiple aggregates</td>
+          <td>When multiple entities must change together, or changes must succeed/fail as a unit.</td>
+          <td>EF Core has built-in UoW (DbContext). Dapper needs manual transaction management.</td>
+        </tr>
+        <tr>
+          <td><strong>CQRS</strong><br>Separate read and write paths</td>
+          <td>When reads and writes have different performance requirements, or different models fit each.</td>
+          <td>EF Core for writes (change tracking). Dapper for reads (no overhead).</td>
+        </tr>
+        <tr>
+          <td><strong>Bulk Insert</strong><br>Insert 1000+ rows efficiently</td>
+          <td>Data imports, batch operations, ETL pipelines.</td>
+          <td>SqlBulkCopy (fastest). Dapper batch (good balance). EF SaveChanges on collections (slowest).</td>
+        </tr>
+        <tr>
+          <td><strong>Specification</strong><br>Encapsulate query logic in objects</td>
+          <td>Complex filtering logic that repeats. Domain-driven design.</td>
+          <td>EF Core with LINQ. Build Specification object that returns IQueryable.</td>
+        </tr>
+        <tr>
+          <td><strong>Cache-Aside</strong><br>Query cache before database</td>
+          <td>Frequently read, rarely changed data (reference data, configs).</td>
+          <td>Either EF or Dapper. Cache layer is independent of data access tool.</td>
+        </tr>
+        <tr>
+          <td><strong>Eventual Consistency</strong><br>Multiple databases, async updates</td>
+          <td>Microservices, event sourcing, distributed systems.</td>
+          <td>Either. Combine with message queues (RabbitMQ, Azure Service Bus).</td>
+        </tr>
+        <tr>
+          <td><strong>Pagination</strong><br>Load large result sets in chunks</td>
+          <td>Always. Never load 1M rows at once.</td>
+          <td>EF: <code class="inline">.Skip(pageSize * (pageNum-1)).Take(pageSize)</code><br>Dapper: Same SQL pattern</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: CQRS is Not Overengineering</strong>
+    <p>Many projects benefit from CQRS without being "enterprise." Use EF Core for writes (which benefit from change tracking and validations) and Dapper for reads (which are often complex projections). The tools fit naturally into their domains.</p>
+  </div>
+</div>
+
+<!-- Section 07 -->
+<div class="section" id="section-07">
+  <div class="section-num">07 — LINQ Query Syntax vs Method Syntax</div>
+  <h2>from/where/select Style Alongside Method Chaining</h2>
+
+  <p class="section-text">
+    LINQ supports two syntaxes: fluent method syntax (familiar to LINQ veterans) and query syntax (resembles SQL). Both compile to the same code, but query syntax is often more readable for complex filtering and joining. This section shows how to write the same query in both styles.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Method Syntax</th>
+          <th>Query Syntax</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Simple Filter</td>
+          <td><code class="inline">ctx.Products.Where(p => p.Price > 100).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products where p.Price > 100 select p</code></td>
+        </tr>
+        <tr>
+          <td>Filter + Project</td>
+          <td><code class="inline">ctx.Products.Where(p => p.Active).Select(p => p.Name).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products where p.Active select p.Name</code></td>
+        </tr>
+        <tr>
+          <td>Order + Take</td>
+          <td><code class="inline">ctx.Products.OrderByDescending(p => p.Price).Take(5).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products orderby p.Price descending select p) into top5 select top5</code></td>
+        </tr>
+        <tr>
+          <td>Inner Join</td>
+          <td><code class="inline">ctx.Products.Join(ctx.Categories, p => p.CategoryId, c => c.Id, (p, c) => new { p.Name, c.Title })</code></td>
+          <td><code class="inline">from p in ctx.Products join c in ctx.Categories on p.CategoryId equals c.Id select new { p.Name, c.Title }</code></td>
+        </tr>
+        <tr>
+          <td>Left Join (DefaultIfEmpty)</td>
+          <td><code class="inline">ctx.Products.GroupJoin(ctx.Categories, p => p.CategoryId, c => c.Id, (p, cs) => new { p, cs }).SelectMany(x => x.cs.DefaultIfEmpty(), (p, c) => new { p.Name, c.Title })</code></td>
+          <td><code class="inline">from p in ctx.Products join c in ctx.Categories on p.CategoryId equals c.Id into cs from c2 in cs.DefaultIfEmpty() select new { p.Name, c2.Title }</code></td>
+        </tr>
+        <tr>
+          <td>Group By Count</td>
+          <td><code class="inline">ctx.Products.GroupBy(p => p.Category).Select(g => new { Category = g.Key, Count = g.Count() }).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products group p by p.Category into g select new { Category = g.Key, Count = g.Count() }</code></td>
+        </tr>
+        <tr>
+          <td>Multiple Conditions</td>
+          <td><code class="inline">ctx.Products.Where(p => p.Active && p.Price > 50 && p.Stock > 0).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products where p.Active && p.Price > 50 && p.Stock > 0 select p</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Query Syntax Shines with Joins</strong>
+    <p>Query syntax (from/join/select) reads more naturally for complex joins than method syntax. However, query syntax is just syntactic sugar—the compiler converts it to method calls. Use whichever is more readable for your team. If using a tool like Entity Framework, both generate the same SQL.</p>
+  </div>
+</div>
+
+<!-- Section 08 -->
+<div class="section" id="section-08">
+  <div class="section-num">08 — EF Core Migration Commands Cheat Sheet</div>
+  <h2>Database Versioning and Schema Evolution with Migrations</h2>
+
+  <p class="section-text">
+    EF Core Migrations track schema changes in code. This reference shows the commands for creating, applying, and rolling back migrations in the Package Manager Console or dotnet CLI.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Package Manager Console</th>
+          <th>dotnet CLI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Create a new migration</td>
+          <td><code class="inline">Add-Migration MigrationName</code></td>
+          <td><code class="inline">dotnet ef migrations add MigrationName</code></td>
+        </tr>
+        <tr>
+          <td>Remove last migration (not applied)</td>
+          <td><code class="inline">Remove-Migration</code></td>
+          <td><code class="inline">dotnet ef migrations remove</code></td>
+        </tr>
+        <tr>
+          <td>List all migrations</td>
+          <td><code class="inline">Get-Migration</code></td>
+          <td><code class="inline">dotnet ef migrations list</code></td>
+        </tr>
+        <tr>
+          <td>Apply all pending migrations</td>
+          <td><code class="inline">Update-Database</code></td>
+          <td><code class="inline">dotnet ef database update</code></td>
+        </tr>
+        <tr>
+          <td>Apply to specific migration</td>
+          <td><code class="inline">Update-Database -Migration MigrationName</code></td>
+          <td><code class="inline">dotnet ef database update MigrationName</code></td>
+        </tr>
+        <tr>
+          <td>Rollback all migrations</td>
+          <td><code class="inline">Update-Database -Migration 0</code></td>
+          <td><code class="inline">dotnet ef database update 0</code></td>
+        </tr>
+        <tr>
+          <td>Create initial migration from DbContext</td>
+          <td><code class="inline">Add-Migration InitialCreate</code></td>
+          <td><code class="inline">dotnet ef migrations add InitialCreate</code></td>
+        </tr>
+        <tr>
+          <td>Generate idempotent SQL script</td>
+          <td><code class="inline">Script-Migration</code></td>
+          <td><code class="inline">dotnet ef migrations script --idempotent</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Idempotent Scripts for Production</strong>
+    <p>Always generate idempotent migration scripts for production deployments. These scripts include checks like "IF NOT EXISTS" so they're safe to run multiple times. Use <code class="inline">dotnet ef migrations script --idempotent</code> before deploying.</p>
+  </div>
+</div>
+
+<!-- Section 09 -->
+<div class="section" id="section-09">
+  <div class="section-num">09 — Transaction Patterns Quick Reference</div>
+  <h2>Managing Atomicity and Isolation in Data Access</h2>
+
+  <p class="section-text">
+    Transactions ensure that multiple operations succeed or fail as a unit. This reference shows transaction patterns across EF Core and Dapper, plus common isolation levels and when to use each.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>EF Core</th>
+          <th>Dapper</th>
+          <th>Use Case</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Implicit Transaction (SaveChanges)</td>
+          <td><code class="inline">context.Products.Add(p); context.SaveChanges();</code></td>
+          <td>N/A (explicit required)</td>
+          <td>Single operation, EF handles atomicity</td>
+        </tr>
+        <tr>
+          <td>Explicit Transaction Scope</td>
+          <td><code class="inline">using (var txn = context.Database.BeginTransaction()) { /* ops */ txn.Commit(); }</code></td>
+          <td><code class="inline">using (var txn = conn.BeginTransaction()) { /* ops */ txn.Commit(); }</code></td>
+          <td>Multiple operations must succeed/fail together</td>
+        </tr>
+        <tr>
+          <td>Async Transaction</td>
+          <td><code class="inline">using (var txn = await context.Database.BeginTransactionAsync()) { /* ops */ await txn.CommitAsync(); }</code></td>
+          <td><code class="inline">using (var txn = conn.BeginTransaction()) { /* async ops */ txn.Commit(); }</code></td>
+          <td>Non-blocking transactions in async methods</td>
+        </tr>
+        <tr>
+          <td>Isolation Level: Serializable</td>
+          <td><code class="inline">context.Database.BeginTransaction(System.Data.IsolationLevel.Serializable)</code></td>
+          <td><code class="inline">conn.BeginTransaction(System.Data.IsolationLevel.Serializable)</code></td>
+          <td>Strongest isolation, slowest. For critical operations.</td>
+        </tr>
+        <tr>
+          <td>Isolation Level: RepeatableRead</td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.RepeatableRead)</code></td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.RepeatableRead)</code></td>
+          <td>Prevent dirty reads and lost updates</td>
+        </tr>
+        <tr>
+          <td>Isolation Level: ReadCommitted</td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.ReadCommitted)</code> (default)</td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.ReadCommitted)</code> (default)</td>
+          <td>Default. Prevents dirty reads.</td>
+        </tr>
+        <tr>
+          <td>Isolation Level: ReadUncommitted</td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.ReadUncommitted)</code></td>
+          <td><code class="inline">BeginTransaction(System.Data.IsolationLevel.ReadUncommitted)</code></td>
+          <td>Fastest, allows dirty reads. For analytics only.</td>
+        </tr>
+        <tr>
+          <td>Savepoints (Nested Rollback)</td>
+          <td><code class="inline">txn.CreateSavepoint("sp1"); /* ops */ txn.RollbackToSavepoint("sp1");</code></td>
+          <td><code class="inline">conn.Execute("SAVE TRANSACTION sp1"); /* ops */ conn.Execute("ROLLBACK TRANSACTION sp1");</code></td>
+          <td>Rollback part of a transaction, keep rest</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Default Isolation Levels are Usually Fine</strong>
+    <p>ReadCommitted (the default) prevents dirty reads and works for 95% of applications. Serializable guarantees consistency but kills concurrency. RepeatableRead is the middle ground. Only change isolation levels if you've identified specific concurrency bugs.</p>
+  </div>
+</div>
+
+<!-- Section 10 -->
+<div class="section" id="section-10">
+  <div class="section-num">10 — Common Gotchas and Pitfalls</div>
+  <h2>Avoid These Data Access Mistakes</h2>
+
+  <p class="section-text">
+    Even experienced developers fall into these traps. Understanding common pitfalls helps you avoid subtle bugs that appear under load or in production.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Gotcha</th>
+          <th>What Happens</th>
+          <th>Solution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Lazy Evaluation in LINQ</strong><br>Modifying query after materialization</td>
+          <td><code class="inline">var q = ctx.Products.Where(p => p.Active);</code> (not executed yet) <code class="inline">q = q.Where(p => p.Price > 100);</code> (compiled as one query)</td>
+          <td>Call <code class="inline">.ToList()</code> to materialize immediately if query references change</td>
+        </tr>
+        <tr>
+          <td><strong>Change Tracking Overhead</strong><br>EF Core tracks all fetched entities</td>
+          <td>Fetching 100,000 rows with EF slows to a crawl; memory usage explodes</td>
+          <td>Use <code class="inline">.AsNoTracking()</code> for read-only queries. Use Dapper for large result sets.</td>
+        </tr>
+        <tr>
+          <td><strong>SELECT N+1</strong><br>Query loop executes separate queries</td>
+          <td><code class="inline">foreach (var p in products) { var cat = ctx.Categories.Find(p.CategoryId); }</code> (1 + N queries)</td>
+          <td>Use <code class="inline">.Include(p => p.Category)</code> to fetch related data in one query</td>
+        </tr>
+        <tr>
+          <td><strong>Identity Column Not Returned</strong><br>Insert doesn't return new ID</td>
+          <td><code class="inline">ctx.Products.Add(p); ctx.SaveChanges();</code> Then <code class="inline">p.Id</code> is still 0</td>
+          <td>EF automatically populates <code class="inline">p.Id</code> if configured with <code class="inline">.ValueGeneratedOnAdd()</code></td>
+        </tr>
+        <tr>
+          <td><strong>Connection String Leaks</strong><br>Sensitive data in code</td>
+          <td>Connection string with password committed to GitHub</td>
+          <td>Use appsettings.json, user secrets, or environment variables. Never hardcode.</td>
+        </tr>
+        <tr>
+          <td><strong>DateTime.Now vs UTC</strong><br>Timezone bugs</td>
+          <td>Database stores UTC, C# uses local time; comparisons fail</td>
+          <td>Always use <code class="inline">DateTime.UtcNow</code> in C#. Configure database columns as UTC.</td>
+        </tr>
+        <tr>
+          <td><strong>Missing .ToList() on Async</strong><br>Forgetting to materialize async queries</td>
+          <td><code class="inline">var items = await ctx.Products.ToListAsync();</code> (correct) vs <code class="inline">var items = ctx.Products.ToListAsync();</code> (wrong—returns Task, not list)</td>
+          <td>Always await async methods. Use <code class="inline">.ToListAsync()</code>, <code class="inline">.FirstOrDefaultAsync()</code>, etc.</td>
+        </tr>
+        <tr>
+          <td><strong>Null Reference in LINQ</strong><br>Comparing null in query</td>
+          <td><code class="inline">.Where(p => p.Category.Name == "Electronics")</code> throws if Category is null</td>
+          <td>Check for null: <code class="inline">.Where(p => p.Category != null && p.Category.Name == "Electronics")</code></td>
+        </tr>
+        <tr>
+          <td><strong>DbContext Scope Issues</strong><br>Using DbContext outside its scope</td>
+          <td>DbContext disposed in one method, used in another; throws "DbContext has been disposed"</td>
+          <td>Always scope DbContext to the operation. Use dependency injection with AddScoped() or AddTransient().</td>
+        </tr>
+        <tr>
+          <td><strong>Dapper Parameter Case Sensitivity</strong><br>SQL @Name doesn't match object property Name</td>
+          <td><code class="inline">conn.Execute("INSERT ... @name", new { Name = "test" });</code> fails if SQL uses @Name</td>
+          <td>Dapper matches parameter names case-insensitively by default, but be explicit for clarity</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Profile Before Optimizing</strong>
+    <p>Don't guess about performance. Use Entity Framework's logging to see generated SQL. Use SQL Profiler to capture actual queries. Measure memory and CPU before and after changes. The biggest wins often come from fixing SELECT N+1, not micro-optimizations.</p>
+  </div>
+</div>
+
+<!-- Section 11 -->
+<div class="section" id="section-11">
+  <div class="section-num">11 — Performance Tips Quick Reference</div>
+  <h2>Optimization Strategies for Data Access Across Tools</h2>
+
+  <p class="section-text">
+    Database performance is often the bottleneck in applications. This reference covers the highest-impact optimizations for EF Core and Dapper, ranked by impact and ease of implementation.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Optimization</th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Use Indexes</strong><br>CREATE INDEX on frequently queried columns</td>
+          <td>Very High (10-100x speedup)</td>
+          <td>Low</td>
+          <td>Index WHERE, ORDER BY, and JOIN columns. In EF Core: <code class="inline">.HasIndex(p => p.CategoryId)</code></td>
+        </tr>
+        <tr>
+          <td><strong>AsNoTracking for Reads</strong><br>Disable change tracking on queries</td>
+          <td>High</td>
+          <td>Very Low</td>
+          <td>EF: <code class="inline">ctx.Products.AsNoTracking().ToList()</code> for read-only queries. Skip this for objects you'll modify.</td>
+        </tr>
+        <tr>
+          <td><strong>Use Dapper for Complex Reads</strong><br>Skip ORM overhead when reading</td>
+          <td>High</td>
+          <td>Low</td>
+          <td>For reports, analytics, or complex joins: Dapper is 2-5x faster than EF on large result sets</td>
+        </tr>
+        <tr>
+          <td><strong>Avoid SELECT *</strong><br>Project only needed columns</td>
+          <td>Medium-High</td>
+          <td>Low</td>
+          <td>EF: <code class="inline">.Select(p => new { p.Id, p.Name })</code> Dapper: List columns in SELECT</td>
+        </tr>
+        <tr>
+          <td><strong>Batch Updates</strong><br>Update multiple rows in one statement</td>
+          <td>Very High (for bulk ops)</td>
+          <td>Medium</td>
+          <td>Use <code class="inline">.ExecuteUpdate()</code> in EF 7+ or <code class="inline">SqlBulkCopy</code>. Avoid looping and SaveChanges().</td>
+        </tr>
+        <tr>
+          <td><strong>Enable IDENTITY_INSERT</strong><br>Speed up bulk inserts when ID is provided</td>
+          <td>High (for bulk only)</td>
+          <td>Medium</td>
+          <td>SqlBulkCopy with <code class="inline">KeepIdentity = true</code></td>
+        </tr>
+        <tr>
+          <td><strong>Use Parameterized Queries Always</strong><br>Prevent SQL injection and aid caching</td>
+          <td>Medium (caching)</td>
+          <td>Very Low</td>
+          <td>EF and Dapper use parameters by default. Avoid string concatenation in SQL.</td>
+        </tr>
+        <tr>
+          <td><strong>Include Only Needed Related Data</strong><br>Use .Include() selectively</td>
+          <td>Medium</td>
+          <td>Low</td>
+          <td>EF: <code class="inline">.Include(p => p.Category)</code> only when needed. Avoid .Include() in loops.</td>
+        </tr>
+        <tr>
+          <td><strong>Use Query Caching</strong><br>Cache frequently accessed data</td>
+          <td>High (for read-heavy)</td>
+          <td>Medium</td>
+          <td>MemoryCache or Redis for reference data, counts, or reports. Use cache invalidation strategy.</td>
+        </tr>
+        <tr>
+          <td><strong>Monitor Query Plans</strong><br>Use EXPLAIN or SQL Profiler</td>
+          <td>High (prevents regression)</td>
+          <td>Low-Medium</td>
+          <td>SQL Profiler shows actual execution time. EXPLAIN shows plan before execution. Look for Table Scans.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: The 80/20 Rule</strong>
+    <p>80% of performance gains come from 20% of changes. Indexes, AsNoTracking(), and avoiding SELECT N+1 solve most problems. Micro-optimizations (like expression caching) have minimal impact unless you're in a hot path serving millions of requests.</p>
+  </div>
+</div>
+
+<!-- Section 12 -->
+<div class="section" id="section-12">
+  <div class="section-num">12 — SQL vs LINQ vs Query Syntax: Additional Examples</div>
+  <h2>More Complex Comparisons Across All Three Approaches</h2>
+
+  <p class="section-text">
+    Here are two additional complex scenarios showing how SQL, LINQ method syntax, and LINQ query syntax express the same logic differently. These highlight when each approach shines.
+  </p>
+
+  <div class="comparison-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 15%;">Scenario</th>
+          <th style="width: 28%;">Raw SQL</th>
+          <th style="width: 28%;">LINQ Method Syntax</th>
+          <th style="width: 28%;">LINQ Query Syntax</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Top Products by Category</strong><br>Get the 3 most expensive items per category</td>
+          <td><code class="inline">SELECT TOP 3 p.Id, p.Name, p.Price, c.Name FROM Products p JOIN Categories c ON p.CategoryId = c.Id ORDER BY c.Name, p.Price DESC</code></td>
+          <td><code class="inline">ctx.Products.Join(ctx.Categories, p => p.CategoryId, c => c.Id, (p, c) => new { p, c }).GroupBy(x => x.c.Id).SelectMany(g => g.OrderByDescending(x => x.p.Price).Take(3)).ToList()</code></td>
+          <td><code class="inline">from p in ctx.Products join c in ctx.Categories on p.CategoryId equals c.Id group p by c.Id into g from top3 in (from x in g orderby x.Price descending select x).Take(3) select top3</code></td>
+        </tr>
+        <tr>
+          <td><strong>Orders with Item Count</strong><br>Return orders and count items per order, excluding cancelled orders</td>
+          <td><code class="inline">SELECT o.Id, o.OrderDate, COUNT(oi.Id) as ItemCount FROM Orders o LEFT JOIN OrderItems oi ON o.Id = oi.OrderId WHERE o.Status != 'Cancelled' GROUP BY o.Id, o.OrderDate</code></td>
+          <td><code class="inline">ctx.Orders.Where(o => o.Status != "Cancelled").GroupJoin(ctx.OrderItems, o => o.Id, oi => oi.OrderId, (o, items) => new { o.Id, o.OrderDate, ItemCount = items.Count() }).ToList()</code></td>
+          <td><code class="inline">from o in ctx.Orders where o.Status != "Cancelled" join oi in ctx.OrderItems on o.Id equals oi.OrderId into items select new { o.Id, o.OrderDate, ItemCount = items.Count() }</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="key-insight">
+    <strong>Key Insight: Method Syntax Works Better for Intermediate Operations</strong>
+    <p>When you need to build queries dynamically (applying filters conditionally), method syntax shines because each method returns IQueryable. Query syntax requires the entire query in one statement, making conditional construction harder. For complex aggregations, raw SQL often wins in clarity.</p>
+  </div>
+</div>
+
+<!-- TYPE MAPPING QUICK REFERENCE SECTION -->
+<div class="section-wrapper">
+  <h2>SQL Server to C# Type Mapping Quick Reference</h2>
+  <p>Understanding how SQL Server data types map to C# types is fundamental to data access. Use this reference table to quickly identify the correct type mapping for your columns. Pay special attention to NULL handling—SQL columns that allow NULL must map to nullable C# types (int?, decimal?, etc.) or use special handling in Dapper and EF Core.</p>
+
+  <div class="example-block">
+    <h3>Complete Type Mapping Table</h3>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 18%;">SQL Server Type</th>
+          <th style="width: 16%;">C# Type</th>
+          <th style="width: 16%;">Nullable Version</th>
+          <th style="width: 25%;">Notes</th>
+          <th style="width: 25%;">EF Core Config</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>INT</code></td>
+          <td><code>int</code></td>
+          <td><code>int?</code></td>
+          <td>4-byte integer; range -2.1B to 2.1B. Use for IDs, counts, sequences.</td>
+          <td><code>.HasColumnType("int")</code></td>
+        </tr>
+        <tr>
+          <td><code>BIGINT</code></td>
+          <td><code>long</code></td>
+          <td><code>long?</code></td>
+          <td>8-byte integer; range ±9.2E18. Use for large IDs, timestamps.</td>
+          <td><code>.HasColumnType("bigint")</code></td>
+        </tr>
+        <tr>
+          <td><code>SMALLINT</code></td>
+          <td><code>short</code></td>
+          <td><code>short?</code></td>
+          <td>2-byte integer; range -32K to 32K. Use for status codes, limited ranges.</td>
+          <td><code>.HasColumnType("smallint")</code></td>
+        </tr>
+        <tr>
+          <td><code>TINYINT</code></td>
+          <td><code>byte</code></td>
+          <td><code>byte?</code></td>
+          <td>1-byte integer; range 0-255. Use for flags, small counts.</td>
+          <td><code>.HasColumnType("tinyint")</code></td>
+        </tr>
+        <tr>
+          <td><code>BIT</code></td>
+          <td><code>bool</code></td>
+          <td><code>bool?</code></td>
+          <td>Stored as 0 (false) or 1 (true). Use for boolean flags, active/inactive.</td>
+          <td><code>.HasColumnType("bit")</code></td>
+        </tr>
+        <tr>
+          <td><code>DECIMAL(p,s)</code></td>
+          <td><code>decimal</code></td>
+          <td><code>decimal?</code></td>
+          <td>Fixed-point; p=precision, s=scale. CRITICAL for money/currency.</td>
+          <td><code>.HasPrecision(18, 2)</code></td>
+        </tr>
+        <tr>
+          <td><code>MONEY</code></td>
+          <td><code>decimal</code></td>
+          <td><code>decimal?</code></td>
+          <td>4-byte currency type (±922T). Stores 2 decimal places internally.</td>
+          <td><code>.HasColumnType("money")</code></td>
+        </tr>
+        <tr>
+          <td><code>FLOAT / REAL</code></td>
+          <td><code>double / float</code></td>
+          <td><code>double? / float?</code></td>
+          <td>Approximate numeric; use only when precision not critical.</td>
+          <td><code>.HasColumnType("float")</code></td>
+        </tr>
+        <tr>
+          <td><code>VARCHAR(n)</code></td>
+          <td><code>string</code></td>
+          <td>N/A (strings nullable by default)</td>
+          <td>ASCII text; max 8K. Use for most text.</td>
+          <td><code>.HasMaxLength(100)</code></td>
+        </tr>
+        <tr>
+          <td><code>NVARCHAR(n)</code></td>
+          <td><code>string</code></td>
+          <td>N/A (strings nullable by default)</td>
+          <td>Unicode text; max 4K (8K bytes). Use for international content, names.</td>
+          <td><code>.HasMaxLength(100).IsUnicode()</code></td>
+        </tr>
+        <tr>
+          <td><code>TEXT / NTEXT</code></td>
+          <td><code>string</code></td>
+          <td>N/A</td>
+          <td>Deprecated; prefer VARCHAR/NVARCHAR. No size limit in property definition.</td>
+          <td><code>.HasColumnType("ntext")</code></td>
+        </tr>
+        <tr>
+          <td><code>CHAR(n)</code></td>
+          <td><code>string</code></td>
+          <td>N/A</td>
+          <td>Fixed-length ASCII; pads to length. Use for codes (state abbreviations).</td>
+          <td><code>.HasMaxLength(2).IsFixedLength()</code></td>
+        </tr>
+        <tr>
+          <td><code>DATETIME</code></td>
+          <td><code>DateTime</code></td>
+          <td><code>DateTime?</code></td>
+          <td>Accurate to 3.33ms; range 1753-9999. Use for most timestamps.</td>
+          <td><code>.HasColumnType("datetime")</code></td>
+        </tr>
+        <tr>
+          <td><code>DATETIME2</code></td>
+          <td><code>DateTime</code></td>
+          <td><code>DateTime?</code></td>
+          <td>Accurate to 100ns; range 0001-9999. PREFERRED for new code.</td>
+          <td><code>.HasColumnType("datetime2")</code></td>
+        </tr>
+        <tr>
+          <td><code>DATE</code></td>
+          <td><code>DateOnly</code></td>
+          <td><code>DateOnly?</code></td>
+          <td>Date only, no time (3-byte). .NET 6+ only.</td>
+          <td><code>.HasColumnType("date")</code></td>
+        </tr>
+        <tr>
+          <td><code>TIME</code></td>
+          <td><code>TimeSpan</code></td>
+          <td><code>TimeSpan?</code></td>
+          <td>Time only, no date. Range 00:00:00 to 23:59:59.9999999.</td>
+          <td><code>.HasColumnType("time")</code></td>
+        </tr>
+        <tr>
+          <td><code>UNIQUEIDENTIFIER</code></td>
+          <td><code>Guid</code></td>
+          <td><code>Guid?</code></td>
+          <td>128-bit unique identifier. SQL equivalent of .NET Guid. Standard for distributed keys.</td>
+          <td><code>.HasDefaultValueSql("NEWID()")</code></td>
+        </tr>
+        <tr>
+          <td><code>VARBINARY(n)</code></td>
+          <td><code>byte[]</code></td>
+          <td>N/A (arrays nullable)</td>
+          <td>Binary data; max 8K. Use for hashes, encrypted data, blobs.</td>
+          <td><code>.HasMaxLength(8000)</code></td>
+        </tr>
+        <tr>
+          <td><code>IMAGE</code></td>
+          <td><code>byte[]</code></td>
+          <td>N/A</td>
+          <td>Deprecated; use VARBINARY(MAX). Unlimited size.</td>
+          <td><code>.HasColumnType("image")</code></td>
+        </tr>
+        <tr>
+          <td><code>XML</code></td>
+          <td><code>string</code></td>
+          <td>N/A</td>
+          <td>Stores XML; validated against schema. Parse in C# using XDocument.</td>
+          <td><code>.HasColumnType("xml")</code></td>
+        </tr>
+        <tr>
+          <td><code>JSON (SQL 2016+)</code></td>
+          <td><code>string</code></td>
+          <td>N/A</td>
+          <td>Stores JSON; use JSON methods (JSON_QUERY, JSON_VALUE). Parse in C# with JsonSerializer.</td>
+          <td><code>.HasColumnType("nvarchar(max)")</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="example-block">
+    <h3>Nullable Handling in EF Core and Dapper</h3>
+    <p>Nullable columns in SQL Server require corresponding nullable C# types or special handling:</p>
+    <pre><code>// EF Core: Using nullable reference types
+public class Product
+{
+  public int Id { get; set; }
+  public string Name { get; set; } // NOT nullable
+  public string? Description { get; set; } // Nullable (allows NULL)
+  public int? CategoryId { get; set; } // Nullable foreign key
+  public decimal Price { get; set; } // NOT nullable
+  public decimal? DiscountPrice { get; set; } // Nullable decimal
+}
+
+// Dapper: Read from NULL-able column
+var products = connection.Query&lt;Product&gt;("SELECT Id, Name, CategoryId FROM Products");
+// If CategoryId is NULL in database, property gets null value
+// CategoryId must be int? to handle NULL
+
+// EF Core Configuration for NULL handling
+modelBuilder.Entity&lt;Product&gt;()
+  .Property(p => p.Description)
+  .IsRequired(false); // Explicitly allows NULL
+
+modelBuilder.Entity&lt;Product&gt;()
+  .Property(p => p.CategoryId)
+  .IsRequired(false); // Nullable foreign key</code></pre>
+  </div>
+
+</div>
+
+  </div>
+</main>
+
+<!-- KEY TAKEAWAYS SECTION -->
+<div class="wrap">
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>CRUD operations map across SQL, EF Core, and Dapper; understand the differences in how each handles inserts with identity return values</li>
+      <li>SQL clauses (WHERE, ORDER BY, GROUP BY) have direct LINQ equivalents (.Where, .OrderBy, .GroupBy); learn the mapping for fluent translation</li>
+      <li>SQL types map to C# types predictably; use nullable types (int?, DateTime?) when columns allow NULL</li>
+      <li>EF Core's Fluent API provides declarative configuration for keys, relationships, indexes, and constraints; master .HasKey(), .HasOne(), .HasMany()</li>
+      <li>Dapper methods are simple: Query<T>() for multiple rows, QueryFirstOrDefault<T>() for one, Execute() for modifications, QueryMultiple() for multiple result sets</li>
+      <li>Choose patterns based on your needs: Repository for abstraction, Unit of Work for transactions, CQRS for read/write separation, Bulk Insert for large imports</li>
+      <li>EF Core excels at writes with change tracking; Dapper excels at complex reads; the best architectures use both</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CHAPTER NAVIGATION -->
+<div class="wrap">
+  <nav class="chapter-nav">
+    <a href="ch31-json-columns.html" class="nav-item prev">
+      <span class="nav-label">Previous</span>
+      <span class="nav-title">Working with JSON Columns</span>
+    </a>
+    <a href="ch33-real-world-project.html" class="nav-item next">
+      <span class="nav-label">Next</span>
+      <span class="nav-title">Real-World E-Commerce Project</span>
+    </a>
+  </nav>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>About This Book</h4>
+        <p>SQL to C# is a comprehensive guide to data access patterns, from SQL fundamentals to advanced EF Core and Dapper techniques. Learn how relational concepts map to object-oriented code.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Core Topics</h4>
+        <ul>
+          <li><a href="#">Data Modeling</a></li>
+          <li><a href="#">Query Patterns</a></li>
+          <li><a href="#">Performance Optimization</a></li>
+          <li><a href="#">Advanced EF Core</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="#">GitHub Repository</a></li>
+          <li><a href="#">Live Examples</a></li>
+          <li><a href="#">Community Forum</a></li>
+          <li><a href="#">Contact Authors</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>SQL to C# — Master data access across SQL Server, Entity Framework Core, and Dapper. Published 2024.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

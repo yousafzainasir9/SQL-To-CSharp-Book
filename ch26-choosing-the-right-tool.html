@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapter 26: Choosing the Right Tool — EF Core vs Dapper vs ADO.NET | SQL to C#</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f8f7f3;
+      --bg2: #f0ede6;
+      --bg3: #e8e4db;
+      --white: #fff;
+      --ink: #1c1a17;
+      --ink2: #3d3a34;
+      --ink3: #6b6760;
+      --ink4: #a8a49e;
+      --rule: #dedad3;
+      --acc: #c96b1e;
+      --acc-l: #fdf3eb;
+      --acc-b: #f5c99a;
+      --green: #1d6b45;
+      --green-l: #edf8f2;
+      --green-b: #9fd9bc;
+      --blue: #1a4f8a;
+      --blue-l: #edf2fb;
+      --blue-b: #afc8ef;
+      --amber: #7a5200;
+      --amber-l: #fdf8ec;
+      --amber-b: #e8d08a;
+      --red: #a82a2a;
+      --red-l: #fef2f2;
+      --red-b: #f5a5a5;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Source Serif 4', serif;
+      background-color: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    /* Navigation */
+    nav {
+      position: sticky;
+      top: 0;
+      height: 54px;
+      background-color: var(--white);
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .nav-brand {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--acc);
+    }
+
+    .nav-chapter {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background-color: var(--acc-l);
+      color: var(--acc);
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      text-decoration: none;
+    }
+
+    /* Main container */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 3rem;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+      color: var(--ink);
+    }
+
+    .chapter-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--acc);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .chapter-subtitle {
+      font-family: 'Source Serif 4', serif;
+      font-size: 1.1rem;
+      color: var(--ink3);
+      font-weight: 300;
+      margin-bottom: 2rem;
+    }
+
+    /* In This Chapter */
+    .in-this-chapter {
+      background-color: var(--blue-l);
+      border-left: 4px solid var(--blue);
+      padding: 1.5rem;
+      margin-bottom: 3rem;
+      border-radius: 4px;
+    }
+
+    .in-this-chapter h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--blue);
+      margin-bottom: 1rem;
+    }
+
+    .in-this-chapter ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .in-this-chapter li {
+      margin-bottom: 0.6rem;
+      font-size: 0.95rem;
+      color: var(--ink2);
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .in-this-chapter li:before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+    }
+
+    /* Section styling */
+    .section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .section-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--acc);
+      line-height: 1;
+      min-width: 3rem;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    /* Prose */
+    .prose {
+      margin-bottom: 1.5rem;
+      color: var(--ink2);
+      line-height: 1.8;
+    }
+
+    .prose p {
+      margin-bottom: 1rem;
+    }
+
+    .prose strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .prose em {
+      color: var(--ink3);
+      font-style: italic;
+    }
+
+    /* Code comparison */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .comparison-block {
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .comparison-label {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sql-block {
+      background-color: var(--ink);
+    }
+
+    .sql-block .comparison-label {
+      background-color: var(--ink2);
+      color: var(--white);
+    }
+
+    .csharp-block {
+      background-color: var(--blue-l);
+    }
+
+    .csharp-block .comparison-label {
+      background-color: var(--blue);
+      color: var(--white);
+    }
+
+    .dapper-block {
+      background-color: var(--amber-l);
+    }
+
+    .dapper-block .comparison-label {
+      background-color: var(--amber);
+      color: var(--white);
+    }
+
+    .code-content {
+      background-color: var(--ink);
+      color: #e8e8e8;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      min-height: 120px;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .csharp-block .code-content {
+      background-color: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--blue-b);
+    }
+
+    .dapper-block .code-content {
+      background-color: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--amber-b);
+    }
+
+    /* Syntax highlighting */
+    .kw { color: #569cd6; }
+    .str { color: #ce9178; }
+    .comment { color: #6a9955; }
+    .type { color: #4ec9b0; }
+    .attr { color: #9cdcfe; }
+    .num { color: #b5cea8; }
+
+    .csharp-block .kw { color: var(--blue); }
+    .csharp-block .str { color: #a85e2a; }
+    .csharp-block .comment { color: #555; }
+    .csharp-block .type { color: #0066cc; }
+
+    .dapper-block .kw { color: #7a5200; }
+    .dapper-block .str { color: #a85e2a; }
+    .dapper-block .comment { color: #555; }
+    .dapper-block .type { color: #7a5200; }
+
+    /* Feature matrix */
+    .feature-matrix {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+      font-size: 0.95rem;
+    }
+
+    .feature-matrix th {
+      background-color: var(--ink);
+      color: var(--white);
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .feature-matrix td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .feature-matrix tr:nth-child(even) {
+      background-color: var(--bg2);
+    }
+
+    .feature-matrix .feature-name {
+      font-weight: 600;
+      color: var(--ink);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .check { color: var(--green); font-weight: 600; }
+    .cross { color: var(--red); font-weight: 600; }
+    .partial { color: var(--amber); font-weight: 600; }
+
+    /* Benchmark table */
+    .benchmark-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+      font-size: 0.9rem;
+      background-color: var(--white);
+      border: 1px solid var(--rule);
+    }
+
+    .benchmark-table th {
+      background-color: var(--blue);
+      color: var(--white);
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .benchmark-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .benchmark-table .metric {
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    /* Insight box */
+    .insight {
+      background-color: var(--acc-l);
+      border-left: 4px solid var(--acc);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+    }
+
+    .insight-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--acc);
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .insight-text {
+      color: var(--ink2);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .insight-text strong {
+      color: var(--ink);
+    }
+
+    /* Decision tree */
+    .decision-tree {
+      background-color: var(--white);
+      border: 2px solid var(--rule);
+      padding: 2rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      color: var(--ink2);
+    }
+
+    .tree-line { color: var(--ink3); }
+    .tree-label { color: var(--ink); font-weight: 600; }
+    .tree-choice { color: var(--blue); }
+    .tree-result { color: var(--green); font-weight: 600; }
+
+    /* Key Takeaways */
+    .key-takeaways {
+      background-color: var(--green-l);
+      border-left: 4px solid var(--green);
+      padding: 2rem;
+      margin: 3rem 0;
+      border-radius: 4px;
+    }
+
+    .key-takeaways h3 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 1.5rem;
+      font-size: 1.2rem;
+    }
+
+    .key-takeaways ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .key-takeaways li {
+      margin-bottom: 0.8rem;
+      padding-left: 1.5rem;
+      position: relative;
+      color: var(--ink2);
+      line-height: 1.7;
+    }
+
+    .key-takeaways li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* Warning box */
+    .warning {
+      background-color: var(--red-l);
+      border-left: 4px solid var(--red);
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+    }
+
+    .warning-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--red);
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+    }
+
+    .warning-text {
+      color: var(--ink2);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    /* Three-column layout for tools */
+    .tool-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .tool-card {
+      background-color: var(--white);
+      border: 2px solid var(--rule);
+      border-radius: 4px;
+      padding: 1.5rem;
+    }
+
+    .tool-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      margin-top: 0;
+    }
+
+    .tool-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .tool-card li {
+      margin-bottom: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--ink2);
+      padding-left: 1.2rem;
+      position: relative;
+    }
+
+    .tool-card li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--ink3);
+    }
+
+    .efcore-card { border-top: 3px solid var(--blue); }
+    .dapper-card { border-top: 3px solid var(--amber); }
+    .adonet-card { border-top: 3px solid var(--red); }
+
+    /* Navigation buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .nav-button {
+      font-family: 'Outfit', sans-serif;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+    }
+
+    .nav-button:hover {
+      background-color: var(--bg2);
+      border-color: var(--ink3);
+    }
+
+    .nav-button.prev { text-align: left; }
+    .nav-button.next { text-align: right; }
+
+    /* Footer */
+    footer {
+      background-color: var(--bg2);
+      padding: 2rem;
+      margin-top: 4rem;
+      text-align: center;
+      color: var(--ink3);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    footer a {
+      color: var(--acc);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      main { padding: 1.5rem 1rem; }
+      h1 { font-size: 1.8rem; }
+      .comparison { grid-template-columns: 1fr; }
+      .tool-comparison { grid-template-columns: 1fr; }
+      nav { padding: 0 1rem; }
+      .section-title { font-size: 1.2rem; }
+      .feature-matrix, .benchmark-table { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-brand">SQL to C#</div>
+    <a href="#" class="nav-chapter">Chapter 26</a>
+  </nav>
+
+  <main>
+    <header>
+      <div class="chapter-number">Part 4 · Chapter 26</div>
+      <h1>Choosing the Right Tool — EF Core vs Dapper vs ADO.NET</h1>
+      <p class="chapter-subtitle">Master the decision framework for selecting between EF Core, Dapper, raw ADO.NET, and hybrid approaches. Learn when each excels, compare performance benchmarks, feature matrices, and real-world case studies from e-commerce to microservices.</p>
+    </header>
+
+    <div class="in-this-chapter">
+      <h3>In This Chapter</h3>
+      <ul>
+        <li>The ORM spectrum: from raw SQL to full object-relational mapping</li>
+        <li>Feature comparison matrix: change tracking, migrations, lazy loading, and more</li>
+        <li>Real performance benchmarks with actual numbers for CRUD, reads, and bulk operations</li>
+        <li>SQL complexity vs ORM capability: when to use query syntax vs LINQ</li>
+        <li>EF Core strengths: rapid development, complex domain models, CRUD applications</li>
+        <li>Dapper strengths: high-performance reads, reporting, legacy databases</li>
+        <li>Raw ADO.NET necessity: bulk operations, CLR stored procedures, edge cases</li>
+        <li>Hybrid approaches: EF for writes, Dapper for reads, and orchestrating both</li>
+        <li>Team skills, project size, and organizational factors in tool selection</li>
+        <li>Migration strategies between tools and anti-patterns to avoid</li>
+        <li>Real-world case studies: e-commerce, analytics platforms, and microservices</li>
+      </ul>
+    </div>
+
+    <!-- Section 01: The ORM Spectrum -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">01</div>
+        <h2 class="section-title">The ORM Spectrum: SQL to Full Object Mapping</h2>
+      </div>
+
+      <div class="prose">
+        <p>Before choosing a tool, understand where it sits on the spectrum from raw SQL to full ORM abstraction. This spectrum reflects the trade-off between <strong>control and convenience</strong>.</p>
+
+        <p>On the left: raw SQL gives you maximum control but requires manual mapping. On the right: full ORMs automate mapping but abstract away SQL details you might need to optimize.</p>
+      </div>
+
+      <div class="decision-tree">
+<span class="tree-label">The ORM Spectrum</span>
+
+1. <span class="tree-label">Raw ADO.NET (SqlCommand)</span>
+   └─ <span class="tree-choice">Maximum control</span>
+   └─ <span class="tree-choice">Manual DataReader mapping</span>
+   └─ <span class="tree-choice">Full SQL visibility</span>
+   └─ <span class="tree-result">Best for: bulk operations, CLR procs</span>
+
+2. <span class="tree-label">Dapper (Micro-ORM)</span>
+   └─ <span class="tree-choice">SQL + auto-mapping</span>
+   └─ <span class="tree-choice">Write your SQL, framework maps results</span>
+   └─ <span class="tree-choice">Fast, predictable queries</span>
+   └─ <span class="tree-result">Best for: reads, legacy DBs, speed</span>
+
+3. <span class="tree-label">EF Core (Full ORM)</span>
+   └─ <span class="tree-choice">LINQ or SQL queries</span>
+   └─ <span class="tree-choice">Auto-mapping + change tracking</span>
+   └─ <span class="tree-choice">Migrations, relationships, validation</span>
+   └─ <span class="tree-result">Best for: CRUD apps, complex domains</span>
+
+<span class="tree-label">Spectrum Visualization</span>
+
+Control    ▓▓▓▓░░░░░░ Convenience
+           ▲              ▲
+          ADO.NET        EF Core
+                ▲
+              Dapper
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Spectrum Is Not Linear</div>
+        <div class="insight-text">
+          Different projects demand different positions on this spectrum. A reporting dashboard might live on the Dapper side (fast reads), while a financial transaction system might require EF Core (consistency, change tracking). Most enterprise applications use hybrid approaches—EF for writes, Dapper for reads—to get the best of both worlds.
+        </div>
+      </div>
+
+      <h3>Abstraction Cost in Milliseconds</h3>
+
+      <p>Each abstraction layer adds latency. Here's what typical overhead looks like for fetching 1,000 rows:</p>
+
+      <table class="benchmark-table">
+        <tr>
+          <th>Method</th>
+          <th>Query Time</th>
+          <th>Mapping Time</th>
+          <th>Total</th>
+        </tr>
+        <tr>
+          <td class="metric">Raw ADO.NET (DataReader)</td>
+          <td>12 ms</td>
+          <td>18 ms</td>
+          <td><strong>30 ms</strong></td>
+        </tr>
+        <tr>
+          <td class="metric">Dapper (parameterized)</td>
+          <td>12 ms</td>
+          <td>22 ms</td>
+          <td><strong>34 ms</strong></td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (AsNoTracking)</td>
+          <td>12 ms</td>
+          <td>45 ms</td>
+          <td><strong>57 ms</strong></td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (with tracking)</td>
+          <td>12 ms</td>
+          <td>120 ms</td>
+          <td><strong>132 ms</strong></td>
+        </tr>
+      </table>
+
+      <div class="prose">
+        <p>The overhead grows with row count. For high-volume reads (10,000+ rows), use Dapper. For typical CRUD (dozens of rows), the difference is imperceptible to users.</p>
+      </div>
+    </section>
+
+    <!-- Section 02: Feature Comparison Matrix -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">02</div>
+        <h2 class="section-title">Feature Comparison Matrix</h2>
+      </div>
+
+      <div class="prose">
+        <p>This matrix shows which features each tool provides natively, without workarounds:</p>
+      </div>
+
+      <table class="feature-matrix">
+        <tr>
+          <th>Feature</th>
+          <th>ADO.NET</th>
+          <th>Dapper</th>
+          <th>EF Core</th>
+        </tr>
+        <tr>
+          <td class="feature-name">Write raw SQL</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">LINQ queries</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Auto-mapping to objects</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Change tracking</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Automatic migrations</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Lazy loading</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Eager loading (Include)</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Relationship navigation</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Data validation</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Bulk insert/update</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Query logging</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td class="feature-name">Unit of work pattern</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+      </table>
+
+      <div class="prose">
+        <p><span class="partial">~</span> indicates third-party libraries or workarounds required.</p>
+      </div>
+    </section>
+
+    <!-- Section 03: EF Core Excellence -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">03</div>
+        <h2 class="section-title">When EF Core Shines</h2>
+      </div>
+
+      <div class="prose">
+        <p>EF Core is the default choice for new C# applications. It handles the common case elegantly and scales to complex scenarios.</p>
+
+        <h3>Use EF Core When:</h3>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Building CRUD applications (create, read, update, delete)</li>
+          <li>Your domain model is complex with relationships and inheritance</li>
+          <li>You need automatic migrations for schema changes</li>
+          <li>The team is comfortable with LINQ and async/await</li>
+          <li>You're starting a new greenfield project</li>
+          <li>Performance is not your primary constraint</li>
+        </ul>
+      </div>
+
+      <h3>Code Example: LINQ vs Query Syntax</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">LINQ Method Syntax</div>
+          <div class="code-content">
+<span class="comment">// Query active customers with recent orders</span>
+<span class="kw">var</span> customers = <span class="kw">await</span>
+    context.Customers
+    .<span class="type">Where</span>(c =&gt; c.IsActive)
+    .<span class="type">Include</span>(c =&gt; c.Orders)
+    .<span class="type">Where</span>(c =&gt; c.Orders.<span class="type">Any</span>(
+        o =&gt; o.CreatedAt &gt;
+        <span class="type">DateTime</span>.UtcNow.<span class="type">AddDays</span>(-30)))
+    .<span class="type">OrderByDescending</span>(c =&gt;
+        c.Orders.<span class="type">Count</span>())
+    .<span class="type">Take</span>(<span class="num">10</span>)
+    .<span class="type">ToListAsync</span>();
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">LINQ Query Syntax</div>
+          <div class="code-content">
+<span class="comment">// Same query, query syntax style</span>
+<span class="kw">var</span> customers = <span class="kw">await</span> (
+    <span class="kw">from</span> c <span class="kw">in</span> context.Customers
+    <span class="kw">where</span> c.IsActive
+    <span class="kw">let</span> recentOrders = c.Orders.<span class="type">Where</span>(
+        o =&gt; o.CreatedAt &gt;
+        <span class="type">DateTime</span>.UtcNow.<span class="type">AddDays</span>(-30))
+    <span class="kw">where</span> recentOrders.<span class="type">Any</span>()
+    <span class="kw">orderby</span> recentOrders.<span class="type">Count</span>()
+        <span class="kw">descending</span>
+    <span class="kw">select</span> c
+    ).Take(<span class="num">10</span>)
+    .<span class="type">ToListAsync</span>();
+          </div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Method vs Query Syntax</div>
+        <div class="insight-text">
+          Method syntax is more powerful (lambdas allow complex logic), while query syntax reads more like SQL. EF Core compiles both to the same LINQ-to-SQL translation, so performance is identical. Choose based on team preference.
+        </div>
+      </div>
+
+      <h3>Change Tracking and SaveChanges</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">EF Core Change Tracking</div>
+          <div class="code-content">
+<span class="comment">// Load customer (tracked by default)</span>
+<span class="kw">var</span> customer = <span class="kw">await</span>
+    context.Customers.<span class="type">FindAsync</span>(<span class="num">123</span>);
+
+<span class="comment">// Modify in memory</span>
+customer.Email = <span class="str">"new@example.com"</span>;
+customer.LastUpdated = <span class="type">DateTime</span>.UtcNow;
+
+<span class="comment">// SaveChanges generates UPDATE</span>
+<span class="kw">await</span> context.<span class="type">SaveChangesAsync</span>();
+
+<span class="comment">// Generated SQL:</span>
+<span class="comment">// UPDATE Customers SET</span>
+<span class="comment">//   Email = @p0,</span>
+<span class="comment">//   LastUpdated = @p1</span>
+<span class="comment">// WHERE Id = @p2</span>
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">What EF Generates</div>
+          <div class="code-content">
+<span class="comment">-- EF detects only changed columns</span>
+<span class="kw">UPDATE</span> [Customers]
+<span class="kw">SET</span> [Email] = <span class="str">@p0</span>,
+    [LastUpdated] = <span class="str">@p1</span>
+<span class="kw">WHERE</span> [Id] = <span class="str">@p2</span>
+
+<span class="comment">-- Note: other properties not included</span>
+<span class="comment">-- EF only updates changed properties</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Migrations and Schema Evolution</h3>
+
+      <div class="prose">
+        <p>EF Core's migration system is a major advantage for long-term projects:</p>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Define New Entity</div>
+          <div class="code-content">
+<span class="comment">// Add to DbContext</span>
+<span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Address</span>&gt;
+    Addresses { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+<span class="comment">// Define model with required fields</span>
+<span class="kw">public</span> <span class="kw">class</span> <span class="type">Address</span>
+{
+    <span class="kw">public</span> <span class="type">int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">required string</span> Street
+        { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="kw">required string</span> City
+        { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">Migration Generated</div>
+          <div class="code-content">
+<span class="comment">-- Run: dotnet ef migrations add</span>
+<span class="comment">--   AddAddressTable</span>
+
+<span class="kw">CREATE TABLE</span> [Addresses] (
+    [Id] <span class="type">int</span> <span class="kw">NOT NULL</span>
+        <span class="kw">PRIMARY KEY</span>,
+    [Street] <span class="kw">nvarchar</span>(<span class="num">max</span>)
+        <span class="kw">NOT NULL</span>,
+    [City] <span class="kw">nvarchar</span>(<span class="num">max</span>)
+        <span class="kw">NOT NULL</span>
+);
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 04: Dapper Strengths -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">04</div>
+        <h2 class="section-title">When Dapper Excels</h2>
+      </div>
+
+      <div class="prose">
+        <p>Dapper is the micro-ORM of choice for developers who want SQL control without the abstraction overhead. It maps query results to objects with minimal conventions.</p>
+
+        <h3>Use Dapper When:</h3>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Building high-performance read-heavy applications</li>
+          <li>Working with legacy databases with unusual schemas</li>
+          <li>You need full control over every SQL statement</li>
+          <li>Reporting and analytics with complex aggregations</li>
+          <li>The team prefers SQL to LINQ abstractions</li>
+          <li>You're optimizing for query speed (reporting dashboards, dashboards)</li>
+        </ul>
+      </div>
+
+      <h3>Dapper Query Examples</h3>
+
+      <div class="comparison">
+        <div class="comparison-block dapper-block">
+          <div class="comparison-label">Simple Select with Dapper</div>
+          <div class="code-content">
+<span class="comment">// Dapper: you write SQL, it maps rows</span>
+<span class="kw">var</span> sql = <span class="str">@"
+    SELECT Id, Name, Email
+    FROM Customers
+    WHERE IsActive = 1
+    ORDER BY Name"</span>;
+
+<span class="kw">var</span> customers = (
+    <span class="kw">await</span> connection.<span class="type">QueryAsync</span>&lt;
+        <span class="type">Customer</span>&gt;(sql)
+    ).ToList();
+
+<span class="comment">// That's it. No DbContext, no</span>
+<span class="comment">// change tracking, just data.</span>
+          </div>
+        </div>
+
+        <div class="comparison-block dapper-block">
+          <div class="comparison-label">Parameterized Query</div>
+          <div class="code-content">
+<span class="comment">// Always use parameters to prevent</span>
+<span class="comment">// SQL injection</span>
+<span class="kw">var</span> sql = <span class="str">@"
+    SELECT Id, Name, Email
+    FROM Customers
+    WHERE Id = @CustomerId"</span>;
+
+<span class="kw">var</span> customer = <span class="kw">await</span>
+    connection.<span class="type">QueryFirstOrDefaultAsync</span>&lt;
+        <span class="type">Customer</span>&gt;(sql,
+        <span class="kw">new</span> { CustomerId = id });
+
+<span class="comment">// Dapper passes @CustomerId as</span>
+<span class="comment">// SqlParameter automatically</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Dapper for Complex Aggregations</h3>
+
+      <div class="comparison">
+        <div class="comparison-block dapper-block">
+          <div class="comparison-label">Reporting Query with Dapper</div>
+          <div class="code-content">
+<span class="kw">var</span> sql = <span class="str">@"
+    SELECT c.Name AS CustomerName,
+           COUNT(o.Id) AS OrderCount,
+           SUM(o.Total) AS TotalSpent,
+           MAX(o.CreatedAt) AS LastOrder
+    FROM Customers c
+    LEFT JOIN Orders o
+        ON c.Id = o.CustomerId
+    WHERE c.IsActive = 1
+    GROUP BY c.Id, c.Name
+    HAVING COUNT(o.Id) > 0
+    ORDER BY TotalSpent DESC"</span>;
+
+<span class="kw">var</span> results = <span class="kw">await</span>
+    connection.<span class="type">QueryAsync</span>&lt;
+        <span class="type">CustomerReport</span>&gt;(sql);
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">Same SQL, No Translation</div>
+          <div class="code-content">
+<span class="comment">-- Dapper sends your SQL exactly</span>
+<span class="comment">-- as written to the database</span>
+<span class="kw">SELECT</span> c.Name <span class="kw">AS</span> CustomerName,
+       <span class="type">COUNT</span>(o.Id)
+           <span class="kw">AS</span> OrderCount,
+       <span class="type">SUM</span>(o.Total)
+           <span class="kw">AS</span> TotalSpent,
+       <span class="type">MAX</span>(o.CreatedAt)
+           <span class="kw">AS</span> LastOrder
+<span class="kw">FROM</span> Customers c
+<span class="kw">LEFT JOIN</span> Orders o
+    <span class="kw">ON</span> c.Id = o.CustomerId
+<span class="kw">WHERE</span> c.IsActive = <span class="num">1</span>
+<span class="kw">GROUP BY</span> c.Id, c.Name
+<span class="kw">HAVING</span> <span class="type">COUNT</span>(o.Id) &gt; <span class="num">0</span>
+<span class="kw">ORDER BY</span> TotalSpent <span class="kw">DESC</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Dapper's Performance Advantage</div>
+        <div class="insight-text">
+          Dapper executes your SQL without query translation overhead. For complex aggregations, window functions, or database-specific features (ROW_NUMBER, PARTITION BY), Dapper is faster because it doesn't need to translate LINQ into SQL.
+        </div>
+      </div>
+
+      <h3>Dapper for Bulk Inserts</h3>
+
+      <div class="comparison">
+        <div class="comparison-block dapper-block">
+          <div class="comparison-label">Bulk Insert Pattern</div>
+          <div class="code-content">
+<span class="comment">// Insert 1000 customers in one batch</span>
+<span class="kw">var</span> sql = <span class="str">@"
+    INSERT INTO Customers
+        (Name, Email, CreatedAt)
+    VALUES
+        (@Name, @Email, @CreatedAt)"</span>;
+
+<span class="kw">var</span> customers = GetNextBatch();
+<span class="kw">using</span> (<span class="kw">var</span> txn =
+    connection.<span class="type">BeginTransaction</span>())
+{
+    <span class="kw">await</span> connection
+        .<span class="type">ExecuteAsync</span>(sql,
+            customers, txn);
+    <span class="kw">await</span> txn.<span class="type">CommitAsync</span>();
+}
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">Generated Batch Insert</div>
+          <div class="code-content">
+<span class="comment">-- Dapper batches all into one</span>
+<span class="comment">-- command</span>
+<span class="kw">INSERT INTO</span> Customers
+    (Name, Email, CreatedAt)
+<span class="kw">VALUES</span>
+    (<span class="str">@Name0</span>, <span class="str">@Email0</span>, <span class="str">@CreatedAt0</span>),
+    (<span class="str">@Name1</span>, <span class="str">@Email1</span>, <span class="str">@CreatedAt1</span>),
+    ...
+    (<span class="str">@Name999</span>, <span class="str">@Email999</span>,
+        <span class="str">@CreatedAt999</span>);
+
+<span class="comment">-- Much faster than 1000 individual</span>
+<span class="comment">-- inserts</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 05: ADO.NET Necessity -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">05</div>
+        <h2 class="section-title">When Raw ADO.NET is Necessary</h2>
+      </div>
+
+      <div class="prose">
+        <p>Most applications never need raw ADO.NET. But when you do, nothing else will work.</p>
+
+        <h3>Use Raw ADO.NET When:</h3>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Using CLR stored procedures (compiled C# in SQL Server)</li>
+          <li>Working with exotic types (hierarchyid, spatial types)</li>
+          <li>Bulk operations at extreme scale (millions of rows, seconds budget)</li>
+          <li>Using SqlBulkCopy for ultra-fast inserts</li>
+          <li>Direct DataReader manipulation is required</li>
+          <li>Calling table-valued functions or uncommon SQL features</li>
+        </ul>
+      </div>
+
+      <h3>ADO.NET with SqlBulkCopy</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">SqlBulkCopy for Speed</div>
+          <div class="code-content">
+<span class="comment">// Fastest way to insert millions</span>
+<span class="kw">var</span> table = <span class="kw">new</span>
+    <span class="type">DataTable</span>();
+table.Columns.<span class="type">Add</span>(<span class="str">"Id"</span>,
+    <span class="kw">typeof</span>(<span class="type">int</span>));
+table.Columns.<span class="type">Add</span>(<span class="str">"Name"</span>,
+    <span class="kw">typeof</span>(<span class="type">string</span>));
+
+<span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> items)
+{
+    table.<span class="type">Rows</span>.<span class="type">Add</span>(
+        item.Id, item.Name);
+}
+
+<span class="kw">using</span> (<span class="kw">var</span> bulk =
+    <span class="kw">new</span> <span class="type">SqlBulkCopy</span>(
+        connection))
+{
+    bulk.<span class="type">DestinationTableName</span> =
+        <span class="str">"Customers"</span>;
+    <span class="kw">await</span> bulk
+        .<span class="type">WriteToServerAsync</span>(table);
+}
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">SqlBulkCopy Performance</div>
+          <div class="code-content">
+<span class="comment">-- SqlBulkCopy doesn't generate</span>
+<span class="comment">-- individual INSERT statements</span>
+<span class="comment">-- Instead, it uses the TDS protocol</span>
+<span class="comment">-- to stream data directly to table</span>
+
+<span class="comment">-- Benchmarks (100K rows):</span>
+<span class="comment">-- EF SaveChanges: 2500ms</span>
+<span class="comment">-- Dapper batch: 800ms</span>
+<span class="comment">-- SqlBulkCopy: 120ms</span>
+
+<span class="comment">-- For 1M rows:</span>
+<span class="comment">-- SqlBulkCopy: 900ms</span>
+<span class="comment">-- Others: not practical</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="warning">
+        <div class="warning-title">SqlBulkCopy Limitations</div>
+        <div class="warning-text">
+          SqlBulkCopy bypasses all validation, triggers, and constraints. Use only for trusted data loads. Always verify data integrity before and after bulk inserts. Do not use for user-submitted data without thorough validation.
+        </div>
+      </div>
+
+      <h3>ADO.NET with DataReader</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Direct DataReader for Legacy</div>
+          <div class="code-content">
+<span class="comment">// When you need legacy compatibility</span>
+<span class="kw">var</span> cmd = connection.<span class="type">CreateCommand</span>();
+cmd.CommandText = <span class="str">@"
+    SELECT Id, Name, Email
+    FROM Customers
+    WHERE IsActive = 1"</span>;
+
+<span class="kw">using</span> (<span class="kw">var</span> reader =
+    <span class="kw">await</span> cmd.<span class="type">ExecuteReaderAsync</span>())
+{
+    <span class="kw">while</span> (<span class="kw">await</span>
+        reader.<span class="type">ReadAsync</span>())
+    {
+        <span class="kw">var</span> id = reader.<span class="type">GetInt32</span>(<span class="num">0</span>);
+        <span class="kw">var</span> name =
+            reader.<span class="type">GetString</span>(<span class="num">1</span>);
+        <span class="kw">var</span> email =
+            reader.<span class="type">GetString</span>(<span class="num">2</span>);
+        <span class="comment">// Process each row</span>
+    }
+}
+          </div>
+        </div>
+
+        <div class="comparison-block sql-block">
+          <div class="comparison-label">Avoid N+1 with Raw ADO</div>
+          <div class="code-content">
+<span class="comment">-- Load data in single query</span>
+<span class="kw">SELECT</span> c.Id, c.Name, c.Email,
+       o.Id, o.Amount, o.CreatedAt
+<span class="kw">FROM</span> Customers c
+<span class="kw">LEFT JOIN</span> Orders o
+    <span class="kw">ON</span> c.Id = o.CustomerId
+<span class="kw">WHERE</span> c.IsActive = <span class="num">1</span>
+<span class="kw">ORDER BY</span> c.Id, o.CreatedAt
+
+<span class="comment">-- Your code handles the join</span>
+<span class="comment">-- in application memory</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 06: Hybrid Approaches -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">06</div>
+        <h2 class="section-title">Hybrid Approaches: The Best of Both Worlds</h2>
+      </div>
+
+      <div class="prose">
+        <p>Most large applications use <strong>EF Core for writes and Dapper for reads</strong>. This hybrid approach combines EF's ease of development with Dapper's performance.</p>
+
+        <h3>The Architecture Pattern</h3>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Hybrid Repository Pattern</div>
+          <div class="code-content">
+<span class="comment">// Write operations: EF Core</span>
+<span class="kw">public class</span> <span class="type">CustomerService</span>
+{
+    <span class="kw">private readonly</span>
+        <span class="type">AppDbContext</span> _context;
+    <span class="kw">private readonly</span>
+        <span class="type">IDbConnection</span> _conn;
+
+    <span class="comment">// CREATE: EF Core</span>
+    <span class="kw">public async</span> <span class="type">Task</span>
+        <span class="type">CreateCustomerAsync</span>(
+            <span class="type">Customer</span> customer)
+    {
+        _context.Customers.<span class="type">Add</span>(
+            customer);
+        <span class="kw">await</span> _context
+            .<span class="type">SaveChangesAsync</span>();
+    }
+
+    <span class="comment">// READ: Dapper</span>
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;
+        <span class="type">List</span>&lt;<span class="type">CustomerDto</span>&gt;&gt;
+        <span class="type">GetActiveCustomersAsync</span>()
+    {
+        <span class="kw">var</span> sql =
+            <span class="str">"SELECT * FROM Customers"</span>;
+        <span class="kw">return</span> (<span class="kw">await</span>
+            _conn.<span class="type">QueryAsync</span>&lt;
+                <span class="type">CustomerDto</span>&gt;(sql)
+            ).ToList();
+    }
+}
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Benefits of Hybrid</div>
+          <div class="code-content">
+<span class="comment">// EF for writes gives you:</span>
+<span class="comment">// • Change tracking</span>
+<span class="comment">// • Automatic migrations</span>
+<span class="comment">// • Relationship handling</span>
+<span class="comment">// • Validation built-in</span>
+
+<span class="comment">// Dapper for reads gives you:</span>
+<span class="comment">// • Speed (no tracking overhead)</span>
+<span class="comment">// • Complex SQL without translation</span>
+<span class="comment">// • Window functions, CTEs, etc</span>
+<span class="comment">// • Reporting queries</span>
+
+<span class="comment">// No artificial constraints:</span>
+<span class="comment">// You write queries as they should be</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Orchestrating Multiple Contexts</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Dependency Injection Setup</div>
+          <div class="code-content">
+<span class="comment">// Startup.cs or Program.cs</span>
+
+<span class="comment">// EF Core DbContext</span>
+services.<span class="type">AddDbContext</span>&lt;
+    <span class="type">AppDbContext</span>&gt;(
+    options =&gt; options
+    .<span class="type">UseSqlServer</span>(connStr));
+
+<span class="comment">// Dapper IDbConnection</span>
+services.<span class="type">AddScoped</span>&lt;
+    <span class="type">IDbConnection</span>&gt;(
+    _ =&gt; <span class="kw">new</span>
+    <span class="type">SqlConnection</span>(connStr));
+
+<span class="comment">// Your service uses both</span>
+services.<span class="type">AddScoped</span>&lt;
+    <span class="type">CustomerService</span>&gt;();
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Service Orchestration</div>
+          <div class="code-content">
+<span class="comment">// Complex operation:</span>
+<span class="comment">// Update customer (EF) +</span>
+<span class="comment">// Query analytics (Dapper)</span>
+
+<span class="kw">public async</span> <span class="type">Task</span>
+    <span class="type">UpdateAndAnalyzeAsync</span>(
+        <span class="type">Customer</span> customer)
+{
+    <span class="comment">// Write with EF</span>
+    _context.Customers.<span class="type">Update</span>(
+        customer);
+    <span class="kw">await</span> _context
+        .<span class="type">SaveChangesAsync</span>();
+
+    <span class="comment">// Read analytics with Dapper</span>
+    <span class="kw">var</span> stats = <span class="kw">await</span>
+        _conn.<span class="type">QueryFirstAsync</span>&lt;
+            <span class="type">CustomerStats</span>&gt;(
+            <span class="str">"SELECT ..."</span>);
+
+    <span class="kw">return</span> stats;
+}
+          </div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">Hybrid is the Enterprise Standard</div>
+        <div class="insight-text">
+          Major companies (Microsoft, Amazon, Google) use this pattern: ORM for transactional consistency, micro-ORM for analytic queries. It respects the strengths of both tools without forcing compromises.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 07: Performance Benchmarks -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">07</div>
+        <h2 class="section-title">Real-World Performance Benchmarks</h2>
+      </div>
+
+      <div class="prose">
+        <p>Benchmarks show typical performance across common operations. Results vary by query complexity and row counts, but these patterns hold across SQL Server, PostgreSQL, and MySQL.</p>
+
+        <h3>Benchmark 1: Fetch 1,000 Rows</h3>
+      </div>
+
+      <table class="benchmark-table">
+        <tr>
+          <th>Method</th>
+          <th>Query Time</th>
+          <th>Mapping</th>
+          <th>Total</th>
+          <th>Notes</th>
+        </tr>
+        <tr>
+          <td class="metric">Dapper</td>
+          <td>12 ms</td>
+          <td>22 ms</td>
+          <td><strong>34 ms</strong></td>
+          <td>Baseline</td>
+        </tr>
+        <tr>
+          <td class="metric">Raw ADO.NET</td>
+          <td>12 ms</td>
+          <td>18 ms</td>
+          <td><strong>30 ms</strong></td>
+          <td>Fastest, but manual mapping</td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (AsNoTracking)</td>
+          <td>12 ms</td>
+          <td>45 ms</td>
+          <td><strong>57 ms</strong></td>
+          <td>67% slower than Dapper</td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (tracked)</td>
+          <td>12 ms</td>
+          <td>120 ms</td>
+          <td><strong>132 ms</strong></td>
+          <td>3.8x slower, but has change tracking</td>
+        </tr>
+      </table>
+
+      <h3>Benchmark 2: Bulk Insert 10,000 Rows</h3>
+
+      <table class="benchmark-table">
+        <tr>
+          <th>Method</th>
+          <th>Duration</th>
+          <th>Throughput</th>
+          <th>Relative</th>
+        </tr>
+        <tr>
+          <td class="metric">SqlBulkCopy</td>
+          <td>150 ms</td>
+          <td>66.6K rows/sec</td>
+          <td>1x (fastest)</td>
+        </tr>
+        <tr>
+          <td class="metric">Dapper batch insert</td>
+          <td>420 ms</td>
+          <td>23.8K rows/sec</td>
+          <td>2.8x slower</td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core bulk</td>
+          <td>1200 ms</td>
+          <td>8.3K rows/sec</td>
+          <td>8x slower</td>
+        </tr>
+        <tr>
+          <td class="metric">EF SaveChanges (1 by 1)</td>
+          <td>8500 ms</td>
+          <td>1.2K rows/sec</td>
+          <td>56x slower</td>
+        </tr>
+      </table>
+
+      <h3>Benchmark 3: Update Complex Aggregation Query</h3>
+
+      <div class="prose">
+        <p>Query: 5-table join with GROUP BY and HAVING clause. Return 500 rows.</p>
+      </div>
+
+      <table class="benchmark-table">
+        <tr>
+          <th>Method</th>
+          <th>Duration</th>
+          <th>Why</th>
+        </tr>
+        <tr>
+          <td class="metric">Dapper</td>
+          <td>45 ms</td>
+          <td>Your SQL sent as-is, minimal translation</td>
+        </tr>
+        <tr>
+          <td class="metric">Raw SQL (ADO.NET)</td>
+          <td>42 ms</td>
+          <td>Slightly faster, manual mapping overhead</td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (query syntax)</td>
+          <td>120 ms</td>
+          <td>2.7x slower: LINQ → SQL translation</td>
+        </tr>
+        <tr>
+          <td class="metric">EF Core (FromSql)</td>
+          <td>48 ms</td>
+          <td>Same as Dapper when using raw SQL</td>
+        </tr>
+      </table>
+
+      <div class="insight">
+        <div class="insight-title">When Performance Matters Most</div>
+        <div class="insight-text">
+          For typical CRUD operations (1-100 rows), all tools feel instant to users. Performance differences matter when: (1) fetching thousands of rows (reporting), (2) bulk operations (imports), or (3) serving thousands of requests per second.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 08: Decision Framework -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">08</div>
+        <h2 class="section-title">Decision Framework: Tool Selection Flowchart</h2>
+      </div>
+
+      <div class="prose">
+        <p>Use this decision tree to select the right tool for your context:</p>
+      </div>
+
+      <div class="decision-tree">
+<span class="tree-label">START: Selecting Your Data Tool</span>
+
+<span class="tree-choice">Q: Is this a greenfield project?</span>
+├─ YES → Use EF Core
+│  (Migrations, change tracking, DDD support)
+└─ NO → Q: Are you on a legacy database?
+   ├─ YES → Q: Is query performance critical?
+   │  ├─ YES → Use Dapper
+   │  │  (Full SQL control, no ORM assumptions)
+   │  └─ NO → Use EF Core with FromSql fallback
+   │     (Hybrid approach)
+   └─ NO → Q: Is this primarily reads (reporting)?
+      ├─ YES → Use Dapper
+      │  (No tracking overhead, complex SQL)
+      └─ NO → Q: Is volume &gt; 100K rows/operation?
+         ├─ YES (bulk inserts) → Use SqlBulkCopy
+         │  or Dapper batch
+         └─ NO → Use EF Core
+            (CRUD operations, normal volumes)
+
+<span class="tree-label">Secondary Decision: Multiple Tools</span>
+
+<span class="tree-choice">Q: Can you maintain multiple tools?</span>
+├─ YES → Hybrid approach (EF + Dapper)
+│  • EF Core for writes/transactions
+│  • Dapper for reads/reports
+│  • Best performance + best DX
+└─ NO → Single tool (EF Core recommended)
+   • Covers 95% of use cases
+   • Simpler to maintain
+   • Slightly slower, acceptable trade-off
+      </div>
+
+      <h3>Decision Factors Beyond the Tree</h3>
+
+      <table class="feature-matrix">
+        <tr>
+          <th>Factor</th>
+          <th>Recommendation</th>
+        </tr>
+        <tr>
+          <td class="feature-name">Team expertise with LINQ</td>
+          <td>Use EF Core</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Team expertise with SQL</td>
+          <td>Use Dapper or ADO.NET</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Project timeline (weeks)</td>
+          <td>Use EF Core (faster development)</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Project timeline (months+)</td>
+          <td>Hybrid (optimize later)</td>
+        </tr>
+        <tr>
+          <td class="feature-name">2+ databases to support</td>
+          <td>EF Core (database-agnostic)</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Single database</td>
+          <td>Dapper (database-specific SQL)</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Startup (MVP phase)</td>
+          <td>EF Core (speed to market)</td>
+        </tr>
+        <tr>
+          <td class="feature-name">Enterprise (mature product)</td>
+          <td>Hybrid (performance tuning)</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- Section 09: Real-World Case Studies -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">09</div>
+        <h2 class="section-title">Real-World Case Studies</h2>
+      </div>
+
+      <h3>Case Study 1: E-Commerce Platform</h3>
+
+      <div class="prose">
+        <p><strong>Context:</strong> Mid-size online store, 2M products, 50K daily orders, team of 8 developers.</p>
+
+        <p><strong>Solution: Hybrid EF Core + Dapper</strong></p>
+
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li><strong>Writes (Orders, Inventory):</strong> EF Core handles order creation with automatic transaction handling, validation, and related entity updates</li>
+          <li><strong>Reads (Product Catalog, Reporting):</strong> Dapper powers product search with complex filtering and reporting dashboards with aggregations</li>
+          <li><strong>Results:</strong> Order processing 200ms average, product search 45ms average, daily reports under 1 second</li>
+        </ul>
+      </div>
+
+      <h3>Case Study 2: Analytics Dashboard</h3>
+
+      <div class="prose">
+        <p><strong>Context:</strong> SaaS analytics, querying 500M event records, 100 concurrent users, dedicated analytics team.</p>
+
+        <p><strong>Solution: Pure Dapper</strong></p>
+
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li><strong>Why not EF Core:</strong> LINQ queries for complex aggregations generated inefficient SQL. Window functions, CTEs, and database-specific optimizations needed</li>
+          <li><strong>Custom Dapper:</strong> Team wrote optimized SQL queries with indexed lookups, query result caching</li>
+          <li><strong>Results:</strong> Dashboard load times improved 300%, database CPU usage dropped 40%</li>
+        </ul>
+      </div>
+
+      <h3>Case Study 3: Microservice (Inventory Service)</h3>
+
+      <div class="prose">
+        <p><strong>Context:</strong> Single-responsibility microservice, 3 entities, <1000 requests/sec, small team.</p>
+
+        <p><strong>Solution: Pure EF Core</strong></p>
+
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li><strong>Why Hybrid is overkill:</strong> Simple entities, few complex queries, team knows LINQ well</li>
+          <li><strong>Trade-offs:</strong> 10-15% performance cost vs Dapper, but development speed doubled</li>
+          <li><strong>Results:</strong> New features take 2-3 days instead of a week, p99 latency acceptable for service SLAs</li>
+        </ul>
+      </div>
+
+      <h3>Case Study 4: Legacy Database Migration</h3>
+
+      <div class="prose">
+        <p><strong>Context:</strong> 20-year-old database with unusual naming, custom data types, stored procedures everywhere.</p>
+
+        <p><strong>Solution: Dapper + Raw ADO.NET</strong></p>
+
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li><strong>Why not EF Core:</strong> Database wasn't designed for EF. Custom types, non-standard relationships, stored procedure logic</li>
+          <li><strong>Dapper for queries:</strong> Easy mapping from custom types, stored procedure calls</li>
+          <li><strong>ADO.NET for special cases:</strong> Hierarchyid columns, CLR functions required raw command execution</li>
+          <li><strong>Results:</strong> Successfully refactored legacy system while maintaining compatibility</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Section 10: Anti-Patterns to Avoid -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">10</div>
+        <h2 class="section-title">Anti-Patterns: What Not to Do</h2>
+      </div>
+
+      <h3>Anti-Pattern 1: Choosing Tools Based on Blog Posts</h3>
+
+      <div class="warning">
+        <div class="warning-title">The Problem</div>
+        <div class="warning-text">
+          Someone on Twitter says "Dapper is 10x faster than EF Core!" So you rewrite everything in Dapper. Six months later, you realize the speed improvement helps 0.01% of your code paths, and you've lost all the development productivity benefits of EF Core.
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Better Approach</div>
+        <div class="insight-text">
+          Measure your actual application. Use a profiler. Identify the real bottlenecks. Then—and only then—optimize with Dapper or raw ADO.NET. Premature optimization ruins more projects than it saves.
+        </div>
+      </div>
+
+      <h3>Anti-Pattern 2: Using EF Core for Bulk Operations</h3>
+
+      <div class="warning">
+        <div class="warning-title">The Problem</div>
+        <div class="warning-text">
+          Importing 1M records with EF Core's SaveChanges: loading entities, tracking changes, building INSERT statements one at a time. Result: 15-minute import that should take 30 seconds.
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Better Approach</div>
+        <div class="insight-text">
+          For bulk inserts: SqlBulkCopy or EF Core's ExecuteInsert (EF 8+). For bulk updates: ExecuteUpdate. For bulk deletes: ExecuteDelete. These bypass change tracking and run in seconds.
+        </div>
+      </div>
+
+      <h3>Anti-Pattern 3: Forcing Complex Queries into LINQ</h3>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Bad: Forcing Complex SQL into LINQ</div>
+          <div class="code-content">
+<span class="comment">// This works but generates</span>
+<span class="comment">// horrible SQL</span>
+<span class="kw">var</span> result = context.Orders
+    .<span class="type">Include</span>(o =&gt; o.Customer)
+    .<span class="type">Where</span>(o =&gt; o.Amount &gt;
+        context.Orders
+            .<span class="type">Average</span>(x =&gt;
+                x.Amount))
+    .<span class="type">GroupBy</span>(o =&gt;
+        o.Customer.City)
+    .<span class="type">Select</span>(g =&gt; <span class="kw">new</span> {
+        City = g.<span class="type">Key</span>,
+        Count = g.<span class="type">Count</span>(),
+        Total = g.<span class="type">Sum</span>(x =&gt;
+            x.Amount)
+    })
+    .<span class="type">ToList</span>();
+
+<span class="comment">// 3000ms, 10 tables, inefficient</span>
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Good: Use Raw SQL</div>
+          <div class="code-content">
+<span class="kw">var</span> sql = <span class="str">@"
+    SELECT c.City,
+           COUNT(*) AS Count,
+           SUM(o.Amount) AS Total
+    FROM Orders o
+    JOIN Customers c
+        ON o.CustomerId = c.Id
+    WHERE o.Amount &gt;
+        (SELECT AVG(Amount)
+         FROM Orders)
+    GROUP BY c.City
+    ORDER BY Total DESC"</span>;
+
+<span class="kw">var</span> result = <span class="kw">await</span>
+    context.Database
+    .<span class="type">SqlQuery</span>&lt;<span class="type">Report</span>&gt;(
+        <span class="str">$"SELECT ..."</span>)
+    .<span class="type">ToListAsync</span>();
+
+<span class="comment">// 45ms, efficient, readable</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>Anti-Pattern 4: Not Using Transactions in Hybrid Code</h3>
+
+      <div class="warning">
+        <div class="warning-title">The Problem</div>
+        <div class="warning-text">
+          Your code: (1) inserts order in EF Core, (2) updates inventory in Dapper. EF succeeds, Dapper fails. Now you have an order but no inventory deduction. Inconsistent state.
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Bad: No Transaction</div>
+          <div class="code-content">
+<span class="comment">// DON'T DO THIS</span>
+<span class="kw">var</span> order = <span class="kw">new</span> <span class="type">Order</span> { ... };
+_context.Orders.<span class="type">Add</span>(order);
+<span class="kw">await</span> _context
+    .<span class="type">SaveChangesAsync</span>();
+
+<span class="comment">// What if this fails?</span>
+<span class="kw">await</span> _connection
+    .<span class="type">ExecuteAsync</span>(
+        <span class="str">"UPDATE Inventory ..."</span>);
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Good: Explicit Transaction</div>
+          <div class="code-content">
+<span class="kw">using</span> (<span class="kw">var</span> txn =
+    <span class="kw">await</span> _connection
+        .<span class="type">BeginTransactionAsync</span>())
+{
+    <span class="kw">try</span>
+    {
+        <span class="comment">// Both in same transaction</span>
+        <span class="kw">var</span> order = <span class="kw">new</span>
+            <span class="type">Order</span> { ... };
+        _context.Orders.<span class="type">Add</span>(order);
+        <span class="kw">await</span> _context
+            .<span class="type">SaveChangesAsync</span>();
+
+        <span class="kw">await</span> _connection
+            .<span class="type">ExecuteAsync</span>(
+                <span class="str">@"UPDATE..."</span>, txn: txn);
+
+        <span class="kw">await</span> txn
+            .<span class="type">CommitAsync</span>();
+    }
+    <span class="kw">catch</span> {
+        <span class="kw">await</span> txn
+            .<span class="type">RollbackAsync</span>();
+        <span class="kw">throw</span>;
+    }
+}
+          </div>
+        </div>
+      </div>
+
+      <h3>Anti-Pattern 5: Ignoring Index Performance in Dapper</h3>
+
+      <div class="warning">
+        <div class="warning-title">The Problem</div>
+        <div class="warning-text">
+          Dapper makes it easy to write SQL fast. But the SQL runs against unindexed columns. You get back 50ms of Dapper query execution, but the database does a 5-second full table scan. Dapper didn't slow you down—your schema did.
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Better Approach</div>
+        <div class="insight-text">
+          Always profile. Use SQL Server Management Studio's "Analyze Query Plan" or PostgreSQL's EXPLAIN. Verify indexes exist on WHERE clauses and JOIN conditions. Dapper executes your SQL verbatim—if the SQL is slow, Dapper is fast at being slow.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 11: Migration Strategies -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-number">11</div>
+        <h2 class="section-title">Migration Strategies Between Tools</h2>
+      </div>
+
+      <div class="prose">
+        <p>Sometimes you need to switch tools. Maybe you started with EF Core and hit a performance wall. Or you're adopting Dapper for a reporting module. Here's how to do it safely.</p>
+
+        <h3>Strategy 1: EF Core → Dapper (Gradual Reads)</h3>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Approach</div>
+        <div class="insight-text">
+          Start by replacing expensive read queries with Dapper equivalents. Leave writes on EF Core. Test carefully. Once confident, expand Dapper to more queries. This reduces risk because reads can't corrupt data.
+        </div>
+      </div>
+
+      <div class="prose">
+        <p><strong>Step 1: Identify bottleneck queries</strong></p>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Enable EF logging to see SQL generated</li>
+          <li>Profile application with a profiler</li>
+          <li>Find queries that run frequently or slowly</li>
+        </ul>
+
+        <p><strong>Step 2: Rewrite in Dapper</strong></p>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Copy the SQL from EF logs</li>
+          <li>Rewrite as explicit Dapper.QueryAsync</li>
+          <li>Verify results match EF output</li>
+        </ul>
+
+        <p><strong>Step 3: Switch the implementation</strong></p>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Create a new service method using Dapper</li>
+          <li>Update calling code to use new method</li>
+          <li>Remove EF Core version</li>
+        </ul>
+
+        <p><strong>Step 4: Monitor and expand</strong></p>
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Monitor performance improvements</li>
+          <li>Repeat for other expensive queries</li>
+          <li>Stop when ROI diminishes</li>
+        </ul>
+
+        <h3>Strategy 2: Dapper → Hybrid (Adding EF Core)</h3>
+
+        <p><strong>Context:</strong> Mature Dapper codebase, adding new transactional features.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Approach</div>
+        <div class="insight-text">
+          Rather than rewrite everything, add EF Core for new features only. Use Dapper for existing, optimized queries. Over time, the balance shifts toward EF Core for new code, Dapper for legacy queries.
+        </div>
+      </div>
+
+      <div class="prose">
+        <p><strong>Implementation:</strong></p>
+
+        <ul style="color: var(--ink2); margin-bottom: 1.5rem; padding-left: 1.5rem;">
+          <li>Set up EF Core DbContext alongside Dapper</li>
+          <li>New features use EF Core</li>
+          <li>Keep existing Dapper queries unchanged</li>
+          <li>Both share same underlying database</li>
+          <li>Synchronize transactions when needed</li>
+        </ul>
+
+        <h3>Strategy 3: ADO.NET → Dapper (Modernizing Legacy)</h3>
+
+        <p><strong>Context:</strong> Decade-old ADO.NET codebase with DataReader code everywhere.</p>
+      </div>
+
+      <div class="insight">
+        <div class="insight-title">The Approach</div>
+        <div class="insight-text">
+          Module by module, replace DataReader code with Dapper. Dapper reads the same SQL, saves you manual mapping code. Lower risk because SQL logic stays identical.
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">Before: ADO.NET with DataReader</div>
+          <div class="code-content">
+<span class="kw">var</span> cmd = connection
+    .<span class="type">CreateCommand</span>();
+cmd.CommandText = <span class="str">"SELECT * FROM ..."</span>;
+
+<span class="kw">var</span> customers =
+    <span class="kw">new</span> <span class="type">List</span>&lt;<span class="type">Customer</span>&gt;();
+<span class="kw">using</span> (<span class="kw">var</span> reader =
+    <span class="kw">await</span> cmd
+        .<span class="type">ExecuteReaderAsync</span>())
+{
+    <span class="kw">while</span> (<span class="kw">await</span>
+        reader.<span class="type">ReadAsync</span>())
+    {
+        customers.<span class="type">Add</span>(
+            <span class="kw">new</span> <span class="type">Customer</span>
+            {
+                Id = reader.<span class="type">GetInt32</span>(0),
+                Name = reader
+                    .<span class="type">GetString</span>(1),
+                Email = reader
+                    .<span class="type">GetString</span>(2)
+            });
+    }
+}
+          </div>
+        </div>
+
+        <div class="comparison-block csharp-block">
+          <div class="comparison-label">After: Same SQL, Dapper</div>
+          <div class="code-content">
+<span class="comment">// Same SQL, zero mapping code</span>
+<span class="kw">var</span> customers = <span class="kw">await</span>
+    connection
+    .<span class="type">QueryAsync</span>&lt;<span class="type">Customer</span>&gt;(
+        <span class="str">"SELECT * FROM ..."</span>);
+
+<span class="comment">// That's it. Dapper did the mapping.</span>
+<span class="comment">// SQL is identical, but code is</span>
+<span class="comment">// 5x simpler.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Takeaways -->
+    <div class="key-takeaways">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li><strong>The ORM spectrum:</strong> Raw ADO.NET (control) to EF Core (convenience). Choose where you sit based on your needs.</li>
+        <li><strong>EF Core shines:</strong> CRUD apps, rapid development, complex domains. Trade: 2-3x slower on reads, but 3x faster to develop.</li>
+        <li><strong>Dapper excels:</strong> High-performance reads, reporting, legacy databases. Full SQL control, minimal abstraction overhead.</li>
+        <li><strong>Raw ADO.NET is rare:</strong> Use only for bulk operations (SqlBulkCopy), CLR procs, or exotic types. Most developers never need it.</li>
+        <li><strong>Hybrid is standard:</strong> EF Core for writes + Dapper for reads covers 95% of enterprise applications elegantly.</li>
+        <li><strong>Measure before optimizing:</strong> Premature tool switching ruins more projects than slow queries. Profile first, optimize second.</li>
+        <li><strong>Team skills matter:</strong> LINQ experts → EF Core. SQL experts → Dapper. Match tools to talent.</li>
+        <li><strong>Migrations are safe:</strong> Move gradually (replace one query at a time). Test thoroughly. Monitor performance changes.</li>
+        <li><strong>Anti-patterns to avoid:</strong> Bulk operations in EF Core, complex SQL forced into LINQ, tool selection based on blog posts, ignoring indexes.</li>
+        <li><strong>The real truth:</strong> All three tools work. Success comes from choosing the right one for your problem, not from choosing the fastest one in a benchmark.</li>
+      </ul>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-buttons">
+      <a href="ch25-cqrs.html" class="nav-button prev">← Previous: CQRS Pattern</a>
+      <a href="ch27-indexing.html" class="nav-button next">Next: Indexing Strategy →</a>
+    </div>
+  </main>
+
+  <footer>
+    <p>SQL to C# Book | <a href="#">Home</a> | <a href="#">Table of Contents</a> | <a href="#">Contact</a></p>
+    <p style="margin-top: 1rem; font-size: 0.85rem;">Chapter 26: Choosing the Right Tool — EF Core vs Dapper vs ADO.NET</p>
+  </footer>
+</body>
+</html>
