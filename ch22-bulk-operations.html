@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chapter 22: Bulk Operations | SQL to C#</title>
+    <meta name="description" content="Chapter 22: Bulk Operations with Dapper — Insert, update, and delete thousands of records efficiently using batch operations and SqlBulkCopy.">
+    <title>Chapter 22: Bulk Operations with Dapper | SQL to C#</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -12,7 +13,7 @@
             --bg: #f8f7f3;
             --bg2: #f0ede6;
             --bg3: #e8e4db;
-            --white: #fff;
+            --white: #ffffff;
             --ink: #1c1a17;
             --ink2: #3d3a34;
             --ink3: #6b6760;
@@ -32,1221 +33,366 @@
             --amber-b: #e8d08a;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
+        html, body {
             font-family: 'Source Serif 4', serif;
             background-color: var(--bg);
             color: var(--ink);
-            line-height: 1.7;
-        }
-
-        .nav {
-            position: sticky;
-            top: 0;
-            height: 54px;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--rule);
-            display: flex;
-            align-items: center;
-            padding: 0 40px;
-            gap: 20px;
-            z-index: 100;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .nav-brand {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--acc);
-        }
-
-        .nav-chapter {
-            background-color: var(--acc-l);
-            color: var(--acc);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 60px 40px;
-        }
-
-        header {
-            margin-bottom: 60px;
-        }
-
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 48px;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 20px;
-            color: var(--ink);
-        }
-
-        .subtitle {
-            font-family: 'Source Serif 4', serif;
-            font-size: 18px;
-            color: var(--ink3);
-            font-weight: 300;
-        }
-
-        .in-this-chapter {
-            background-color: var(--green-l);
-            border-left: 4px solid var(--green);
-            padding: 20px;
-            margin-bottom: 60px;
-            border-radius: 4px;
-        }
-
-        .in-this-chapter h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--green);
-            margin-bottom: 12px;
-        }
-
-        .in-this-chapter ul {
-            list-style: none;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .in-this-chapter li {
-            font-size: 14px;
-            color: var(--ink2);
-        }
-
-        .in-this-chapter li:before {
-            content: "→ ";
-            color: var(--green);
-            font-weight: 600;
-            margin-right: 6px;
-        }
-
-        section {
-            margin-bottom: 80px;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .section-number {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--acc);
-            min-width: 60px;
-        }
-
-        .section-divider {
-            flex: 1;
-            height: 1px;
-            background-color: var(--rule);
-        }
-
-        h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 24px;
-        }
-
-        h3 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--ink2);
-            margin-top: 28px;
-            margin-bottom: 12px;
-        }
-
-        p {
-            margin-bottom: 16px;
-            color: var(--ink2);
-            font-size: 16px;
-        }
-
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .code-block {
-            border-radius: 4px;
-            padding: 20px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
             line-height: 1.6;
-            overflow-x: auto;
         }
 
-        .code-sql {
-            background-color: var(--ink);
-            color: #e8e6e1;
-            border-left: 4px solid var(--acc);
+        nav {
+            position: sticky; top: 0; height: 54px;
+            background: rgba(248,247,243,0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--rule);
+            display: flex; align-items: center;
+            padding: 0 2rem; z-index: 1000;
         }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background-color: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-        .code-csharp {
-            background-color: var(--blue-l);
-            color: var(--ink);
-            border-left: 4px solid var(--blue-b);
-        }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
 
-        .code-label {
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            display: block;
-        }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-        .code-sql .code-label {
-            color: var(--acc-b);
-        }
+        .section { margin-bottom: 64px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background-color: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 16px; }
+        .section-prose { font-size: 15px; color: var(--ink2); line-height: 1.7; margin-bottom: 20px; }
+        .section-prose p { margin-bottom: 10px; }
 
-        .code-csharp .code-label {
-            color: var(--blue);
-        }
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .code-block { border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background-color: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background-color: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        .code-full-width { margin-bottom: 24px; }
 
         .insight {
-            background-color: var(--acc-l);
-            border-left: 4px solid var(--acc);
-            padding: 20px;
-            margin: 30px 0;
-            border-radius: 4px;
-        }
-
-        .insight-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--acc);
-            margin-bottom: 8px;
-        }
-
-        .insight p {
-            margin-bottom: 0;
-            font-size: 15px;
+            background-color: var(--acc-l); border-left: 4px solid var(--acc);
+            padding: 16px 20px; border-radius: 0 8px 8px 0;
+            margin-bottom: 24px; font-size: 14px; line-height: 1.6; color: var(--ink2);
         }
 
         .key-takeaways {
-            background-color: var(--amber-l);
-            border-left: 4px solid var(--amber);
-            padding: 30px;
-            margin: 60px 0;
-            border-radius: 4px;
+            background-color: var(--green-l); border-left: 4px solid var(--green);
+            padding: 24px 28px; border-radius: 0 12px 12px 0; margin-bottom: 48px;
         }
+        .key-takeaways h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .key-takeaways ul { list-style: none; padding-left: 0; }
+        .key-takeaways li { margin-bottom: 8px; padding-left: 24px; position: relative; font-size: 14px; line-height: 1.6; color: var(--ink2); }
+        .key-takeaways li::before { content: "\2713"; position: absolute; left: 0; color: var(--green); font-weight: bold; }
 
-        .key-takeaways h3 {
-            margin-top: 0;
-            color: var(--amber);
-        }
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
+        .nav-item { background-color: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-        .key-takeaways ul {
-            list-style: none;
-        }
+        footer { background-color: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-        .key-takeaways li {
-            margin-bottom: 12px;
-            padding-left: 24px;
-            position: relative;
-        }
-
-        .key-takeaways li:before {
-            content: "■";
-            position: absolute;
-            left: 0;
-            color: var(--amber);
-            font-weight: 700;
-        }
-
-        .nav-links {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 60px 0;
-        }
-
-        .nav-link {
-            padding: 20px;
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            text-decoration: none;
-            color: var(--ink2);
-            background-color: var(--white);
-            transition: all 0.2s;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .nav-link:hover {
-            border-color: var(--acc);
-            background-color: var(--acc-l);
-        }
-
-        .nav-link-label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--ink3);
-            margin-bottom: 8px;
-        }
-
-        .nav-link-text {
-            display: block;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--ink);
-        }
-
-        footer {
-            border-top: 1px solid var(--rule);
-            padding-top: 40px;
-            margin-top: 60px;
-            text-align: center;
-            color: var(--ink3);
-            font-size: 13px;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background-color: var(--bg2);
-            padding: 2px 6px;
-            border-radius: 2px;
-            font-size: 14px;
-        }
-
-        strong {
-            font-weight: 600;
-            color: var(--ink);
-        }
-
-        .note {
-            background-color: var(--bg2);
-            padding: 16px;
-            border-radius: 4px;
-            margin: 20px 0;
-            border-left: 4px solid var(--ink3);
-        }
-
-        em {
-            font-style: italic;
-            color: var(--ink2);
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-brand">SQL to C#</div>
-        <div class="nav-chapter">CH 22</div>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 22</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
     </nav>
 
-    <div class="container">
-        <header>
-            <h1>Bulk Operations — High-Performance Data Loading</h1>
-            <p class="subtitle">Embrace SQL with a lightweight, performant ORM that stays out of your way</p>
-        </header>
-
-        <div class="in-this-chapter">
-            <h2>In This Chapter</h2>
-            <ul>
-                <li>What Dapper is and why it exists</li>
-                <li>Your first Dapper query in 3 lines</li>
-                <li>Parameterized queries and SQL injection prevention</li>
-                <li>INSERT, UPDATE, DELETE with Execute</li>
-                <li>Query variants: First, Single, FirstOrDefault</li>
-                <li>Async/await patterns with Dapper</li>
-            </ul>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 22</div>
+            <h1>Bulk Operations with Dapper</h1>
+            <p class="chapter-intro">Insert, update, and delete thousands of records efficiently using batch operations and SqlBulkCopy. Choose the right tool for your scale.</p>
         </div>
 
-        <section>
+        <!-- SECTION 01: Batch Inserts -->
+        <section class="section">
             <div class="section-header">
-                <div class="section-number">01</div>
-                <div class="section-divider"></div>
+                <span class="sec-num">01</span>
+                <div class="sec-rule"></div>
             </div>
-            <h2>What is Dapper? The Micro-ORM Philosophy</h2>
+            <h2>Batch Inserts with Execute</h2>
 
-            <p>
-                Dapper is not a full-featured ORM like Entity Framework Core. It's a <strong>micro-ORM</strong>—a thin,
-                high-performance wrapper around <code>IDbConnection</code> that does one job exceptionally well:
-                map SQL query results to C# objects. Nothing more, nothing less.
-            </p>
-
-            <h3>The Philosophy: You Write SQL, Dapper Maps It</h3>
-
-            <p>
-                With Entity Framework, you write LINQ and the framework generates SQL for you. With Dapper,
-                you write the SQL yourself, and Dapper handles the object mapping. This approach has profound trade-offs:
-            </p>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL (You Write This)</span>
-                        <pre>SELECT Id, FirstName, Email,
-       CreatedAt, IsActive
-FROM Customers
-WHERE Department = @Department
-ORDER BY CreatedAt DESC</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C# (Dapper Maps It)</span>
-                        <pre>var customers = connection
-    .Query&lt;Customer&gt;(sql,
-        new { Department = "Sales" })
-    .ToList();</pre>
-                    </div>
-                </div>
+            <div class="section-prose">
+                <p>Insert multiple rows by passing a collection to <code>Execute</code>. Dapper loops internally and batches efficiently.</p>
             </div>
 
-            <div class="insight">
-                <div class="insight-title">Why Choose Dapper?</div>
-                <p>
-                    <strong>Speed:</strong> Minimal overhead. Direct mapping from DataReader to objects.
-                    <strong>Control:</strong> You see and write every query. No surprises, no N+1 queries unless you write them.
-                    <strong>Performance:</strong> Often faster than EF for bulk operations. No change tracking overhead.
-                    <strong>Simplicity:</strong> No DbContext, no migrations, no configuration. Just SQL and parameters.
-                </p>
-            </div>
-
-            <h3>Installation via NuGet</h3>
-
-            <p>
-                Dapper is a single NuGet package with zero dependencies (except the database driver you're using).
-            </p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">Package Manager Console</span>
-                <pre>Install-Package Dapper</pre>
-            </div>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">Or with .NET CLI</span>
-                <pre>dotnet add package Dapper</pre>
-            </div>
-
-            <p>
-                That's it. No DbContext scaffolding, no migrations, no config files. Just add the package
-                and start writing SQL.
-            </p>
-
-            <h3>Dapper vs Entity Framework: The Mindset Shift</h3>
-
-            <p>
-                EF Core encourages you to think in terms of objects and relationships. Dapper encourages you
-                to think in terms of SQL queries and result sets. Which is better? It depends on your use case:
-            </p>
-
-            <table style="width: 100%; margin: 30px 0; border-collapse: collapse;">
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Aspect</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Dapper</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Entity Framework</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Learning Curve</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">You know SQL? You're done.</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Concepts, configurations, quirks.</td>
-                </tr>
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Performance</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Faster. Minimal overhead.</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Good. Change tracking cost.</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Query Control</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Complete. You write it.</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Translates LINQ to SQL.</td>
-                </tr>
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule);">CRUD Operations</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Manual SQL for each.</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Built-in SaveChanges.</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Relationships</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Manual joins, manual mapping.</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Automatic navigation props.</td>
-                </tr>
-            </table>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <div class="section-number">02</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Your First Dapper Query</h2>
-
-            <p>
-                Let's query a list of active customers from the database. Here's the complete, working code.
-            </p>
-
-            <h3>Step 1: Define Your Model</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Customer Class</span>
-                <pre>public class Customer
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>var customers = new List&lt;Customer&gt;
 {
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
-}</pre>
-            </div>
-
-            <h3>Step 2: Write the Query</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL</span>
-                        <pre>SELECT Id, FirstName, LastName,
-       Email, IsActive, CreatedAt
-FROM Customers
-WHERE IsActive = 1</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C# with Dapper</span>
-                        <pre>const string connString =
-    "Data Source=localhost;Database=Shop;Trusted_Connection=true;";
-
-using var conn =
-    new SqlConnection(connString);
-
-var customers = conn
-    .Query&lt;Customer&gt;(
-        "SELECT Id, FirstName, LastName, Email, IsActive, CreatedAt " +
-        "FROM Customers " +
-        "WHERE IsActive = 1"
-    )
-    .ToList();</pre>
-                    </div>
-                </div>
-            </div>
-
-            <p>
-                That's it. Three steps: connection, query, map to objects. Dapper does the heavy lifting of
-                reading the DataReader and creating Customer instances.
-            </p>
-
-            <h3>Comparison: Dapper vs EF Core</h3>
-
-            <p>
-                The same query with Entity Framework Core:
-            </p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# with EF Core</span>
-                <pre>using var context = new ShopContext();
-
-var customers = context.Customers
-    .Where(c => c.IsActive)
-    .ToList();</pre>
-            </div>
-
-            <p>
-                EF is more concise and type-safe (LINQ), but Dapper gives you explicit control over the SQL.
-                If the query runs slowly, you'll know exactly why—it's your SQL, not EF's query translation.
-            </p>
-
-            <div class="insight">
-                <div class="insight-title">Dapper Magic: Convention-Based Mapping</div>
-                <p>
-                    Dapper maps SQL column names to C# property names by <strong>name matching (case-insensitive)</strong>.
-                    The column <code>FirstName</code> in your query automatically maps to the property <code>FirstName</code>
-                    on your Customer class. No configuration needed.
-                </p>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <div class="section-number">03</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Parameterized Queries (Preventing SQL Injection)</h2>
-
-            <p>
-                <strong>Never</strong> concatenate user input directly into SQL. Always use parameters. Dapper makes
-                this trivial with anonymous objects.
-            </p>
-
-            <h3>The Wrong Way (Don't Do This!)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - VULNERABLE TO SQL INJECTION</span>
-                <pre>// NEVER DO THIS
-string userCity = GetInputFromUser(); // "London' OR '1'='1"
-string sql = $"SELECT * FROM Customers WHERE City = '{userCity}'";
-var customers = conn.Query&lt;Customer&gt;(sql).ToList();</pre>
-            </div>
-
-            <p>
-                If a user enters <code>London' OR '1'='1</code>, your query becomes:
-            </p>
-
-            <div class="code-block code-sql">
-                <span class="code-label">SQL (Injected!)</span>
-                <pre>SELECT * FROM Customers WHERE City = 'London' OR '1'='1'</pre>
-            </div>
-
-            <p>
-                This returns all customers, not just those in London. Catastrophic security breach.
-            </p>
-
-            <h3>The Right Way: Use Parameters</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL with Parameter Placeholder</span>
-                        <pre>SELECT Id, FirstName, Email, City
-FROM Customers
-WHERE City = @City
-ORDER BY FirstName</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C# - Safe Parameter Passing</span>
-                        <pre>string userCity = GetInputFromUser();
-
-var customers = conn
-    .Query&lt;Customer&gt;(
-        "SELECT Id, FirstName, Email, City " +
-        "FROM Customers " +
-        "WHERE City = @City " +
-        "ORDER BY FirstName",
-        new { City = userCity }
-    )
-    .ToList();</pre>
-                    </div>
-                </div>
-            </div>
-
-            <p>
-                The <code>@City</code> parameter in SQL is replaced safely by the database driver. User input
-                is never interpreted as SQL code.
-            </p>
-
-            <h3>Multiple Parameters</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Multiple Parameters with Anonymous Object</span>
-                <pre>var customers = conn
-    .Query&lt;Customer&gt;(
-        "SELECT Id, FirstName, Email, City, CreatedAt " +
-        "FROM Customers " +
-        "WHERE City = @City AND IsActive = @IsActive " +
-        "AND CreatedAt > @JoinDate",
-        new
-        {
-            City = "London",
-            IsActive = true,
-            JoinDate = new DateTime(2020, 1, 1)
-        }
-    )
-    .ToList();</pre>
-            </div>
-
-            <div class="insight">
-                <div class="insight-title">Anonymous Objects for Parameters</div>
-                <p>
-                    The parameter names in the anonymous object must match the SQL parameter placeholders.
-                    <code>new { City = "London" }</code> satisfies <code>WHERE City = @City</code>.
-                    Dapper matches them by name.
-                </p>
-            </div>
-
-            <h3>Complex Scenarios: DynamicParameters</h3>
-
-            <p>
-                For advanced scenarios (output parameters, special types), use <code>DynamicParameters</code>:
-            </p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Using DynamicParameters</span>
-                <pre>var parameters = new DynamicParameters();
-parameters.Add("@City", "London");
-parameters.Add("@IsActive", true);
-parameters.Add("@CreatedAfter", new DateTime(2020, 1, 1));
-
-var customers = conn
-    .Query&lt;Customer&gt;(
-        "SELECT * FROM Customers " +
-        "WHERE City = @City AND IsActive = @IsActive " +
-        "AND CreatedAt > @CreatedAfter",
-        parameters
-    )
-    .ToList();</pre>
-            </div>
-
-            <p>
-                This provides the same safety as anonymous objects but with more explicit control over parameter types
-                and directions (we'll see this in the stored procedures chapter).
-            </p>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <div class="section-number">04</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Execute for INSERT, UPDATE, DELETE</h2>
-
-            <p>
-                For queries that don't return results (INSERT, UPDATE, DELETE), use <code>Execute</code> instead of
-                <code>Query</code>. It returns the number of rows affected.
-            </p>
-
-            <h3>INSERT: Add a New Customer</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL</span>
-                        <pre>INSERT INTO Customers
-    (FirstName, LastName, Email, City, IsActive, CreatedAt)
-VALUES
-    (@FirstName, @LastName, @Email, @City, @IsActive, @CreatedAt)</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C#</span>
-                        <pre>int rowsInserted = conn
-    .Execute(
-        "INSERT INTO Customers " +
-        "(FirstName, LastName, Email, City, IsActive, CreatedAt) " +
-        "VALUES (@FirstName, @LastName, @Email, @City, @IsActive, @CreatedAt)",
-        new
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@example.com",
-            City = "London",
-            IsActive = true,
-            CreatedAt = DateTime.Now
-        }
-    );
-
-Console.WriteLine($"Inserted {rowsInserted} row(s)");</pre>
-                    </div>
-                </div>
-            </div>
-
-            <h3>UPDATE: Modify an Existing Customer</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL</span>
-                        <pre>UPDATE Customers
-SET FirstName = @FirstName,
-    LastName = @LastName,
-    Email = @Email
-WHERE Id = @Id</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C#</span>
-                        <pre>int rowsUpdated = conn
-    .Execute(
-        "UPDATE Customers " +
-        "SET FirstName = @FirstName, " +
-        "    LastName = @LastName, " +
-        "    Email = @Email " +
-        "WHERE Id = @Id",
-        new
-        {
-            Id = 5,
-            FirstName = "Jane",
-            LastName = "Smith",
-            Email = "jane@example.com"
-        }
-    );
-
-Console.WriteLine($"Updated {rowsUpdated} row(s)");</pre>
-                </div>
-            </div>
-
-            <h3>DELETE: Remove a Customer</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-sql">
-                        <span class="code-label">SQL</span>
-                        <pre>DELETE FROM Customers
-WHERE Id = @Id</pre>
-                    </div>
-                </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C#</span>
-                        <pre>int rowsDeleted = conn
-    .Execute(
-        "DELETE FROM Customers WHERE Id = @Id",
-        new { Id = 5 }
-    );
-
-Console.WriteLine($"Deleted {rowsDeleted} row(s)");</pre>
-                </div>
-            </div>
-
-            <h3>Batch Operations: Insert Multiple Records</h3>
-
-            <p>
-                One of Dapper's strengths is batching. Pass a collection and Dapper executes the query once per item:
-            </p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Batch Insert</span>
-                <pre>var newCustomers = new List&lt;Customer&gt;
-{
-    new { FirstName = "Alice", LastName = "Brown", Email = "alice@example.com", City = "Paris", IsActive = true, CreatedAt = DateTime.Now },
-    new { FirstName = "Bob", LastName = "Green", Email = "bob@example.com", City = "Berlin", IsActive = true, CreatedAt = DateTime.Now },
-    new { FirstName = "Carol", LastName = "White", Email = "carol@example.com", City = "Amsterdam", IsActive = true, CreatedAt = DateTime.Now }
+    new { FirstName = "Alice", LastName = "Smith" },
+    new { FirstName = "Bob", LastName = "Jones" },
+    new { FirstName = "Charlie", LastName = "Brown" }
 };
 
-int totalInserted = conn
-    .Execute(
-        "INSERT INTO Customers (FirstName, LastName, Email, City, IsActive, CreatedAt) " +
-        "VALUES (@FirstName, @LastName, @Email, @City, @IsActive, @CreatedAt)",
-        newCustomers
-    );
+var sql = @"INSERT INTO Customers (FirstName, LastName, CreatedAt)
+            VALUES (@FirstName, @LastName, GETDATE())";
 
-Console.WriteLine($"Inserted {totalInserted} rows total");</pre>
-            </div>
-
-            <div class="insight">
-                <div class="insight-title">Return Value: Rows Affected</div>
-                <p>
-                    <code>Execute</code> returns an <code>int</code> representing the number of rows affected.
-                    For batches, it returns the total across all iterations. Always check this to verify
-                    your operation succeeded.
-                </p>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <div class="section-number">05</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>QueryFirst, QuerySingle, QueryFirstOrDefault</h2>
-
-            <p>
-                So far we've used <code>Query&lt;T&gt;</code> which returns an <code>IEnumerable</code>. But what if you
-                expect zero or one result? Dapper provides specialized methods with different exception behaviors.
-            </p>
-
-            <h3>QueryFirst: The First Result (Throws if None)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>// Get the most recently created customer
-var customer = conn
-    .QueryFirst&lt;Customer&gt;(
-        "SELECT TOP 1 Id, FirstName, Email, CreatedAt " +
-        "FROM Customers " +
-        "ORDER BY CreatedAt DESC"
-    );
-
-Console.WriteLine($"Latest: {customer.FirstName}, {customer.CreatedAt}");</pre>
-            </div>
-
-            <p>
-                If the query returns no rows, <code>QueryFirst</code> throws an <code>InvalidOperationException</code>.
-                Use this when you're certain a result exists.
-            </p>
-
-            <h3>QueryFirstOrDefault: The First Result (Returns Null if None)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>// Get the most recently created customer, or null
-var customer = conn
-    .QueryFirstOrDefault&lt;Customer&gt;(
-        "SELECT TOP 1 Id, FirstName, Email, CreatedAt " +
-        "FROM Customers " +
-        "ORDER BY CreatedAt DESC"
-    );
-
-if (customer != null)
-{
-    Console.WriteLine($"Latest: {customer.FirstName}");
-}
-else
-{
-    Console.WriteLine("No customers found");
-}</pre>
-            </div>
-
-            <p>
-                This is safer when results are optional. No exception thrown; you just get <code>null</code>.
-            </p>
-
-            <h3>QuerySingle: Exactly One Result (Throws Otherwise)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>// Get a specific customer by ID (expect exactly one)
-var customer = conn
-    .QuerySingle&lt;Customer&gt;(
-        "SELECT Id, FirstName, Email, CreatedAt " +
-        "FROM Customers " +
-        "WHERE Id = @Id",
-        new { Id = 42 }
-    );
-
-Console.WriteLine($"Customer: {customer.FirstName}");</pre>
-            </div>
-
-            <p>
-                If no rows are found, or more than one row is found, <code>QuerySingle</code> throws. Use this
-                when you expect exactly one result (like fetching by primary key).
-            </p>
-
-            <h3>QuerySingleOrDefault: Exactly One or None (Returns Null Otherwise)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>// Try to get a customer by ID, or null
-var customer = conn
-    .QuerySingleOrDefault&lt;Customer&gt;(
-        "SELECT Id, FirstName, Email, CreatedAt " +
-        "FROM Customers " +
-        "WHERE Id = @Id",
-        new { Id = 42 }
-    );
-
-if (customer != null)
-{
-    Console.WriteLine($"Found: {customer.FirstName}");
-}
-else
-{
-    Console.WriteLine("Customer not found");
-}</pre>
-            </div>
-
-            <h3>Summary: When to Use Each</h3>
-
-            <table style="width: 100%; margin: 30px 0; border-collapse: collapse;">
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Method</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Throws if No Results?</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Throws if Multiple?</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule); font-weight: 600;">Returns Collection?</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);"><code>Query&lt;T&gt;</code></td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (empty)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (all returned)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Yes</td>
-                </tr>
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule);"><code>QueryFirst&lt;T&gt;</code></td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Yes</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (takes first)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);"><code>QueryFirstOrDefault&lt;T&gt;</code></td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (null)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (takes first)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No</td>
-                </tr>
-                <tr style="background-color: var(--bg2);">
-                    <td style="padding: 12px; border: 1px solid var(--rule);"><code>QuerySingle&lt;T&gt;</code></td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Yes</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">Yes</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No</td>
-                </tr>
-                <tr>
-                    <td style="padding: 12px; border: 1px solid var(--rule);"><code>QuerySingleOrDefault&lt;T&gt;</code></td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (null)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No (throws on 2+)</td>
-                    <td style="padding: 12px; border: 1px solid var(--rule);">No</td>
-                </tr>
-            </table>
-
-            <div class="insight">
-                <div class="insight-title">Design Pattern: Match Your Expectations</div>
-                <p>
-                    Choose the method that matches what you expect. If you expect exactly one customer by ID,
-                    use <code>QuerySingleOrDefault</code>. If you're fetching a list, use <code>Query</code>.
-                    If you want the most recent but it might not exist, use <code>QueryFirstOrDefault</code>.
-                </p>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-header">
-                <div class="section-number">06</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Async Queries</h2>
-
-            <p>
-                For I/O-bound operations, use <code>async/await</code> to free up threads while waiting for the database.
-                Dapper provides fully async versions of all query methods.
-            </p>
-
-            <h3>Basic Async Query</h3>
-
-            <div class="comparison">
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C# - Synchronous</span>
-                        <pre>public List&lt;Customer&gt; GetCustomers()
-{
-    using var conn =
-        new SqlConnection(connString);
-
-    var customers = conn
-        .Query&lt;Customer&gt;(
-            "SELECT * FROM Customers " +
-            "WHERE IsActive = 1"
-        )
-        .ToList();
-
-    return customers;
-}</pre>
-                    </div>
+int rowsInserted = await connection.ExecuteAsync(sql, customers);
+Console.WriteLine($"Inserted {rowsInserted} rows");</pre>
                 </div>
-                <div>
-                    <div class="code-block code-csharp">
-                        <span class="code-label">C# - Asynchronous</span>
-                        <pre>public async Task&lt;List&lt;Customer&gt;&gt;
-    GetCustomersAsync()
+            </div>
+
+            <div class="insight">
+                <strong>Performance:</strong> Much faster than looping and executing one-by-one. Dapper batches execution internally.
+            </div>
+        </section>
+
+        <!-- SECTION 02: Batch Updates -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">02</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Batch Updates</h2>
+
+            <div class="section-prose">
+                <p>Update multiple rows the same way: pass a collection to <code>Execute</code>.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>var updates = new List&lt;object&gt;
 {
-    using var conn =
-        new SqlConnection(connString);
+    new { FirstName = "Alice Updated", Id = 1 },
+    new { FirstName = "Bob Updated", Id = 2 },
+    new { FirstName = "Charlie Updated", Id = 3 }
+};
 
-    var customers = await conn
-        .QueryAsync&lt;Customer&gt;(
-            "SELECT * FROM Customers " +
-            "WHERE IsActive = 1"
-        );
+var sql = "UPDATE Customers SET FirstName = @FirstName WHERE Id = @Id";
+int rowsUpdated = await connection.ExecuteAsync(sql, updates);
+Console.WriteLine($"Updated {rowsUpdated} rows");</pre>
+                </div>
+            </div>
 
-    return customers.ToList();
+            <div class="insight">
+                <strong>Batch syntax:</strong> Same as batch insert—pass a collection and Dapper executes each item.
+            </div>
+        </section>
+
+        <!-- SECTION 03: Bulk Copy for Large Inserts -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">03</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>SqlBulkCopy for Large Datasets</h2>
+
+            <div class="section-prose">
+                <p>For 10,000+ rows, use <code>SqlBulkCopy</code> (SQL Server only). It bypasses normal INSERT logic for speed.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C# — Convert List to DataTable</div>
+                <div class="code-block csharp-block">
+                    <pre>public static DataTable ToDataTable&lt;T&gt;(List&lt;T&gt; items)
+{
+    var dt = new DataTable(typeof(T).Name);
+    var props = typeof(T).GetProperties();
+
+    foreach (var prop in props)
+        dt.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
+
+    foreach (var item in items)
+    {
+        var row = dt.NewRow();
+        foreach (var prop in props)
+            row[prop.Name] = prop.GetValue(item) ?? DBNull.Value;
+        dt.Rows.Add(row);
+    }
+    return dt;
 }</pre>
                 </div>
             </div>
 
-            <p>
-                The async version uses <code>QueryAsync</code> instead of <code>Query</code>, and returns a
-                <code>Task&lt;IEnumerable&lt;T&gt;&gt;</code> instead of <code>IEnumerable&lt;T&gt;</code>.
-            </p>
+            <div class="code-full-width">
+                <div class="code-label">C# — Bulk Insert</div>
+                <div class="code-block csharp-block">
+                    <pre>var customers = GenerateLargeList(); // 100,000+ rows
+var dt = ToDataTable(customers);
 
-            <h3>Async Execute (INSERT, UPDATE, DELETE)</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Async Insert</span>
-                <pre>public async Task InsertCustomerAsync(Customer customer)
+await using var connection = new SqlConnection(connectionString);
+connection.Open();
+using var bulkCopy = new SqlBulkCopy(connection)
 {
-    using var conn = new SqlConnection(connString);
+    DestinationTableName = "Customers"
+};
+await bulkCopy.WriteToServerAsync(dt);
 
-    int rowsInserted = await conn
-        .ExecuteAsync(
-            "INSERT INTO Customers " +
-            "(FirstName, LastName, Email, City, IsActive, CreatedAt) " +
-            "VALUES (@FirstName, @LastName, @Email, @City, @IsActive, @CreatedAt)",
-            new
-            {
-                customer.FirstName,
-                customer.LastName,
-                customer.Email,
-                customer.City,
-                customer.IsActive,
-                customer.CreatedAt
-            }
-        );
-
-    if (rowsInserted == 0)
-        throw new InvalidOperationException("Insert failed");
-}</pre>
-            </div>
-
-            <h3>Async Single/First Variants</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Async QuerySingleOrDefault</span>
-                <pre>public async Task&lt;Customer?&gt; GetCustomerByIdAsync(int id)
-{
-    using var conn = new SqlConnection(connString);
-
-    var customer = await conn
-        .QuerySingleOrDefaultAsync&lt;Customer&gt;(
-            "SELECT Id, FirstName, Email, CreatedAt " +
-            "FROM Customers " +
-            "WHERE Id = @Id",
-            new { Id = id }
-        );
-
-    return customer;
-}</pre>
-            </div>
-
-            <h3>ConfigureAwait: A Best Practice</h3>
-
-            <p>
-                When writing library or reusable code, add <code>.ConfigureAwait(false)</code> to async calls.
-                This tells the runtime not to capture the current synchronization context, improving performance
-                in high-throughput scenarios.
-            </p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - With ConfigureAwait</span>
-                <pre>public async Task&lt;List&lt;Customer&gt;&gt; GetCustomersAsync()
-{
-    using var conn = new SqlConnection(connString);
-
-    var customers = await conn
-        .QueryAsync&lt;Customer&gt;(
-            "SELECT * FROM Customers WHERE IsActive = 1"
-        )
-        .ConfigureAwait(false);
-
-    return customers.ToList();
-}</pre>
-            </div>
-
-            <h3>Full Example: Async Repository Method</h3>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C# - Production-Ready Async Method</span>
-                <pre>public class CustomerRepository
-{
-    private readonly string _connectionString;
-
-    public CustomerRepository(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
-
-    public async Task&lt;Customer?&gt; GetByIdAsync(int customerId)
-    {
-        const string sql =
-            "SELECT Id, FirstName, LastName, Email, City, " +
-            "IsActive, CreatedAt FROM Customers WHERE Id = @Id";
-
-        using var conn = new SqlConnection(_connectionString);
-
-        var customer = await conn
-            .QuerySingleOrDefaultAsync&lt;Customer&gt;(sql,
-                new { Id = customerId })
-            .ConfigureAwait(false);
-
-        return customer;
-    }
-
-    public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetAllActiveAsync()
-    {
-        const string sql =
-            "SELECT Id, FirstName, LastName, Email, City, " +
-            "IsActive, CreatedAt FROM Customers " +
-            "WHERE IsActive = 1 ORDER BY FirstName";
-
-        using var conn = new SqlConnection(_connectionString);
-
-        var customers = await conn
-            .QueryAsync&lt;Customer&gt;(sql)
-            .ConfigureAwait(false);
-
-        return customers;
-    }
-
-    public async Task&lt;int&gt; InsertAsync(Customer customer)
-    {
-        const string sql =
-            "INSERT INTO Customers " +
-            "(FirstName, LastName, Email, City, IsActive, CreatedAt) " +
-            "VALUES (@FirstName, @LastName, @Email, @City, @IsActive, @CreatedAt)";
-
-        using var conn = new SqlConnection(_connectionString);
-
-        return await conn
-            .ExecuteAsync(sql, customer)
-            .ConfigureAwait(false);
-    }
-}</pre>
+Console.WriteLine($"Bulk inserted {dt.Rows.Count} rows");</pre>
+                </div>
             </div>
 
             <div class="insight">
-                <div class="insight-title">Async: Not Just for Concurrency</div>
-                <p>
-                    Using async/await in ASP.NET and other frameworks allows a small thread pool to handle
-                    many concurrent requests. While your code is waiting for the database, other requests can
-                    use the freed thread. This is critical for scalable web applications.
-                </p>
+                <strong>When to use:</strong> 10,000+ rows: use SqlBulkCopy. Hundreds: use Execute batches. Tens: loop normally.
             </div>
         </section>
 
+        <!-- SECTION 04: Batch Delete -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">04</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Batch Deletes</h2>
+
+            <div class="section-prose">
+                <p>Delete multiple rows by passing a collection of IDs.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>var idsToDelete = new List&lt;int&gt; { 1, 2, 3, 4, 5 };
+
+var sql = "DELETE FROM Customers WHERE Id = @Id";
+int rowsDeleted = await connection.ExecuteAsync(sql,
+    idsToDelete.Select(id => new { Id = id }));
+
+Console.WriteLine($"Deleted {rowsDeleted} rows");</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Alternative:</strong> For many IDs, use a WHERE...IN clause: <code>DELETE FROM Customers WHERE Id IN (@Ids)</code>.
+            </div>
+        </section>
+
+        <!-- SECTION 05: Transactions for Bulk Ops -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">05</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Transactions & Bulk Operations</h2>
+
+            <div class="section-prose">
+                <p>Wrap bulk operations in a transaction for safety. If any batch fails, rollback all changes.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>await using var connection = new SqlConnection(connectionString);
+connection.Open();
+using var transaction = connection.BeginTransaction();
+try
+{
+    // Insert customers
+    var insertSql = @"INSERT INTO Customers (FirstName, LastName)
+                      VALUES (@FirstName, @LastName)";
+    await connection.ExecuteAsync(insertSql, customers, transaction);
+
+    // Insert related orders
+    var orderSql = @"INSERT INTO Orders (CustomerId, Total)
+                     VALUES (@CustomerId, @Total)";
+    await connection.ExecuteAsync(orderSql, orders, transaction);
+
+    transaction.Commit();
+}
+catch
+{
+    transaction.Rollback();
+    throw;
+}</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Safety:</strong> Pass <code>transaction</code> as the 3rd parameter to <code>Execute</code>. If any step fails, rollback everything.
+            </div>
+        </section>
+
+        <!-- SECTION 06: Performance Comparison -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">06</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Performance Comparison</h2>
+
+            <div class="section-prose">
+                <p>Choose the right tool based on data volume. Loop for small batches, Execute for medium, SqlBulkCopy for large.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">Approximate Times (1 million rows)</div>
+                <div class="code-block csharp-block">
+                    <pre>// Loop with individual INSERT: ~80 seconds
+foreach (var customer in customers)
+    await connection.ExecuteAsync(insertSql, customer);
+
+// Batch Execute (1000 rows at a time): ~3 seconds
+for (int i = 0; i < customers.Count; i += 1000)
+    await connection.ExecuteAsync(insertSql, customers.Skip(i).Take(1000));
+
+// SqlBulkCopy: ~0.5 seconds
+await bulkCopy.WriteToServerAsync(dt);</pre>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Scale matters:</strong> Use SqlBulkCopy only when performance is critical. For most apps, Execute batches are sufficient.
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
         <div class="key-takeaways">
             <h3>Key Takeaways</h3>
             <ul>
-                <li>Dapper is a micro-ORM: you write SQL, it maps results to objects.</li>
-                <li>Install via NuGet (<code>Install-Package Dapper</code>) and start querying immediately.</li>
-                <li>Always use parameterized queries (<code>@Parameter</code>) to prevent SQL injection.</li>
-                <li>Use <code>Query&lt;T&gt;</code> for lists, <code>Execute</code> for INSERT/UPDATE/DELETE operations.</li>
-                <li>Choose the right variant: <code>QueryFirst</code>, <code>QuerySingle</code>, <code>QueryFirstOrDefault</code>, <code>QuerySingleOrDefault</code> based on expected results.</li>
-                <li>Use async methods (<code>QueryAsync</code>, <code>ExecuteAsync</code>) in web applications for better scalability.</li>
-                <li>Add <code>.ConfigureAwait(false)</code> in library code to avoid unnecessary context switching.</li>
+                <li>Use <code>Execute(sql, collection)</code> for batch INSERT/UPDATE/DELETE.</li>
+                <li>Pass transactions to Execute: <code>Execute(sql, data, transaction)</code>.</li>
+                <li>SqlBulkCopy is fastest for 10,000+ rows but requires DataTable conversion.</li>
+                <li>Batch executions loop internally; loop manually only for small batches.</li>
+                <li>Wrap bulk ops in transactions to ensure all-or-nothing consistency.</li>
+                <li>Choose based on data volume: loop for tens, Execute for hundreds, SqlBulkCopy for thousands+.</li>
             </ul>
         </div>
 
-        <div class="nav-links">
-            <a href="ch17-ef-performance.html" class="nav-link">
-                <span class="nav-link-label">Previous Chapter</span>
-                <span class="nav-link-text">EF Core Performance Patterns</span>
+        <!-- Chapter Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch21-stored-procedures.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Stored Procedures</span>
             </a>
-            <a href="ch19-object-mapping.html" class="nav-link">
-                <span class="nav-link-label">Next Chapter</span>
-                <span class="nav-link-text">Object Mapping — SQL Results to C# Objects</span>
+            <a class="nav-item" href="index.html">
+                <span class="nav-item-label">Home &rarr;</span>
+                <span class="nav-item-title">All Chapters</span>
             </a>
         </div>
+    </main>
 
-        <footer>
-            <p>SQL to C# • Part 4: Dapper — The Thin Layer • Chapter 18 of 22</p>
-            <p style="margin-top: 12px; font-size: 12px;">Published 2026 • Licensed under CC BY-NC-ND 4.0</p>
-        </footer>
-    </div>
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

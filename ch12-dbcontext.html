@@ -1,2088 +1,618 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 12: DbContext — Your Database in Code — SQL to C#</title>
-<meta name="description" content="Master Entity Framework's DbContext: entity lifetime, connection strings, OnModelCreating fluent API, DbSet references, dependency injection, and the built-in Unit of Work pattern.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-}
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
-.nav-links a:hover { color: var(--acc); }
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-.chapter-header h1 {
-  font-size: clamp(32px, 4vw, 42px);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 640px;
-}
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-.section {
-  margin-bottom: 70px;
-}
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.section-num::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-}
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  max-width: 750px;
-}
-.section-text p {
-  margin-bottom: 14px;
-}
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-.code-block {
-  border-radius: 12px;
-  padding: 24px;
-  overflow-x: auto;
-}
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-.code-block.csharp,
-.code-block.csharp-method,
-.code-block.csharp-query {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-.code-block.csharp .code-label,
-.code-block.csharp-method .code-label,
-.code-block.csharp-query .code-label {
-  color: var(--blue);
-}
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.code-block.sql code {
-  color: #e8e4db;
-}
-.code-block.csharp code,
-.code-block.csharp-method code,
-.code-block.csharp-query code {
-  color: var(--ink);
-}
-.code-single {
-  margin-bottom: 28px;
-}
-.code-single .code-block {
-  max-width: 100%;
-}
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px;
-  padding-left: 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin: 80px 0;
-}
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.nav-item.prev {
-  align-items: flex-start;
-}
-.nav-item.next {
-  align-items: flex-end;
-}
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-.footer-inner {
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 14px;
-  color: var(--ink3);
-}
-@media (max-width: 768px) {
-  .code-comparison {
-    grid-template-columns: 1fr;
-  }
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-  .nav-item.next {
-    align-items: flex-start;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 12: DbContext — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: "Source Serif 4", serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: "Outfit", sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: "Outfit", sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: "Outfit", sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: "Outfit", sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: "Outfit", sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: "Outfit", sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: "Outfit", sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: "Outfit", sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: "Outfit", sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
+
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: "Outfit", sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 12</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<nav>
-  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
-    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
-    </ul>
-  </div>
-</nav>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 12</div>
+            <h1>DbContext</h1>
+            <p class="chapter-intro">You get a requirement: "Connect the app to the database." A SQL developer opens a connection, runs queries, closes it. A C# developer creates a DbContext — it IS the connection, the query builder, and the transaction manager all in one.</p>
+        </div>
 
-<div class="wrap">
+        <!-- 01: Connect to the database -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Connect My App to the Database"</h2>
 
-<div class="chapter-header">
-  <div class="chapter-num">Chapter 12</div>
-  <h1>DbContext — Your Database in Code</h1>
-  <p class="chapter-desc">Master Entity Framework's DbContext: the core abstraction that represents your database session, manages entity lifetimes, tracks changes, and coordinates all database operations. Learn connection strings, schema configuration with the Fluent API, dependency injection patterns, and how DbContext implements the Unit of Work pattern natively.</p>
-</div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                New project needs database access. Set up the connection.
+            </div>
 
-<div class="in-this-chapter">
-  <h3>In This Chapter</h3>
-  <ul>
-    <li>What DbContext is: your database session equivalent to a SQL connection</li>
-    <li>DbSet properties as table references and entity collections</li>
-    <li>Connection strings and appsettings.json configuration</li>
-    <li>OnModelCreating and the Fluent API for schema mapping</li>
-    <li>DbContext lifetime and scoping in dependency injection</li>
-    <li>SaveChanges: how EF batches and executes changes atomically</li>
-    <li>DbContext as a built-in Unit of Work pattern implementation</li>
-    <li>DbContext pooling and performance optimization techniques</li>
-  </ul>
-</div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Open a SqlConnection, pass the connection string, execute commands, manage open/close lifecycle. If the connection is left open too long, bad things happen.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Create a DbContext class. It wraps the connection, builds queries from LINQ, tracks changes, and generates SQL automatically. One DbContext per operation, then dispose.
+                </div>
+            </div>
 
-<div class="section">
-  <div class="section-num">01 — WHAT IS DBCONTEXT</div>
-  <h2>DbContext: Your Database Session</h2>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Manual Connection</div>
+                    <div class="code-block sql-block">
+                        <pre>using (SqlConnection conn = new SqlConnection(
+    "Server=localhost;Database=Shop;..."))
+{
+    conn.Open();
+    SqlCommand cmd = new SqlCommand(
+        "SELECT * FROM Customers", conn);
+    SqlDataReader reader = cmd.ExecuteReader();
+    while (reader.Read())
+    {
+        // Process rows manually
+    }
+    conn.Close(); // Must close explicitly
+}</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — DbContext</div>
+                    <div class="code-block csharp-block">
+                        <pre>using var db = new ShopContext();
+var customers = await db.Customers
+    .ToListAsync(cancellationToken);
 
-  <div class="section-text">
-    <p>DbContext is your gateway to the database. It represents a session—like opening a SQL connection to a specific database. When you instantiate DbContext, you're establishing a connection context. When you call SaveChanges(), all tracked entity modifications are flushed to the database in a transaction. DbContext manages entity lifetimes, tracks which entities are added, modified, or deleted, and coordinates all database operations.</p>
-    <p>In SQL terms, using the database directly is like opening a connection with specific authentication and a target database. DbContext does the same thing programmatically, but with entity management on top.</p>
-  </div>
+// DbContext handles:
+// - Connection pool management
+// - Query generation from LINQ
+// - Connection open/close lifecycle
+// - Automatic disposal via using</pre>
+                    </div>
+                </div>
+            </div>
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL: Explicit Connection</span>
-      <pre><code>USE MyAppDatabase;
+            <div class="code-full">
+                <div class="code-label">C# — Define Your DbContext Class</div>
+                <div class="code-block csharp-block">
+                    <pre>public class ShopContext : DbContext
+{
+    public ShopContext(DbContextOptions&lt;ShopContext&gt; options)
+        : base(options) { }
+
+    // Each DbSet represents a table
+    public DbSet&lt;Customer&gt; Customers { get; set; }
+    public DbSet&lt;Order&gt; Orders { get; set; }
+    public DbSet&lt;Product&gt; Products { get; set; }
+
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
+    {
+        // Configure tables, keys, relationships, constraints
+    }
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: Define which tables the app uses -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Define Which Tables My App Uses"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                App needs access to Customers, Orders, and Products tables. Make them queryable.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Tables exist in the database. I query them directly: SELECT * FROM Customers. The database schema is separate from my query logic.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Each DbSet&lt;T&gt; maps to a table. DbSet&lt;Customer&gt; = Customers table. DbSet&lt;Order&gt; = Orders table. I query DbSets with LINQ, not raw SQL.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Direct Table Access</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Tables exist in the database
 SELECT * FROM Customers;
-UPDATE Customers SET Name = 'NewName' WHERE Id = 1;
--- No automatic tracking; you manually coordinate changes</code></pre>
-    </div>
+SELECT * FROM Orders;
+SELECT * FROM Products;
 
-    <div class="code-block csharp">
-      <span class="code-label">C# DbContext: Session</span>
-      <pre><code>public class AppDbContext : DbContext
+-- Join them in queries
+SELECT c.Name, o.Total
+FROM Customers c
+JOIN Orders o ON c.Id = o.CustomerId
+WHERE o.Total &gt; 100;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — DbSets &amp; LINQ Queries</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class ShopContext : DbContext
 {
-  public DbSet<Customer> Customers { get; set; }
-  public DbSet<Order> Orders { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder options)
-  {
-    options.UseSqlServer(
-      "Server=localhost;Database=MyApp;");
-  }
+    public DbSet&lt;Customer&gt; Customers { get; set; }
+    public DbSet&lt;Order&gt; Orders { get; set; }
+    public DbSet&lt;Product&gt; Products { get; set; }
 }
 
-using (var context = new AppDbContext())
+// Query with LINQ
+var expensive = await db.Customers
+    .Where(c =&gt; c.Orders.Any(o =&gt; o.Total &gt; 100))
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Full DbContext with Multiple DbSets</div>
+                <div class="code-block ef-block">
+                    <pre>public class ShopContext : DbContext
 {
-  var customers = context.Customers.ToList();
-  var customer = context.Customers.Find(1);
-  customer.Name = "NewName";
-  context.SaveChanges();
-}</code></pre>
-    </div>
-  </div>
+    public ShopContext(DbContextOptions&lt;ShopContext&gt; options)
+        : base(options) { }
 
-  <div class="key-insight">
-    <strong>DbContext = Connection + Entity Management</strong>
-    <p>DbContext isn't just a connection; it's a session manager. It tracks every entity loaded, every INSERT/UPDATE/DELETE operation, and executes them atomically on SaveChanges. This is fundamentally different from manual SQL where you write each operation explicitly. DbContext watches your objects.</p>
-  </div>
+    public DbSet&lt;Customer&gt; Customers { get; set; }
+    public DbSet&lt;Order&gt; Orders { get; set; }
+    public DbSet&lt;Product&gt; Products { get; set; }
+    public DbSet&lt;OrderItem&gt; OrderItems { get; set; }
+    public DbSet&lt;Category&gt; Categories { get; set; }
 
-  <div class="section-text">
-    <p>DbSet properties represent table references. DbSet<Customer> is like SELECT * FROM Customers—a queryable collection of rows mapped to objects. You can call LINQ methods on DbSet just like querying SQL: .Where(), .OrderBy(), .GroupBy(), etc. All that LINQ translates to SQL queries executed server-side.</p>
-  </div>
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
+    {
+        // Configure relationships, keys, constraints
+    }
+}</pre>
+                </div>
+            </div>
+        </section>
 
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">DbSet Properties and Navigation</span>
-      <pre><code>public class AppDbContext : DbContext
-{
-  public DbSet<Customer> Customers { get; set; }
-  public DbSet<Order> Orders { get; set; }
-  public DbSet<Product> Products { get; set; }
-  public DbSet<Category> Categories { get; set; }
+        <!-- 03: Store connection details securely -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Store Connection Details Securely"</h2>
 
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder options)
-  {
-    options.UseSqlServer(
-      "Server=localhost;Database=MyApp;");
-  }
-}
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Connection string varies per environment (dev/staging/prod). Don't hardcode it.
+            </div>
 
-var activeCustomers = context.Customers
-  .Where(c => c.IsActive)
-  .OrderBy(c => c.Name)
-  .ToList();
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Connection string is a runtime detail. Dev uses localhost, prod uses the cloud. Store it in config, not in code. Credentials must never be in source control.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Load connection from appsettings.json or environment variables. Register DbContext in dependency injection. Inject it into services. Different config per environment.
+                </div>
+            </div>
 
-var highValueOrders = context.Orders
-  .Where(o => o.Total > 1000)
-  .Include(o => o.Customer)
-  .ToList();</code></pre>
-    </div>
-  </div>
-
-  <div class="section-text">
-    <p>The critical insight: DbContext is short-lived. You shouldn't hold a DbContext instance for long periods. In web applications, a new DbContext is created per HTTP request, queries execute, changes save, and the context is disposed. This ensures proper resource cleanup and prevents stale entity states.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">02 — CONNECTION STRINGS</div>
-  <h2>Configuration: appsettings.json and UseSqlServer</h2>
-
-  <div class="section-text">
-    <p>DbContext needs to know how to connect to your database. Connection strings specify the server, database name, authentication method, and optional parameters. The connection string format follows the standard SQL Server pattern: Server=hostname;Database=dbname;User Id=username;Password=password; or Trusted_Connection=true; for Windows authentication.</p>
-    <p>In modern ASP.NET Core applications, connection strings are stored in appsettings.json and loaded via IConfiguration. This keeps sensitive data out of source code and allows environment-specific configuration: development local, production Azure SQL.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL Connection String Format</span>
-      <pre><code>Server=sqlserver.example.com;
-Database=MyAppDatabase;
-User Id=appuser;
-Password=SecurePassword123;
-Encrypt=true;
-Connection Timeout=30;</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">C# DbContext Configuration</span>
-      <pre><code>public class AppDbContext : DbContext
-{
-  public DbSet<Customer> Customers { get; set; }
-  public DbSet<Order> Orders { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder options)
-  {
-    var connString = 
-      "Server=localhost;Database=MyApp;";
-    options.UseSqlServer(connString);
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Dependency Injection is the Modern Pattern</strong>
-    <p>Hard-coding connection strings in DbContext.OnConfiguring is an antipattern. Instead, use dependency injection: pass IConfiguration to DbContext or the DbContextOptions directly. This allows environment-specific configuration without changing code.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Dependency Injection Setup (ASP.NET Core)</span>
-      <pre><code>// Program.cs / Startup.cs
-public void ConfigureServices(IServiceCollection services)
-{
-  services.AddDbContext<AppDbContext>(options =>
-  {
-    var connString = Configuration
-      .GetConnectionString("DefaultConnection");
-    options.UseSqlServer(connString);
-  });
-
-  services.AddControllers();
-}
-
-// Controller usage
-public class CustomersController : ControllerBase
-{
-  private readonly AppDbContext _context;
-
-  public CustomersController(AppDbContext context)
-  {
-    _context = context;
-  }
-
-  [HttpGet]
-  public async Task<IActionResult> GetCustomers()
-  {
-    var customers = await 
-      _context.Customers.ToListAsync();
-    return Ok(customers);
-  }
-}
-
-// appsettings.json
-{
+            <div class="code-full">
+                <div class="code-label">appsettings.json — Store Connection String</div>
+                <div class="code-block csharp-block">
+                    <pre>{
   "ConnectionStrings": {
-    "DefaultConnection": 
-      "Server=localhost;Database=MyApp;"
+    "Default": "Server=localhost;Database=Shop;Integrated Security=true;TrustServerCertificate=true;"
   },
-  "Logging": { "LogLevel": { "Default": "Info" } }
-}</code></pre>
-    </div>
-  </div>
+  "Logging": { "LogLevel": { "Default": "Information" } }
+}</pre>
+                </div>
+            </div>
 
-  <div class="section-text">
-    <p>Connection strings support multiple authentication methods: Windows authentication (Trusted_Connection=true), SQL Server authentication (User Id and Password), Azure Active Directory, and certificate-based authentication. In production, use Azure Key Vault or AWS Secrets Manager to store sensitive credentials—never commit them to source code.</p>
-  </div>
-</div>
+            <div class="code-full">
+                <div class="code-label">Program.cs — Register DbContext in DI</div>
+                <div class="code-block csharp-block">
+                    <pre>var builder = WebApplicationBuilder.CreateBuilder(args);
 
-<div class="section">
-  <div class="section-num">03 — ONMODELCREATING</div>
-  <h2>Fluent API: Schema Configuration as Code</h2>
+// Load connection string from appsettings.json
+var connectionString = builder.Configuration
+    .GetConnectionString("Default")
+    ?? throw new InvalidOperationException(
+        "Connection string 'Default' not found.");
 
-  <div class="section-text">
-    <p>OnModelCreating is where you define your entire database schema programmatically. Instead of writing SQL CREATE TABLE statements, you use the Fluent API: a chain of method calls that specify primary keys, foreign keys, indexes, constraints, column properties, and relationships. This is your schema-as-code layer. The schema configuration directly translates to SQL DDL statements executed by migrations.</p>
-    <p>Every database design decision—column types, constraints, indexes, cascading rules—is expressed here as readable C# code. When you run migrations, EF generates the corresponding CREATE TABLE, ALTER TABLE, CREATE INDEX, and ALTER CONSTRAINT statements.</p>
-  </div>
+// Register DbContext in the DI container
+builder.Services.AddDbContext&lt;ShopContext&gt;(options =&gt;
+    options.UseSqlServer(connectionString));
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL Schema Definition</span>
-      <pre><code>CREATE TABLE Customers (
-  Id INT PRIMARY KEY IDENTITY(1,1),
-  Name NVARCHAR(100) NOT NULL,
-  Email NVARCHAR(100) UNIQUE NOT NULL,
-  CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-  IsActive BIT DEFAULT 1
-);
+var app = builder.Build();
+app.MapControllers();
+app.Run();</pre>
+                </div>
+            </div>
 
-CREATE INDEX IX_Email 
-  ON Customers(Email);
-
-CREATE TABLE Orders (
-  Id INT PRIMARY KEY IDENTITY(1,1),
-  CustomerId INT NOT NULL,
-  Total DECIMAL(18,2) NOT NULL,
-  FOREIGN KEY (CustomerId) 
-    REFERENCES Customers(Id) 
-    ON DELETE CASCADE
-);</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">C# Fluent API</span>
-      <pre><code>protected override void OnModelCreating(
-  ModelBuilder modelBuilder)
+            <div class="code-full">
+                <div class="code-label">Using the DbContext in a Service</div>
+                <div class="code-block ef-block">
+                    <pre>public class CustomerService
 {
-  modelBuilder.Entity<Customer>(e =>
-  {
-    e.HasKey(c => c.Id);
+    private readonly ShopContext _db;
 
-    e.Property(c => c.Name)
-      .HasMaxLength(100)
-      .IsRequired();
-
-    e.Property(c => c.Email)
-      .HasMaxLength(100)
-      .IsRequired();
-
-    e.Property(c => c.CreatedAt)
-      .HasDefaultValueSql("GETUTCDATE()");
-
-    e.Property(c => c.IsActive)
-      .HasDefaultValue(true);
-
-    e.HasIndex(c => c.Email).IsUnique();
-
-    e.HasMany(c => c.Orders)
-      .WithOne(o => o.Customer)
-      .HasForeignKey(o => o.CustomerId)
-      .OnDelete(DeleteBehavior.Cascade);
-  });
-
-  modelBuilder.Entity<Order>(e =>
-  {
-    e.HasKey(o => o.Id);
-
-    e.Property(o => o.Total)
-      .HasPrecision(18, 2);
-
-    e.HasIndex(o => o.CustomerId);
-  });
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Fluent API vs Data Annotations</strong>
-    <p>You can configure schema with both Fluent API and data annotations ([Key], [Required], [MaxLength]). The Fluent API is more powerful: complex relationships, deletion behavior, computed columns, owned entities. Data annotations are convenient for simple cases; Fluent API is your go-to for production schemas.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">10+ Fluent API Mapping Examples</span>
-      <pre><code>protected override void OnModelCreating(
-  ModelBuilder modelBuilder)
-{
-  // 1. Table name mapping
-  modelBuilder.Entity<Customer>()
-    .ToTable("Customers");
-
-  // 2. Primary key
-  modelBuilder.Entity<Customer>()
-    .HasKey(c => c.CustomerId);
-
-  // 3. Composite primary key
-  modelBuilder.Entity<OrderLineItem>()
-    .HasKey(ol => new { ol.OrderId, ol.ProductId });
-
-  // 4. Column type and size
-  modelBuilder.Entity<Customer>()
-    .Property(c => c.Name)
-    .HasColumnType("NVARCHAR(150)")
-    .IsRequired();
-
-  // 5. Unique constraint
-  modelBuilder.Entity<Customer>()
-    .HasAlternateKey(c => c.Email);
-
-  // 6. Unique index
-  modelBuilder.Entity<Order>()
-    .HasIndex(o => new { o.CustomerId, o.OrderDate })
-    .IsUnique(false);
-
-  // 7. One-to-many with cascade delete
-  modelBuilder.Entity<Customer>()
-    .HasMany(c => c.Orders)
-    .WithOne(o => o.Customer)
-    .HasForeignKey(o => o.CustomerId)
-    .OnDelete(DeleteBehavior.Cascade);
-
-  // 8. One-to-one relationship
-  modelBuilder.Entity<Customer>()
-    .HasOne(c => c.Address)
-    .WithOne(a => a.Customer)
-    .HasForeignKey<Address>(a => a.CustomerId);
-
-  // 9. Many-to-many (EF Core 5.0+)
-  modelBuilder.Entity<Product>()
-    .HasMany(p => p.Categories)
-    .WithMany(c => c.Products)
-    .UsingEntity<ProductCategory>(
-      j => j.HasOne(pc => pc.Category),
-      j => j.HasOne(pc => pc.Product));
-
-  // 10. Owned entity (value object)
-  modelBuilder.Entity<Customer>()
-    .OwnsOne(c => c.Address, addr =>
+    // DbContext is injected automatically by DI
+    public CustomerService(ShopContext db)
     {
-      addr.Property(a => a.Street)
-        .HasMaxLength(200);
+        _db = db;
+    }
+
+    public async Task&lt;Customer?&gt; GetCustomerAsync(
+        int id, CancellationToken ct = default)
+    {
+        return await _db.Customers
+            .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
+    }
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Configure table names, keys, and constraints -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Configure Table Names, Keys, and Constraints in Code"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                DBA named the table "tbl_Customers" but C# class is Customer. Map them. Also configure primary keys, foreign keys, and constraints via code.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Table names, column types, indexes, constraints — all in DDL (CREATE TABLE). The schema is the source of truth.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use OnModelCreating with Fluent API to define schema as code. Map class names to table names, configure keys, relationships, and constraints. Schema follows the code.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — CREATE TABLE with Constraints</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE tbl_Customers (
+    customer_id INT IDENTITY(1,1) PRIMARY KEY,
+    customer_name NVARCHAR(100) NOT NULL,
+    email NVARCHAR(255) NOT NULL UNIQUE,
+    is_active BIT NOT NULL DEFAULT 1,
+    created_at DATETIME2 NOT NULL
+        DEFAULT GETDATE()
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Fluent API Configuration</div>
+                    <div class="code-block ef-block">
+                        <pre>protected override void OnModelCreating(
+    ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity&lt;Customer&gt;(e =&gt;
+    {
+        // Map to table named tbl_Customers
+        e.ToTable("tbl_Customers");
+
+        // Primary key (maps to customer_id)
+        e.HasKey(c =&gt; c.Id)
+         .HasName("PK_Customers");
+
+        e.Property(c =&gt; c.Id)
+         .HasColumnName("customer_id")
+         .ValueGeneratedOnAdd();
+
+        e.Property(c =&gt; c.Name)
+         .HasColumnName("customer_name")
+         .IsRequired()
+         .HasMaxLength(100);
+
+        e.Property(c =&gt; c.Email)
+         .HasColumnName("email")
+         .IsRequired()
+         .HasMaxLength(255);
+
+        e.HasIndex(c =&gt; c.Email).IsUnique();
+
+        e.Property(c =&gt; c.IsActive)
+         .HasColumnName("is_active")
+         .HasDefaultValue(true);
+
+        e.Property(c =&gt; c.CreatedAt)
+         .HasColumnName("created_at")
+         .HasDefaultValueSql("GETDATE()");
     });
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-  // 11. Default values
-  modelBuilder.Entity<Order>()
-    .Property(o => o.CreatedAt)
-    .HasDefaultValueSql("GETUTCDATE()");
+        <!-- 05: Save multiple changes as one transaction -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Save Multiple Changes as One Transaction"</h2>
 
-  // 12. Exclude from database
-  modelBuilder.Entity<Customer>()
-    .Ignore(c => c.CalculatedProperty);
-}</code></pre>
-    </div>
-  </div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Creating an order also creates order items. Both must succeed or both fail. No partial orders in the database.
+            </div>
 
-  <div class="section-text">
-    <p>The Fluent API is declarative: you describe what the schema should look like, and EF generates the SQL. When you run migrations, EF compares your OnModelCreating definition to the previous schema and generates ALTER TABLE or CREATE TABLE statements to match. This is your single source of truth for database structure.</p>
-  </div>
-</div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    BEGIN TRANSACTION, then multiple INSERTs, then COMMIT. If any INSERT fails, ROLLBACK everything. That is atomicity.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Add order, add items to the order, call SaveChangesAsync() once. EF wraps it in a transaction automatically. If anything fails, the whole thing rolls back.
+                </div>
+            </div>
 
-<div class="section">
-  <div class="section-num">04 — DBCONTEXT LIFETIME AND SCOPING</div>
-  <h2>Short-Lived Sessions and Dependency Injection</h2>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Transaction Control</div>
+                    <div class="code-block sql-block">
+                        <pre>BEGIN TRANSACTION;
 
-  <div class="section-text">
-    <p>DbContext should be short-lived. Like SQL connections, holding a DbContext open for long periods wastes resources, can cause stale data issues, and may cause connection pool exhaustion. In web applications, the canonical pattern is: create one DbContext per HTTP request, execute queries/commands, save changes, dispose. Scoped lifetime in dependency injection implements exactly this.</p>
-    <p>The rule: DbContext is scoped to a request. In ASP.NET Core, services.AddDbContext() defaults to scoped lifetime, meaning one instance per HTTP request. When the request completes, the DbContext is disposed automatically.</p>
-  </div>
+INSERT INTO Orders (CustomerId, Total, CreatedAt)
+VALUES (5, 250.00, GETDATE());
 
-  <div class="code-comparison">
-    <div class="code-block csharp">
-      <span class="code-label">Scoped DbContext (ASP.NET Core)</span>
-      <pre><code>// Program.cs
-services.AddDbContext<AppDbContext>(options =>
-  options.UseSqlServer(connString)
-);
+DECLARE @OrderId INT = SCOPE_IDENTITY();
 
-[ApiController]
-[Route("api/[controller]")]
-public class CustomersController : ControllerBase
+INSERT INTO OrderItems (OrderId, ProductId, Qty, Price)
+VALUES (@OrderId, 10, 2, 50.00);
+INSERT INTO OrderItems (OrderId, ProductId, Qty, Price)
+VALUES (@OrderId, 11, 1, 150.00);
+
+COMMIT; -- Or ROLLBACK if error occurs
+</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — SaveChangesAsync</div>
+                    <div class="code-block csharp-block">
+                        <pre>public async Task CreateOrderAsync(
+    Order order, List&lt;OrderItem&gt; items,
+    CancellationToken ct = default)
 {
-  private readonly AppDbContext _context;
+    db.Orders.Add(order);
+    db.OrderItems.AddRange(items);
 
-  public CustomersController(AppDbContext context)
-  {
-    _context = context;
-  }
+    // One call, wrapped in a transaction
+    // Both succeed or both fail
+    await db.SaveChangesAsync(ct);
+}</pre>
+                    </div>
+                </div>
+            </div>
 
-  [HttpGet("{id}")]
-  public async Task<IActionResult> GetCustomer(
-    int id)
-  {
-    var customer = await 
-      _context.Customers.FindAsync(id);
-    return Ok(customer);
-  }
-}</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">IDbContextFactory for Long-Running Work</span>
-      <pre><code>public class OrderProcessingService 
-  : BackgroundService
+            <div class="code-full">
+                <div class="code-label">C# — Control Transaction Explicitly</div>
+                <div class="code-block ef-block">
+                    <pre>public async Task CreateOrderAsync(
+    Order order, List&lt;OrderItem&gt; items,
+    CancellationToken ct = default)
 {
-  private readonly IDbContextFactory<AppDbContext> 
-    _contextFactory;
-
-  public OrderProcessingService(
-    IDbContextFactory<AppDbContext> contextFactory)
-  {
-    _contextFactory = contextFactory;
-  }
-
-  protected override async Task ExecuteAsync(
-    CancellationToken stoppingToken)
-  {
-    while (!stoppingToken.IsCancellationRequested)
+    using (var transaction = await db.Database
+        .BeginTransactionAsync(ct))
     {
-      using (var context = 
-        _contextFactory.CreateDbContext())
-      {
-        var pending = await context.Orders
-          .Where(o => o.Status == OrderStatus.Pending)
-          .ToListAsync();
-
-        foreach (var order in pending)
+        try
         {
-          order.Status = OrderStatus.Processing;
+            db.Orders.Add(order);
+            db.OrderItems.AddRange(items);
+            await db.SaveChangesAsync(ct);
+
+            // Do business logic (e.g., email, logging)
+
+            await transaction.CommitAsync(ct);
         }
-
-        await context.SaveChangesAsync();
-      }
-      await Task.Delay(5000, stoppingToken);
-    }
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Scoped ≠ Transient ≠ Singleton</strong>
-    <p>Never use DbContext with Singleton lifetime. Singleton instances are created once and reused forever—entity state becomes stale, connection pooling breaks, and concurrency issues emerge. Always use Scoped (default, per-request) or Transient. Only use IDbContextFactory for scenarios where scoped injection doesn't work.</p>
-  </div>
-
-  <div class="section-text">
-    <p>For Blazor Server, where components can live longer than a request, use IDbContextFactory and create a new DbContext for each database operation. For console applications, create a DbContext manually or use IDbContextFactory. The principle is the same: short-lived, bounded to a logical operation boundary.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">05 — SAVECHANGES</div>
-  <h2>How DbContext Executes Changes Atomically</h2>
-
-  <div class="section-text">
-    <p>SaveChanges() is where the magic happens. When you call SaveChanges(), EF takes all tracked entity changes (additions, modifications, deletions) and flushes them to the database in a single transaction. This is atomic: either all changes succeed or all roll back. No partial updates. This transaction semantics are crucial for data consistency.</p>
-    <p>Under the hood, SaveChanges() compares the current state of each entity to its snapshot (taken when loaded) to determine what changed. It then generates INSERT, UPDATE, and DELETE statements for those changes and executes them in a transaction. If any statement fails, the entire transaction rolls back and an exception is thrown.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL: Manual Transactions</span>
-      <pre><code>BEGIN TRANSACTION;
-
-INSERT INTO Customers (Name, Email) 
-  VALUES (@Name, @Email);
-INSERT INTO Orders (CustomerId, Total) 
-  VALUES (@CustomerId, @Total);
-UPDATE Products 
-  SET Stock = Stock - @Quantity 
-  WHERE Id = @ProductId;
-
-COMMIT TRANSACTION;</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">C# DbContext: Automatic Transactions</span>
-      <pre><code>using (var context = new AppDbContext())
-{
-  var customer = new Customer 
-  { 
-    Name = "John", 
-    Email = "john@example.com" 
-  };
-  context.Customers.Add(customer);
-
-  var order = new Order 
-  { 
-    CustomerId = customer.Id, 
-    Total = 99.99m 
-  };
-  context.Orders.Add(order);
-
-  var product = context.Products
-    .First(p => p.Id == 5);
-  product.Stock -= 1;
-
-  try
-  {
-    context.SaveChanges();
-  }
-  catch (DbUpdateException ex)
-  {
-    // Transaction rolled back
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>SaveChanges Returns the Number of Rows Affected</strong>
-    <p>SaveChanges() returns an int: the count of rows inserted, updated, or deleted. You can use this to verify that the expected number of changes were applied. If SaveChanges() returns 0 when you expected 3 changes, something is wrong—perhaps entities weren't actually loaded or modified as expected.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">SaveChanges: Complete Transaction Example</span>
-      <pre><code>public class OrderService
-{
-  private readonly AppDbContext _context;
-
-  public OrderService(AppDbContext context)
-  {
-    _context = context;
-  }
-
-  public async Task<int> CreateOrderWithItemsAsync(
-    OrderCreateDto dto)
-  {
-    var customer = await 
-      _context.Customers.FindAsync(dto.CustomerId);
-    if (customer == null)
-      throw new InvalidOperationException(
-        "Customer not found");
-
-    var order = new Order
-    {
-      CustomerId = dto.CustomerId,
-      OrderDate = DateTime.UtcNow,
-      Total = 0
-    };
-    _context.Orders.Add(order);
-
-    decimal orderTotal = 0;
-    foreach (var itemDto in dto.Items)
-    {
-      var product = await 
-        _context.Products
-          .FindAsync(itemDto.ProductId);
-      if (product == null)
-        throw new InvalidOperationException(
-          $"Product {itemDto.ProductId} not found");
-
-      var lineItem = new OrderLineItem
-      {
-        Order = order,
-        ProductId = itemDto.ProductId,
-        Quantity = itemDto.Quantity,
-        UnitPrice = product.Price
-      };
-      _context.OrderLineItems.Add(lineItem);
-
-      orderTotal += product.Price * itemDto.Quantity;
-      product.Stock -= itemDto.Quantity;
-    }
-
-    order.Total = orderTotal;
-
-    int changesCount = await 
-      _context.SaveChangesAsync();
-
-    return order.Id;
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="section-text">
-    <p>SaveChanges() also flushes any generated primary key values back to your entities. If you insert a new Customer with IDENTITY primary key generation, SaveChanges() populates the Customer.Id property with the generated value. This is crucial for relationships: after inserting a Customer, the Order.CustomerId is set correctly because Customer.Id was auto-populated.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">06 — UNIT OF WORK PATTERN</div>
-  <h2>DbContext as Built-in Unit of Work</h2>
-
-  <div class="section-text">
-    <p>The Unit of Work pattern centralizes all database operations in a single coordinator that tracks all changes and commits them atomically. DbContext IS the Unit of Work pattern. It tracks all loaded entities, monitors their changes, and SaveChanges() is the commit. You don't need a separate Unit of Work wrapper—DbContext already implements it.</p>
-    <p>In the Unit of Work pattern, you load multiple aggregates, make changes across them, and commit everything together. DbContext does this natively: all entities you load are tracked in its ChangeTracker. When you call SaveChanges(), everything is committed in one transaction.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">DbContext as Unit of Work: Multiple Aggregates</span>
-      <pre><code>public class InventoryService
-{
-  private readonly AppDbContext _context;
-
-  public InventoryService(AppDbContext context)
-  {
-    _context = context;
-  }
-
-  public async Task TransferStockAsync(
-    int fromWarehouseId, 
-    int toWarehouseId, 
-    int productId, 
-    int quantity)
-  {
-    var fromWarehouse = await 
-      _context.Warehouses
-        .Include(w => w.Inventory)
-        .FirstAsync(w => w.Id == fromWarehouseId);
-
-    var toWarehouse = await 
-      _context.Warehouses
-        .Include(w => w.Inventory)
-        .FirstAsync(w => w.Id == toWarehouseId);
-
-    var fromStock = fromWarehouse.Inventory
-      .First(i => i.ProductId == productId);
-    var toStock = toWarehouse.Inventory
-      .FirstOrDefault(i => i.ProductId == productId);
-
-    if (fromStock.Quantity < quantity)
-      throw new InvalidOperationException(
-        "Insufficient stock");
-
-    fromStock.Quantity -= quantity;
-
-    if (toStock != null)
-    {
-      toStock.Quantity += quantity;
-    }
-    else
-    {
-      toWarehouse.Inventory.Add(
-        new InventoryItem
+        catch
         {
-          ProductId = productId,
-          Quantity = quantity,
-          WarehouseId = toWarehouseId
-        });
-    }
-
-    int changeCount = await 
-      _context.SaveChangesAsync();
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Don't Wrap DbContext in Another Unit of Work</strong>
-    <p>Some codebases wrap DbContext in a custom IUnitOfWork interface. This is redundant. DbContext is already a Unit of Work. The only reason to add a wrapper is if you need a domain-agnostic abstraction or multi-database support, but for standard scenarios, DbContext is sufficient.</p>
-  </div>
-
-  <div class="section-text">
-    <p>The beauty of DbContext's Unit of Work implementation is transparency. You don't explicitly call "BeginWork()" or "Register(entity)"—you just load entities, modify them, and call SaveChanges(). EF automatically tracks everything. The ChangeTracker.Entries() collection shows you all tracked entities and their states at any point.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">07 — DBCONTEXT POOLING AND PERFORMANCE</div>
-  <h2>AddDbContextPool for High-Throughput Scenarios</h2>
-
-  <div class="section-text">
-    <p>Creating a new DbContext instance for every request has overhead: options building, connection opening, state initialization. In high-throughput scenarios (thousands of requests per second), this adds up. AddDbContextPool reuses DbContext instances. Instead of creating and disposing a new context per request, pooling maintains a pool of ready-to-use contexts. When a request needs one, it takes one from the pool; when done, it returns it. This dramatically reduces GC pressure and startup overhead.</p>
-    <p>Pooling is transparent to your code: it still feels like each request gets its own context, but underneath they're reused instances. The catch: you must ensure your context is stateless between requests.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp">
-      <span class="code-label">Standard AddDbContext (No Pooling)</span>
-      <pre><code>services.AddDbContext<AppDbContext>(
-  options => options.UseSqlServer(
-    connectionString)
-);
-
-// Each request: new DbContext created 
-// → disposed → garbage collected
-// For 1000 req/sec: 1000 instances 
-//   created and destroyed per second</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">AddDbContextPool (Pooled Reuse)</span>
-      <pre><code>services.AddDbContextPool<AppDbContext>(
-  options => options.UseSqlServer(
-    connectionString)
-);
-
-// Each request: DbContext taken from pool 
-// → reset → used → returned to pool
-// For 1000 req/sec: 10-20 instances reused, 
-//   not created per request</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Benchmark: Pooling vs Non-Pooling</strong>
-    <p>On a typical ASP.NET Core application, non-pooled scenarios allocate ~500KB per request for DbContext and related objects. With AddDbContextPool, that drops to near-zero. Memory pressure and GC collections drop dramatically. Throughput typically improves 10-30% depending on workload.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Pooling Configuration and Comparison</span>
-      <pre><code>services.AddDbContextPool<AppDbContext>(
-  options => options.UseSqlServer(
-    connectionString),
-  poolSize: 128
-);
-
-// When to use AddDbContextPool:
-// - High-throughput APIs (>100 req/sec)
-// - Tight memory constraints
-// - DbContext profiled as bottleneck
-// - DbContext has no mutable fields/config
-
-// When to use standard AddDbContext:
-// - Typical application (< 100 req/sec)
-// - DbContext initialization per-request needed
-// - Custom options per-request
-
-[ApiController]
-public class CustomersController : ControllerBase
-{
-  private readonly AppDbContext _context;
-
-  public CustomersController(
-    AppDbContext context)
-  {
-    _context = context;
-  }
-
-  [HttpGet]
-  public async Task<IActionResult> GetCustomers()
-  {
-    return Ok(
-      await _context.Customers.ToListAsync());
-  }
-}
-
-// IDbContextFactory with pooling
-services.AddDbContextFactory<AppDbContext>(
-  options => options.UseSqlServer(
-    connectionString)
-);
-
-public class BackgroundProcessor
-{
-  private readonly 
-    IDbContextFactory<AppDbContext> _factory;
-
-  public async Task ProcessAsync()
-  {
-    using (var context = 
-      _factory.CreateDbContext())
-    {
-      var items = await 
-        context.Items.ToListAsync();
-    }
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="section-text">
-    <p>For Blazor Server and other scenarios where scoped injection doesn't fit, use IDbContextFactory with pooling. AddDbContextFactory creates a factory that returns pooled contexts. Each call to CreateDbContext() returns a context from the pool or creates a new one if needed.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">08 — CONNECTION POOLING AND TRANSACTION SCOPE</div>
-  <h2>SQL Server Connection Pooling vs DbContext Lifetime</h2>
-
-  <div class="section-text">
-    <p>DbContext lifetime (scoped per request) is separate from SQL Server connection pooling. When DbContext opens a connection to SQL Server, the connection is pooled—held in memory, ready for reuse. When your DbContext is disposed, the underlying connection is returned to the pool, not closed. The next DbContext that needs a connection grabs one from the pool instead of establishing a fresh TCP connection. This layering is critical: DbContext manages your data operations; connection pooling manages the low-level TCP connections.</p>
-    <p>Understanding this separation prevents misconfigurations. A DbContext's lifetime tells EF when to apply change tracking; connection pooling tells SQL Server when to reuse TCP connections. Pooling happens below DbContext—you don't directly manage it, but you benefit from it automatically through the connection string MinPoolSize and MaxPoolSize parameters.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL Server Connection Pooling Parameters</span>
-      <pre><code>-- Connection string with pooling configuration
-Data Source=myserver.database.windows.net;
-Initial Catalog=MyDatabase;
-User ID=admin;
-Password=secret;
-Min Pool Size=5;              -- Maintain at least 5 connections
-Max Pool Size=100;            -- Never exceed 100 connections
-Pooling=true;                 -- Enable pooling (default)
-Connection Lifetime=300;      -- Recycle connections after 5 min
-Encrypt=true;                 -- TLS encryption
-
--- Without explicit pooling settings:
--- Min Pool Size=0 (lazy initialization)
--- Max Pool Size=100 (default)
--- Connections idle for 10 minutes are recycled</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">DbContext and Connection Pooling in DI</span>
-      <pre><code>// Pooling is automatic when using AddDbContext
-services.AddDbContext<AppDbContext>(
-  options => options.UseSqlServer(
-    "Data Source=myserver;Database=MyApp;" +
-    "User ID=admin;Password=secret;" +
-    "Min Pool Size=5;Max Pool Size=100;")
-);
-
-// DbContext scoped per request
-// Connection pooling transparent
-public class OrderController : ControllerBase
-{
-  private readonly AppDbContext _context;
-
-  public OrderController(AppDbContext context)
-  {
-    _context = context; // Scoped: one per request
-    // Behind scenes: connection from pool assigned
-  }
-
-  [HttpGet("{id}")]
-  public async Task<Order> GetOrder(int id)
-  {
-    // Query executes with pooled connection
-    return await _context.Orders
-      .FirstOrDefaultAsync(o => o.Id == id);
-  }
-
-  // On controller disposal:
-  // - DbContext.Dispose() called
-  // - Connection released to pool (not closed)
-  // - Next request reuses same connection
-}
-
-// For high-concurrency apps, adjust pooling:
-services.AddDbContext<AppDbContext>(
-  options => options.UseSqlServer(
-    connectionString)
-    .UseQueryTrackingBehavior(
-      QueryTrackingBehavior.NoTracking)
-);
-
-// Connection pool sizing rule of thumb:
-// Pool size = (CPU cores * 2) + 1
-// Typical: 16-core server → min 32 connections</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Connection Pooling is Not DbContext Pooling</strong>
-    <p>DbContext pooling (AddDbContextPool) reuses DbContext instances. Connection pooling (SQL Server parameter) reuses TCP connections. They're orthogonal. You can use DbContext pooling without connection pooling, and vice versa. For maximum efficiency, use both: AddDbContextPool for DbContext instances + Min/Max Pool Size for TCP connections.</p>
-  </div>
-
-  <div class="section-text">
-    <p>A common mistake: thinking DbContext pooling handles both. It doesn't. AddDbContextPool reuses the C# object; SQL Server's connection pooling reuses TCP connections. Use connection string parameters to tune SQL Server pooling behavior separately from DbContext lifetime configuration.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">09 — IDBCONTEXTFACTORY PATTERN</div>
-  <h2>Creating DbContext Instances On-Demand</h2>
-
-  <div class="section-text">
-    <p>IDbContextFactory<T> is an alternative to scoped injection. Instead of relying on dependency injection to provide a DbContext, you use a factory to create instances on demand. This is essential for scenarios where scoped injection doesn't apply: background services, Blazor Server components, console applications, or situations where you need multiple DbContext instances simultaneously.</p>
-    <p>The factory pattern decouples DbContext creation from DI lifecycle. You explicitly control when instances are created, used, and disposed. This gives you fine-grained control over context lifetime and is crucial for multi-tenant applications where different requests may need different database connections.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">IDbContextFactory Setup and Usage</span>
-      <pre><code>// Registration
-services.AddDbContextFactory<AppDbContext>(
-  options => options.UseSqlServer(connectionString)
-);
-
-// Scenario 1: Background Service (worker doesn't use DI)
-public class DataExportService
-{
-  private readonly IDbContextFactory<AppDbContext>
-    _contextFactory;
-
-  public DataExportService(
-    IDbContextFactory<AppDbContext> contextFactory)
-  {
-    _contextFactory = contextFactory;
-  }
-
-  public async Task ExportOrdersAsync()
-  {
-    // Create context on demand
-    using (var context =
-      _contextFactory.CreateDbContext())
-    {
-      var orders = await
-        context.Orders
-          .Where(o => o.CreatedDate >
-            DateTime.UtcNow.AddDays(-30))
-          .ToListAsync();
-
-      // Process and export...
-    }
-    // Context disposed here
-  }
-}
-
-// Scenario 2: Processing multiple aggregates
-public class BillingService
-{
-  private readonly
-    IDbContextFactory<AppDbContext> _factory;
-
-  public BillingService(
-    IDbContextFactory<AppDbContext> factory)
-  {
-    _factory = factory;
-  }
-
-  public async Task ProcessInvoicesAsync()
-  {
-    using (var context1 =
-      _factory.CreateDbContext())
-    {
-      // Load unpaid invoices
-      var invoices = await context1.Invoices
-        .Where(i => !i.Paid)
-        .ToListAsync();
-
-      foreach (var invoice in invoices)
-      {
-        // Create separate context for each
-        // processing step to avoid
-        // cross-aggregate tracking issues
-        using (var context2 =
-          _factory.CreateDbContext())
-        {
-          var customer = await
-            context2.Customers
-              .FirstAsync(c =>
-                c.Id == invoice.CustomerId);
-
-          // Process invoice...
-          context2.SaveChanges();
+            await transaction.RollbackAsync(ct);
+            throw;
         }
-      }
     }
-  }
-}
-
-// Scenario 3: Blazor Server Components
-@page "/edit-customer/{CustomerId:int}"
-@inject IDbContextFactory<AppDbContext> ContextFactory
-@implements IAsyncDisposable
-
-<h3>Edit Customer</h3>
-
-@code {
-  private Customer customer;
-  private AppDbContext context;
-
-  protected override async Task OnInitializedAsync()
-  {
-    // Create context when component initializes
-    context = ContextFactory.CreateDbContext();
-    customer = await context.Customers
-      .FindAsync(CustomerId);
-  }
-
-  private async Task SaveAsync()
-  {
-    customer.ModifiedDate = DateTime.UtcNow;
-    context.Customers.Update(customer);
-    await context.SaveChangesAsync();
-  }
-
-  async ValueTask IAsyncDisposable.DisposeAsync()
-  {
-    if (context is not null)
-    {
-      await context.DisposeAsync();
-    }
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Factory Pattern vs Scoped Injection</strong>
-    <p>Use scoped injection (AddDbContext) in ASP.NET Controllers and services. Use IDbContextFactory in background jobs, Blazor Server, and console apps. The factory gives you explicit control; scoped injection is automatic and cleaner for HTTP request handling.</p>
-  </div>
-
-  <div class="section-text">
-    <p>IDbContextFactory is also valuable in multithreaded scenarios. If you spawn multiple tasks that each need their own DbContext, the factory ensures each task gets an isolated instance. DbContext is not thread-safe; each thread needs its own.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">10 — DBCONTEXT EVENTS AND LIFECYCLE HOOKS</div>
-  <h2>Responding to Context State Changes</h2>
-
-  <div class="section-text">
-    <p>DbContext fires events at key lifecycle points: before and after SaveChanges(), before and after entity state changes. These hooks let you implement cross-cutting concerns like audit logging, timestamp updates, or validation enforcement. The main events are SaveChanges (before commit) and SavedChanges (after commit), plus SavingChanges (async version) and SavedChanges (async version).</p>
-    <p>Events integrate seamlessly with your domain logic. Instead of spreading audit code throughout your services, attach an event handler to DbContext that automatically logs all changes. SaveChanges events give you access to ChangeTracker before the database commits, so you can enforce business rules or abort the commit if something violates your domain constraints.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">DbContext SaveChanges Events and Audit Trail</span>
-      <pre><code>public class AppDbContext : DbContext
-{
-  private readonly ILogger<AppDbContext> _logger;
-  private readonly ICurrentUser _currentUser;
-
-  public AppDbContext(
-    DbContextOptions<AppDbContext> options,
-    ILogger<AppDbContext> logger,
-    ICurrentUser currentUser) : base(options)
-  {
-    _logger = logger;
-    _currentUser = currentUser;
-  }
-
-  public DbSet<Order> Orders { get; set; }
-  public DbSet<Customer> Customers { get; set; }
-  public DbSet<AuditLog> AuditLogs { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    base.OnConfiguring(optionsBuilder);
-
-    // Register SaveChanges event BEFORE commit
-    optionsBuilder.LogTo(
-      Console.WriteLine,
-      LogLevel.Information);
-  }
-
-  public override int SaveChanges()
-  {
-    // Implement audit logging before save
-    ImplementAuditLogging();
-
-    // Update timestamps
-    UpdateTimestamps();
-
-    try
-    {
-      int result = base.SaveChanges();
-      _logger.LogInformation(
-        "Saved {ChangeCount} changes",
-        result);
-      return result;
-    }
-    catch (DbUpdateException ex)
-    {
-      _logger.LogError(ex,
-        "Error saving changes");
-      throw;
-    }
-  }
-
-  public override async Task<int>
-    SaveChangesAsync(
-    CancellationToken cancellationToken = default)
-  {
-    ImplementAuditLogging();
-    UpdateTimestamps();
-
-    try
-    {
-      int result = await base.SaveChangesAsync(
-        cancellationToken);
-      _logger.LogInformation(
-        "Async saved {ChangeCount} changes",
-        result);
-      return result;
-    }
-    catch (DbUpdateException ex)
-    {
-      _logger.LogError(ex,
-        "Error in async save");
-      throw;
-    }
-  }
-
-  private void ImplementAuditLogging()
-  {
-    var entries = ChangeTracker.Entries()
-      .Where(e => e.Entity is not AuditLog)
-      .ToList();
-
-    foreach (var entry in entries)
-    {
-      var auditLog = new AuditLog
-      {
-        EntityName = entry.Entity
-          .GetType().Name,
-        Action = entry.State.ToString(),
-        ChangedAt = DateTime.UtcNow,
-        ChangedBy = _currentUser.UserId,
-        Changes = SerializeChanges(entry)
-      };
-
-      AuditLogs.Add(auditLog);
-    }
-  }
-
-  private void UpdateTimestamps()
-  {
-    var entries = ChangeTracker.Entries()
-      .Where(e => e.Entity is ITimestamped)
-      .ToList();
-
-    foreach (var entry in entries)
-    {
-      var entity = (ITimestamped)entry.Entity;
-
-      if (entry.State == EntityState.Added)
-      {
-        entity.CreatedAt = DateTime.UtcNow;
-      }
-
-      if (entry.State == EntityState.Modified)
-      {
-        entity.UpdatedAt = DateTime.UtcNow;
-      }
-    }
-  }
-
-  private string SerializeChanges(
-    EntityEntry entry)
-  {
-    var changes = new Dictionary<string, object>();
-
-    foreach (var prop in
-      entry.Properties)
-    {
-      if (prop.IsModified)
-      {
-        changes[prop.Metadata.Name] =
-          prop.CurrentValue ?? "null";
-      }
-    }
-
-    return JsonSerializer.Serialize(changes);
-  }
-}
-
-// Interface for timestamped entities
-public interface ITimestamped
-{
-  DateTime CreatedAt { get; set; }
-  DateTime UpdatedAt { get; set; }
-}
-
-public class AuditLog
-{
-  public int Id { get; set; }
-  public string EntityName { get; set; }
-  public string Action { get; set; }
-  public DateTime ChangedAt { get; set; }
-  public string ChangedBy { get; set; }
-  public string Changes { get; set; }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Override SaveChanges for Cross-Cutting Concerns</strong>
-    <p>Overriding SaveChanges and SaveChangesAsync is the idiomatic way to inject behavior into all database commits. This centralizes audit logging, timestamp management, and validation in one place. All calls to SaveChanges flow through your override, ensuring consistency.</p>
-  </div>
-
-  <div class="section-text">
-    <p>ChangeTracker.Entries() gives you access to every tracked entity and its state before the commit. This is your last chance to enforce business rules. If an order total doesn't match its line items, you can throw an exception and prevent the save. This pattern keeps validation logic in the database layer, where it belongs.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">11 — MULTIPLE DBCONTEXT SCENARIOS (BOUNDED CONTEXTS)</div>
-  <h2>Managing Multiple Databases and Contexts</h2>
-
-  <div class="section-text">
-    <p>Real-world applications often use multiple DbContext classes. Domain-Driven Design calls this "bounded contexts"—separate data models for separate business domains. You might have OrderingContext (orders, customers) and InventoryContext (products, warehouses) pointing to different databases. Each context is independently configured, injected, and used. This separation enforces clean architecture boundaries and allows schema evolution without side effects across domains.</p>
-    <p>Managing multiple contexts requires careful dependency injection setup. Each context is registered separately, injected into different services, and used independently. Transactions that span multiple contexts require explicit coordination—DbContext transactions are per-context, not global.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Multiple DbContext Setup and Cross-Context Operations</span>
-      <pre><code>// Domain 1: Ordering (separate database)
-public class OrderingContext : DbContext
-{
-  public DbSet<Order> Orders { get; set; }
-  public DbSet<OrderLineItem> LineItems { get; set; }
-  public DbSet<Customer> Customers { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    optionsBuilder.UseSqlServer(
-      "Server=prod-db;Database=OrderingDB;...");
-  }
-}
-
-// Domain 2: Inventory (separate database)
-public class InventoryContext : DbContext
-{
-  public DbSet<Product> Products { get; set; }
-  public DbSet<Warehouse> Warehouses { get; set; }
-  public DbSet<Stock> Stock { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    optionsBuilder.UseSqlServer(
-      "Server=prod-db;Database=InventoryDB;...");
-  }
-}
-
-// DI Setup
-services.AddDbContext<OrderingContext>(
-  options => options.UseSqlServer(orderingConnStr));
-
-services.AddDbContext<InventoryContext>(
-  options => options.UseSqlServer(inventoryConnStr));
-
-// Service using both contexts
-public class OrderFulfillmentService
-{
-  private readonly OrderingContext
-    _orderingContext;
-  private readonly InventoryContext
-    _inventoryContext;
-
-  public OrderFulfillmentService(
-    OrderingContext orderingContext,
-    InventoryContext inventoryContext)
-  {
-    _orderingContext = orderingContext;
-    _inventoryContext = inventoryContext;
-  }
-
-  // Cross-context operation
-  public async Task FulfillOrderAsync(int orderId)
-  {
-    // Start transaction spanning both contexts
-    // using TransactionScope (distributed transaction)
-    using (var scope =
-      new TransactionScope(
-        TransactionScopeAsyncFlowOption
-          .Enabled))
-    {
-      // Load order from OrderingContext
-      var order = await
-        _orderingContext.Orders
-          .Include(o => o.LineItems)
-          .FirstAsync(o => o.Id == orderId);
-
-      if (order == null)
-        throw new InvalidOperationException(
-          "Order not found");
-
-      // For each line item, decrement stock
-      // in InventoryContext
-      foreach (var lineItem in order.LineItems)
-      {
-        var stock = await
-          _inventoryContext.Stock
-            .FirstAsync(s =>
-              s.ProductId == lineItem.ProductId &&
-              s.WarehouseId == 1);
-
-        if (stock.Quantity < lineItem.Quantity)
-          throw new InvalidOperationException(
-            "Insufficient stock");
-
-        stock.Quantity -= lineItem.Quantity;
-      }
-
-      // Update order status
-      order.Status = OrderStatus.Fulfilled;
-      order.FulfilledAt = DateTime.UtcNow;
-
-      // Save both contexts
-      await _orderingContext.SaveChangesAsync();
-      await _inventoryContext.SaveChangesAsync();
-
-      // Commit distributed transaction
-      scope.Complete();
-    }
-  }
-}
-
-// Alternative: Event-driven approach
-// Instead of cross-context calls, use domain events
-public class OrderDomainEvent
-{
-  public int OrderId { get; set; }
-  public List<(int ProductId, int Quantity)> Items
-    { get; set; }
-}
-
-// After order creation, publish event
-// InventoryService subscribes and decrements
-// stock independently</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Prefer Events Over Cross-Context Transactions</strong>
-    <p>Distributed transactions (TransactionScope) are expensive and error-prone. For loosely coupled domains, use domain events or message queues. Order service publishes "OrderCreated" event; inventory service subscribes and decrements stock asynchronously. This decouples contexts and scales better.</p>
-  </div>
-
-  <div class="section-text">
-    <p>When multiple contexts are necessary, keep them focused and independent. Each context should represent a bounded context from Domain-Driven Design. If you find yourself needing to constantly synchronize state across contexts, your boundaries are probably wrong—reconsider your domain model.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">12 — DBCONTEXT CONFIGURATION OPTIONS DEEP DIVE</div>
-  <h2>Advanced Context Options and Behavior Customization</h2>
-
-  <div class="section-text">
-    <p>DbContext behavior is customizable through dozens of options: query tracking, lazy loading, transaction isolation, and logging. Understanding these options lets you tune DbContext for your specific workloads. QueryTrackingBehavior controls whether loaded entities are tracked for changes (default: tracked). ChangeTracker.LazyLoadingEnabled controls whether navigation properties auto-load (default: disabled for performance). These options are set in OnConfiguring or via AddDbContext options.</p>
-    <p>Configuration options are per-context, allowing different behavior for different contexts. A reporting context might disable tracking entirely; a transactional context might enable detailed logging. Configuration is fluent and composable: each option is set via method chaining on DbContextOptionsBuilder.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Advanced DbContext Configuration Options</span>
-      <pre><code>// DI-based configuration (preferred)
-services.AddDbContext<AppDbContext>(
-  options => options
-    .UseSqlServer(connectionString)
-    // Query behavior: NoTracking for reports,
-    // default for transactions
-    .UseQueryTrackingBehavior(
-      QueryTrackingBehavior.NoTracking)
-    // Enable lazy loading with proxy generation
-    .UseLazyLoadingProxies()
-    // Detailed SQL logging
-    .LogTo(
-      Console.WriteLine,
-      LogLevel.Information)
-    // Enable sensitive data logging
-    // (DANGEROUS in production)
-    .EnableSensitiveDataLogging()
-    // Configure query split behavior
-    .UseQueryTrackingBehavior(
-      QueryTrackingBehavior.TrackAll)
-    // Disable change tracking batch size optimization
-    .ConfigureWarnings(w =>
-      w.Ignore(CoreEventId.ContextInitialized))
-);
-
-// Context-specific configuration
-public class ReportingContext : DbContext
-{
-  public DbSet<SalesReport> SalesReports { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    optionsBuilder
-      .UseSqlServer(
-        "Server=reporting-db;Database=Reports;...")
-      // No tracking: reporting is read-only
-      .UseQueryTrackingBehavior(
-        QueryTrackingBehavior.NoTracking)
-      // Minimal logging: high throughput
-      .LogTo((s) => { }, LogLevel.Critical);
-  }
-
-  // LINQ queries here run fast because:
-  // 1. No change tracking overhead
-  // 2. No logging overhead
-  // 3. Results are not cached in ChangeTracker
-}
-
-public class TransactionalContext : DbContext
-{
-  public DbSet<Order> Orders { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    optionsBuilder
-      .UseSqlServer(
-        "Server=prod-db;Database=Orders;...")
-      // Full tracking: need to detect changes
-      .UseQueryTrackingBehavior(
-        QueryTrackingBehavior.TrackAll)
-      // Lazy loading: convenience for navigation
-      .UseLazyLoadingProxies()
-      // Detailed logging: debug issues
-      .LogTo(
-        Console.WriteLine,
-        LogLevel.Information);
-  }
-}
-
-// Setting options at query time
-public class OrderService
-{
-  private readonly AppDbContext _context;
-
-  public OrderService(AppDbContext context)
-  {
-    _context = context;
-  }
-
-  // Read-only query: disable tracking per-query
-  public async Task<List<Order>> GetRecentOrdersAsync()
-  {
-    return await _context.Orders
-      .AsNoTracking()  // Override context default
-      .Where(o => o.CreatedDate >
-        DateTime.UtcNow.AddDays(-30))
-      .ToListAsync();
-  }
-
-  // Transactional query: full tracking
-  public async Task<Order> GetOrderForEditAsync(
-    int orderId)
-  {
-    return await _context.Orders
-      .Include(o => o.LineItems)
-      .FirstAsync(o => o.Id == orderId);
-    // Auto-tracked via context config
-  }
-
-  // Configure transaction isolation
-  public async Task TransferFundsAsync(
-    int fromAccountId,
-    int toAccountId,
-    decimal amount)
-  {
-    var strategy = _context.Database
-      .CreateExecutionStrategy();
-
-    await strategy.ExecuteAsync(async () =>
-    {
-      using (var transaction =
-        await _context.Database
-          .BeginTransactionAsync(
-            IsolationLevel.Serializable))
-      {
-        var fromAccount = await
-          _context.Accounts
-            .FirstAsync(a =>
-              a.Id == fromAccountId);
-
-        var toAccount = await
-          _context.Accounts
-            .FirstAsync(a =>
-              a.Id == toAccountId);
-
-        fromAccount.Balance -= amount;
-        toAccount.Balance += amount;
-
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
-      }
-    });
-  }
-}
-
-// Configuration comparison
-/*
-REPORTING CONTEXT:
-- QueryTrackingBehavior.NoTracking
-- LogLevel.Critical (no logging)
-- Result: Fast reads, minimal memory
-- Use case: Dashboards, analytics, exports
-
-TRANSACTIONAL CONTEXT:
-- QueryTrackingBehavior.TrackAll (default)
-- LogLevel.Information (detailed logs)
-- UseLazyLoadingProxies
-- Result: Full ACID, precise change tracking
-- Use case: APIs, business logic, CRUD
-
-HYBRID CONTEXT:
-- Mixed: Use AsNoTracking() per query
-- LogLevel.Warning (log only issues)
-- Result: Balanced performance
-- Use case: Applications with mixed workloads
-*/</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Configuration is Power; Default is Sensible</strong>
-    <p>DbContext defaults are good for most scenarios: tracking enabled, lazy loading disabled, minimal logging. Customize only when profiling shows a bottleneck. Over-customization makes code confusing. Use configuration changes strategically: NoTracking for read-only operations, custom logging for debugging, transaction isolation for critical operations.</p>
-  </div>
-
-  <div class="section-text">
-    <p>A common pattern: create separate context classes for different use cases. ReportingContext with NoTracking; TransactionalContext with full tracking. This makes intent explicit and prevents accidentally disabling tracking on transactional operations (or vice versa).</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">13 — QUERY SYNTAX COMPARISON (LINQ QUERY VS METHOD)</div>
-  <h2>LINQ Query Syntax Alongside Method Chaining</h2>
-
-  <div class="section-text">
-    <p>LINQ supports two syntaxes: query (SQL-like keywords) and method chaining. Both compile to the same IL and generate identical SQL. Query syntax is more readable for complex filters; method chaining is more concise. Understanding both lets you choose the right style for each scenario. EF translates both to SQL server-side, so performance is identical. The choice is readability and style preference.</p>
-    <p>Query syntax closely mirrors SQL SELECT statements, making it intuitive for SQL developers. Method chaining is more functional and integrates better with C# idioms like LINQ extension methods. Most modern code uses method chaining, but query syntax is still useful for complex multi-join scenarios.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax (SQL-like)</span>
-      <pre><code>// Query syntax: resembles SQL SELECT
-var expensiveOrders =
-  from order in _context.Orders
-  where order.Total > 1000
-  orderby order.CreatedDate descending
-  select order;
-
-// Join example
-var customerOrders =
-  from customer in _context.Customers
-  join order in _context.Orders
-    on customer.Id equals order.CustomerId
-  where customer.Country == "USA"
-  select new
-  {
-    CustomerName = customer.Name,
-    OrderId = order.Id,
-    OrderTotal = order.Total
-  };
-
-// GroupBy example
-var ordersByMonth =
-  from order in _context.Orders
-  group order by
-    order.CreatedDate.Month
-  into monthGroup
-  select new
-  {
-    Month = monthGroup.Key,
-    Count = monthGroup.Count(),
-    Total = monthGroup.Sum(o => o.Total)
-  };</code></pre>
-    </div>
-
-    <div class="code-block csharp-method">
-      <span class="code-label">LINQ Method Syntax (Functional)</span>
-      <pre><code>// Method syntax: chained extension methods
-var expensiveOrders = _context.Orders
-  .Where(o => o.Total > 1000)
-  .OrderByDescending(o => o.CreatedDate)
-  .ToList();
-
-// Join example
-var customerOrders = _context.Customers
-  .Join(
-    _context.Orders,
-    c => c.Id,
-    o => o.CustomerId,
-    (c, o) => new { c, o })
-  .Where(x => x.c.Country == "USA")
-  .Select(x => new
-  {
-    CustomerName = x.c.Name,
-    OrderId = x.o.Id,
-    OrderTotal = x.o.Total
-  })
-  .ToList();
-
-// GroupBy example
-var ordersByMonth = _context.Orders
-  .GroupBy(o => o.CreatedDate.Month)
-  .Select(g => new
-  {
-    Month = g.Key,
-    Count = g.Count(),
-    Total = g.Sum(o => o.Total)
-  })
-  .ToList();</code></pre>
-    </div>
-  </div>
-
-  <div class="section-text">
-    <p>Both syntaxes compile to identical LINQ-to-Entities queries. You can mix them: start with query syntax for readability, finish with method syntax for additional operations. Modern C# teams favor method syntax for its consistency with stream processing patterns, but SQL developers often prefer query syntax because it reads like their native language.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp-query">
-      <span class="code-label">Complex Query Syntax: Multi-Join and Filter</span>
-      <pre><code>// Query syntax excels at multi-joins
-var orderAnalysis =
-  from customer in _context.Customers
-  join order in _context.Orders
-    on customer.Id equals order.CustomerId
-  join lineItem in _context.OrderLineItems
-    on order.Id equals lineItem.OrderId
-  join product in _context.Products
-    on lineItem.ProductId equals product.Id
-  where customer.Country == "USA"
-    && order.CreatedDate >
-      DateTime.UtcNow.AddMonths(-1)
-    && product.Category == "Electronics"
-  orderby order.Total descending
-  select new
-  {
-    Customer = customer.Name,
-    Product = product.Name,
-    Quantity = lineItem.Quantity,
-    Price = lineItem.UnitPrice,
-    OrderTotal = order.Total,
-    OrderDate = order.CreatedDate
-  };</code></pre>
-    </div>
-
-    <div class="code-block csharp-method">
-      <span class="code-label">Complex Method Syntax: Multi-Join and Filter</span>
-      <pre><code>// Method syntax: same query, different style
-var orderAnalysis = _context.Customers
-  .Where(c => c.Country == "USA")
-  .Join(
-    _context.Orders
-      .Where(o => o.CreatedDate >
-        DateTime.UtcNow.AddMonths(-1)),
-    c => c.Id,
-    o => o.CustomerId,
-    (c, o) => new { c, o })
-  .Join(
-    _context.OrderLineItems,
-    x => x.o.Id,
-    li => li.OrderId,
-    (x, li) => new { x, li })
-  .Join(
-    _context.Products
-      .Where(p => p.Category == "Electronics"),
-    x => x.li.ProductId,
-    p => p.Id,
-    (x, p) => new { x, p })
-  .OrderByDescending(x => x.x.o.Total)
-  .Select(x => new
-  {
-    Customer = x.x.c.Name,
-    Product = x.p.Name,
-    Quantity = x.x.li.Quantity,
-    Price = x.x.li.UnitPrice,
-    OrderTotal = x.x.o.Total,
-    OrderDate = x.x.o.CreatedDate
-  })
-  .ToList();</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Choose Style for Readability, Not Performance</strong>
-    <p>Both syntaxes produce identical SQL and performance. Query syntax shines with multiple joins and complex WHERE clauses. Method syntax is cleaner for simple filters and works better with extension methods. There's no performance penalty for choosing one over the other—pick the style that your team reads most comfortably.</p>
-  </div>
-</div>
-
-<div class="key-takeaways">
-  <h3>Key Takeaways</h3>
-  <ul>
-    <li>DbContext is your database session: manage entity lifecycles, track changes, execute atomically</li>
-    <li>DbSet<T> properties represent table queries as IQueryable; they translate LINQ to SQL server-side</li>
-    <li>Connection strings configure server, authentication, and database name; load from appsettings.json or Key Vault</li>
-    <li>OnModelCreating and the Fluent API define your entire schema as C# code: tables, columns, relationships, indexes, constraints</li>
-    <li>DbContext is scoped (one per HTTP request); use IDbContextFactory for background services and Blazor Server</li>
-    <li>SaveChanges() batches all tracked entity changes and executes them in a single transaction: all succeed or all roll back</li>
-    <li>DbContext IS the Unit of Work pattern—no need for a separate wrapper</li>
-    <li>AddDbContextPool reuses instances, reducing allocation pressure and improving throughput in high-concurrency scenarios</li>
-  </ul>
-</div>
-
-<div class="chapter-nav">
-  <a href="ch11-window-functions.html" class="nav-item prev">
-    <div class="nav-label">Previous Chapter</div>
-    <div class="nav-title">Window Functions</div>
-  </a>
-  <a href="ch13-migrations.html" class="nav-item next">
-    <div class="nav-label">Next Chapter</div>
-    <div class="nav-title">Migrations</div>
-  </a>
-</div>
-
-</div>
-
-<footer>
-  <div class="wrap">
-    <div class="footer-inner">
-      <p>SQL to C#: A Practical Guide to Entity Framework and Modern Database Patterns</p>
-      <p style="margin-top: 10px; font-size: 12px; color: var(--ink4);">Chapter 12 — DbContext: Your Database in Code</p>
-    </div>
-  </div>
-</footer>
-
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: How long should a DbContext live? -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "How Long Should a DbContext Live?"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Web API handles thousands of requests. Each request needs database access. How do we manage DbContext lifetime without memory leaks or stale data?
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Connection pooling. Open a connection, use it, close it quickly. The pool reuses connections. This scales to thousands of requests.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Scoped lifetime. One DbContext per HTTP request via dependency injection. Request starts, DbContext created. Request ends, DbContext disposed. EF handles the connection pool underneath.
+                </div>
+            </div>
+
+            <table>
+                <thead><tr><th>Lifetime</th><th>Scope</th><th>Use Case</th><th>Risk</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Transient</strong></td>
+                        <td>New instance every time</td>
+                        <td>Stateless operations, unit tests</td>
+                        <td>High memory overhead</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Scoped</strong></td>
+                        <td>One per HTTP request</td>
+                        <td>Web APIs, web apps (RECOMMENDED)</td>
+                        <td>None — sweet spot for scalability</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Singleton</strong></td>
+                        <td>One instance for app lifetime</td>
+                        <td>N/A — NEVER use for DbContext</td>
+                        <td>Memory leak, stale data, thread-safety issues</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-full">
+                <div class="code-label">Program.cs — Register DbContext with Scoped Lifetime</div>
+                <div class="code-block csharp-block">
+                    <pre>var builder = WebApplicationBuilder.CreateBuilder(args);
+
+// Scoped: one DbContext per HTTP request
+builder.Services.AddDbContext&lt;ShopContext&gt;(options =&gt;
+    options.UseSqlServer(connectionString));
+
+// Transient: new instance every time (use carefully)
+// builder.Services.AddDbContext&lt;ShopContext&gt;
+//     .Lifetime = ServiceLifetime.Transient;
+
+// NEVER: Singleton will cause memory leaks and data stale issues
+// builder.Services.AddSingleton&lt;ShopContext&gt;();
+
+var app = builder.Build();
+app.MapControllers();
+app.Run();</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — DbContext Pooling for High-Throughput Apps</div>
+                <div class="code-block ef-block">
+                    <pre>// For very high throughput (>1000 requests/sec),
+// use DbContext pooling to reuse instances
+builder.Services.AddDbContextPool&lt;ShopContext&gt;(
+    options =&gt; options.UseSqlServer(connectionString),
+    poolSize: 128); // Reuse up to 128 DbContext instances
+
+// This reduces allocation overhead when combined with
+// AddQuotaPooling for connection pooling</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch11-window-functions.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Window Functions</span>
+            </a>
+            <a class="nav-item" href="ch13-migrations.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Migrations</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# — The Complete Data Access Guide</p>
+        <p>DbContext &middot; Entity Framework &middot; Dependency Injection</p>
+    </footer>
 </body>
 </html>

@@ -41,7 +41,6 @@
       line-height: 1.7;
     }
 
-    /* Navigation */
     nav {
       position: sticky;
       top: 0;
@@ -74,14 +73,12 @@
       text-decoration: none;
     }
 
-    /* Main container */
     main {
       max-width: 960px;
       margin: 0 auto;
       padding: 3rem 2rem;
     }
 
-    /* Header */
     header {
       margin-bottom: 3rem;
     }
@@ -112,7 +109,6 @@
       margin-bottom: 2rem;
     }
 
-    /* In This Chapter */
     .in-this-chapter {
       background-color: var(--blue-l);
       border-left: 4px solid var(--blue);
@@ -149,7 +145,6 @@
       color: var(--blue);
     }
 
-    /* Section styling */
     .section {
       margin-bottom: 3rem;
     }
@@ -179,7 +174,6 @@
       color: var(--ink);
     }
 
-    /* Prose */
     .prose {
       margin-bottom: 1.5rem;
       color: var(--ink2);
@@ -190,26 +184,11 @@
       margin-bottom: 1rem;
     }
 
-    .prose ul {
-      margin-left: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .prose li {
-      margin-bottom: 0.6rem;
-    }
-
     .prose strong {
       color: var(--ink);
       font-weight: 600;
     }
 
-    .prose em {
-      color: var(--ink3);
-      font-style: italic;
-    }
-
-    /* Code comparison */
     .comparison {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -258,8 +237,6 @@
       line-height: 1.6;
       overflow-x: auto;
       min-height: 120px;
-      display: flex;
-      align-items: flex-start;
     }
 
     .csharp-block .code-content {
@@ -268,40 +245,6 @@
       border: 1px solid var(--blue-b);
     }
 
-    /* Syntax highlighting for code */
-    .kw { color: #569cd6; }
-    .str { color: #ce9178; }
-    .comment { color: #6a9955; }
-    .type { color: #4ec9b0; }
-    .attr { color: #9cdcfe; }
-    .num { color: #b5cea8; }
-
-    .csharp-block .kw { color: var(--blue); }
-    .csharp-block .str { color: #a85e2a; }
-    .csharp-block .comment { color: #555; }
-    .csharp-block .type { color: #0066cc; }
-
-    /* Code block for single column */
-    .code-block {
-      background-color: var(--white);
-      border: 1px solid var(--blue-b);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 2rem;
-    }
-
-    .code-block .comparison-label {
-      background-color: var(--blue);
-      color: var(--white);
-    }
-
-    .code-block .code-content {
-      background-color: var(--white);
-      color: var(--ink);
-      min-height: 150px;
-    }
-
-    /* Insight box */
     .insight {
       background-color: var(--acc-l);
       border-left: 4px solid var(--acc);
@@ -324,1606 +267,503 @@
       line-height: 1.7;
     }
 
-    .insight-text strong {
-      color: var(--ink);
+    .code-block {
+      margin-bottom: 2rem;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: var(--ink);
     }
 
-    /* Key Takeaways */
+    .code-block .code-content {
+      min-height: 150px;
+    }
+
     .key-takeaways {
       background-color: var(--green-l);
       border-left: 4px solid var(--green);
-      padding: 2rem;
-      margin: 3rem 0;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
       border-radius: 4px;
     }
 
     .key-takeaways h3 {
       font-family: 'Outfit', sans-serif;
-      font-weight: 700;
+      font-size: 1rem;
+      font-weight: 600;
       color: var(--green);
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
+      margin-bottom: 1rem;
     }
 
     .key-takeaways ul {
       list-style: none;
-      padding: 0;
+      padding-left: 0;
     }
 
     .key-takeaways li {
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.6rem;
       padding-left: 1.5rem;
       position: relative;
+      font-size: 0.95rem;
+      line-height: 1.6;
       color: var(--ink2);
-      line-height: 1.7;
     }
 
-    .key-takeaways li:before {
-      content: "✓";
+    .key-takeaways li::before {
+      content: "\2713";
       position: absolute;
       left: 0;
       color: var(--green);
-      font-weight: 600;
+      font-weight: bold;
     }
 
-    /* Navigation buttons */
-    .nav-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--rule);
+    .chapter-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 3rem;
     }
 
-    .nav-button {
-      font-family: 'Outfit', sans-serif;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.2s;
+    .nav-item {
+      background-color: var(--white);
       border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 20px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      border-color: var(--acc);
+    }
+
+    .nav-item.prev {
+      text-align: right;
+    }
+
+    .nav-item-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--ink4);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .nav-item-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
       color: var(--ink);
     }
 
-    .nav-button:hover {
-      background-color: var(--bg2);
-      border-color: var(--ink3);
+    .nav-item:hover .nav-item-title {
+      color: var(--acc);
     }
 
-    .nav-button.prev { text-align: left; }
-    .nav-button.next { text-align: right; }
-
-    /* Footer */
     footer {
       background-color: var(--bg2);
+      border-top: 1px solid var(--rule);
       padding: 2rem;
-      margin-top: 4rem;
       text-align: center;
       color: var(--ink3);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--rule);
+      font-size: 0.85rem;
+      margin-top: 3rem;
     }
 
-    footer a {
-      color: var(--acc);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
     @media (max-width: 768px) {
-      main { padding: 1.5rem 1rem; }
-      h1 { font-size: 1.8rem; }
-      .comparison { grid-template-columns: 1fr; }
-      nav { padding: 0 1rem; }
-      .section-title { font-size: 1.2rem; }
+      h1 { font-size: 2rem; }
+      .code-comparison { grid-template-columns: 1fr; }
+      .chapter-nav { grid-template-columns: 1fr; }
+      .nav-item.prev { text-align: left; }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <span class="nav-brand">SQL to C#</span>
-    <a href="#" class="nav-chapter">Chapter 25</a>
-  </nav>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span>SQL to C#</span>
+            <span class="nav-chapter">CH 25</span>
+        </a>
+        <a href="index.html" class="nav-chapter" style="background:none;color:var(--ink3);padding:0;">&larr; All Chapters</a>
+    </nav>
 
-  <main>
-    <header>
-      <div class="chapter-number">Chapter 25</div>
-      <h1>CQRS</h1>
-      <p class="chapter-subtitle">Separating Reads from Writes for Optimal Performance</p>
-    </header>
+    <main>
+        <header>
+            <div class="chapter-number">Chapter 25</div>
+            <h1>CQRS</h1>
+            <p class="chapter-subtitle">Separate Command (write) and Query (read) models for scalability and clarity.</p>
+        </header>
 
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>CQRS fundamentals: Why separating reads from writes mirrors database optimization</li>
-        <li>SQL read replicas as database-level CQRS</li>
-        <li>Read models vs write models: denormalized views for reads, normalized tables for writes</li>
-        <li>Implementing CQRS with EF Core write DbContext and Dapper read queries</li>
-        <li>MediatR integration: Commands, Queries, and Handlers for clean architecture</li>
-        <li>Event sourcing and eventual consistency in CQRS systems</li>
-        <li>Performance wins: Dapper reads, EF Core writes, zero joins on the read side</li>
-        <li>When CQRS is worth the complexity—and when to start simple</li>
-      </ul>
-    </div>
+        <!-- SECTION 01: What is CQRS? -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">01</span>
+                <h2 class="section-title">Command Query Responsibility Segregation</h2>
+            </div>
 
-    <!-- Section 01 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">01</div>
-        <h2 class="section-title">The CQRS Principle: Commands vs Queries</h2>
-      </div>
-      <div class="prose">
-        <p><strong>CQRS stands for Command Query Responsibility Segregation.</strong> The principle is deceptively simple: separate the code path that writes data (commands) from the code path that reads data (queries). They have fundamentally different optimization needs, and conflating them forces compromise.</p>
-        <ul>
-          <li><strong>Commands (Writes):</strong> Change state. Need validation, business rule enforcement, referential integrity, change tracking, proper error handling. EF Core with its entity tracking and relationship management is ideal.</li>
-          <li><strong>Queries (Reads):</strong> Don't change state. Need speed, flexible shape, denormalization, minimal data transfer. Dapper with raw SQL is ideal.</li>
-        </ul>
-        <p>CQRS recognizes that <strong>your best read architecture might not be your best write architecture.</strong> In SQL, this is obvious: you normalize tables for inserts and updates, but create denormalized views for reports and reads. CQRS applies that same wisdom to C# code.</p>
-      </div>
+            <div class="prose">
+                <p>CQRS separates read operations from write operations. One model handles inserts/updates/deletes; another handles queries and reporting.</p>
+            </div>
 
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Database-Level CQRS</div>
-          <div class="code-content"><pre><span class="comment">-- NORMALIZED WRITE TABLES</span>
-<span class="comment">-- Minimize data redundancy</span>
-<span class="kw">CREATE TABLE</span> Orders (
-    Id <span class="kw">INT</span> <span class="kw">PRIMARY KEY</span>,
-    CustomerId <span class="kw">INT</span>,
-    OrderDate <span class="kw">DATETIME</span>,
-    <span class="kw">FOREIGN KEY</span> (CustomerId)
-        <span class="kw">REFERENCES</span> Customers(Id)
-);
-
-<span class="kw">CREATE TABLE</span> OrderItems (
-    Id <span class="kw">INT</span> <span class="kw">PRIMARY KEY</span>,
-    OrderId <span class="kw">INT</span>,
-    ProductId <span class="kw">INT</span>,
-    Quantity <span class="kw">INT</span>
-);
-
-<span class="comment">-- DENORMALIZED READ VIEW</span>
-<span class="comment">-- Pre-joined, pre-aggregated</span>
-<span class="kw">CREATE VIEW</span> OrderSummaryView <span class="kw">AS</span>
-<span class="kw">SELECT</span>
-    o.Id,
-    o.CustomerId,
-    c.Name <span class="kw">AS</span> CustomerName,
-    c.Email,
-    o.OrderDate,
-    <span class="kw">COUNT</span>(oi.Id) <span class="kw">AS</span> ItemCount,
-    <span class="kw">SUM</span>(oi.Quantity) <span class="kw">AS</span> TotalQty
-<span class="kw">FROM</span> Orders o
-<span class="kw">JOIN</span> Customers c <span class="kw">ON</span>
-    c.Id = o.CustomerId
-<span class="kw">LEFT JOIN</span> OrderItems oi <span class="kw">ON</span>
-    oi.OrderId = o.Id
-<span class="kw">GROUP BY</span> o.Id, o.CustomerId,
-         c.Name, c.Email, o.OrderDate;</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: CQRS Pattern</div>
-          <div class="code-content"><pre><span class="comment">// Command: Write operation</span>
-<span class="comment">// (uses EF Core)</span>
-<span class="kw">public class</span> <span class="type">CreateOrderCommand</span>
-    : <span class="type">IRequest</span>&lt;<span class="type">int</span>&gt;
+            <div class="comparison">
+                <div class="comparison-block csharp-block">
+                    <div class="comparison-label">Unified Model (CRUD)</div>
+                    <div class="code-content"><pre>// Same entity for reads and writes
+public interface IRepository&lt;T&gt;
 {
-    <span class="kw">public int</span> CustomerId { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">OrderItemDto</span>&gt;
-        Items { <span class="kw">get</span>; <span class="kw">set</span>; }
+    Task&lt;T&gt; GetByIdAsync(int id);
+    Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync();
+    Task AddAsync(T entity);
+    Task UpdateAsync(T entity);
 }
 
-<span class="comment">// Query: Read operation</span>
-<span class="comment">// (uses Dapper)</span>
-<span class="kw">public class</span> <span class="type">GetOrderSummaryQuery</span>
-    : <span class="type">IRequest</span>&lt;<span class="type">OrderSummaryDto</span>&gt;
+var customer = await repo.GetByIdAsync(1);
+await repo.UpdateAsync(customer);
+
+// Problem: Read model has all data;
+// write model needs validation</pre></div>
+                </div>
+                <div class="comparison-block csharp-block">
+                    <div class="comparison-label">CQRS Pattern</div>
+                    <div class="code-content"><pre>// Separate command and query interfaces
+public interface ICommandHandler&lt;TCommand&gt;
 {
-    <span class="kw">public int</span> OrderId { <span class="kw">get</span>; <span class="kw">set</span>; }
+    Task ExecuteAsync(TCommand command);
 }
 
-<span class="comment">// Different handlers, different tools</span>
-<span class="comment">// Different optimization strategies</span></pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">CQRS is Not a Database Pattern, It's an Architecture Pattern</div>
-        <div class="insight-text">
-          CQRS doesn't require separate databases. You can use the same SQL Server instance with normalized tables (for writes via EF) and denormalized views (for reads via Dapper). The separation is in your code architecture, not in your database topology.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 02 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">02</div>
-        <h2 class="section-title">Read Models vs Write Models</h2>
-      </div>
-      <div class="prose">
-        <p>In traditional layered architecture, a single entity class (like <code>Order</code>) is used for both reading and writing. This is convenient but problematic: a write operation needs validation, relationships, and business logic; a read operation needs denormalization, pre-aggregation, and minimal data transfer.</p>
-        <p>CQRS separates these concerns with two distinct models:</p>
-        <ul>
-          <li><strong>Write Model (Command Model):</strong> Normalized entities with validation, constraints, and relationships. Maps to normalized tables. Used by EF Core.</li>
-          <li><strong>Read Model (Query Model):</strong> Denormalized DTOs with only needed fields, pre-joined and pre-aggregated. Maps to views or result sets. Used by Dapper.</li>
-        </ul>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Write Model (EF Entity)</div>
-          <div class="code-content"><pre><span class="comment">// Normalized for WRITES</span>
-<span class="kw">public class</span> <span class="type">Order</span>
+public interface IQueryHandler&lt;TQuery, TResult&gt;
 {
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> CustomerId { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DateTime</span>
-        OrderDate { <span class="kw">get</span>; <span class="kw">set</span>; }
+    Task&lt;TResult&gt; HandleAsync(TQuery query);
+}
 
-    <span class="comment">// Navigation properties</span>
-    <span class="comment">// for relationships</span>
-    <span class="kw">public</span> <span class="type">Customer</span> Customer
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">OrderItem</span>&gt;
-        Items { <span class="kw">get</span>; <span class="kw">set</span>; }
+// Lean write model
+var cmd = new UpdateCustomerCommand { Id = 1, Name = "Bob" };
+await handler.ExecuteAsync(cmd);
 
-    <span class="comment">// Methods for business logic</span>
-    <span class="kw">public void</span> <span class="type">AddItem</span>(
-        <span class="type">OrderItem</span> item)
-    {
-        <span class="kw">if</span> (item.Quantity <= <span class="num">0</span>)
-            <span class="kw">throw new</span>
-                <span class="type">ArgumentException</span>();
-        Items.<span class="type">Add</span>(item);
-    }
-}</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Read Model (DTO)</div>
-          <div class="code-content"><pre><span class="comment">// Denormalized for READS</span>
-<span class="comment">// Flat structure, no joins</span>
-<span class="kw">public class</span> <span class="type">OrderSummaryDto</span>
+// Rich read model
+var query = new GetCustomerDetailsQuery { Id = 1 };
+var details = await handler.HandleAsync(query);</pre></div>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong class="insight-title">Key Difference:</strong>
+                <p class="insight-text">Write model validates and persists. Read model optimizes for queries (can include denormalized views).</p>
+            </div>
+        </section>
+
+        <!-- SECTION 02: Commands -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">02</span>
+                <h2 class="section-title">Commands (Writes)</h2>
+            </div>
+
+            <div class="prose">
+                <p>Commands are explicit operations that mutate state. They return nothing or minimal acknowledgment.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Command Pattern</div>
+                <div class="code-content"><pre>// Define commands as classes
+public class CreateOrderCommand
 {
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> CustomerId { <span class="kw">get</span>; <span class="kw">set</span>; }
+    public int CustomerId { get; set; }
+    public List&lt;OrderItemRequest&gt; Items { get; set; }
+}
 
-    <span class="comment">// Denormalized fields</span>
-    <span class="kw">public string</span> CustomerName
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> CustomerEmail
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-
-    <span class="comment">// Pre-aggregated values</span>
-    <span class="kw">public int</span> ItemCount
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> TotalQuantity
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DateTime</span>
-        OrderDate { <span class="kw">get</span>; <span class="kw">set</span>; }
-
-    <span class="comment">// No navigation properties</span>
-    <span class="comment">// No business logic</span>
-    <span class="comment">// Just data, optimized for reads</span>
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Different Models, Different Concerns</div>
-        <div class="insight-text">
-          The write model (your EF entity) enforces constraints and business rules. The read model (a DTO) is shaped for the UI or API response. They're not fighting for optimization: the write model optimizes for correctness, the read model optimizes for speed. Both win.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 03 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">03</div>
-        <h2 class="section-title">CQRS with Separate DbContexts</h2>
-      </div>
-      <div class="prose">
-        <p>The simplest CQRS implementation uses two DbContext classes: one for writes (EF Core with change tracking), one for reads (AsNoTracking queries). Both point to the same database, but they have different optimization strategies.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Write DbContext (EF Core)</div>
-          <div class="code-content"><pre><span class="comment">// WriteContext: With change tracking</span>
-<span class="comment">// For commands that modify state</span>
-<span class="kw">public class</span> <span class="type">WriteDbContext</span>
-    : <span class="type">DbContext</span>
+public class UpdateOrderStatusCommand
 {
-    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Order</span>&gt;
-        Orders { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Customer</span>&gt;
-        Customers { <span class="kw">get</span>; <span class="kw">set</span>; }
+    public int OrderId { get; set; }
+    public OrderStatus Status { get; set; }
+}
 
-    <span class="kw">protected override void</span>
-        <span class="type">OnConfiguring</span>(
-            <span class="type">DbContextOptionsBuilder</span>
-            builder)
-    {
-        builder.<span class="type">UseSqlServer</span>(
-            <span class="str">"Server=.;..."</span>);
-    }
-
-    <span class="kw">protected override void</span>
-        <span class="type">OnModelCreating</span>(
-            <span class="type">ModelBuilder</span> builder)
-    {
-        <span class="comment">// Relationships, constraints</span>
-        builder.<span class="type">Entity</span>&lt;<span class="type">Order</span>&gt;()
-            .<span class="type">HasMany</span>(o =&gt;
-                o.Items)
-            .<span class="type">WithOne</span>(oi =&gt;
-                oi.Order);
-    }
-}</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Read DbContext (No Tracking)</label>
-          <div class="code-content"><pre><span class="comment">// ReadContext: Always no tracking</span>
-<span class="comment">// For queries (read-only operations)</span>
-<span class="kw">public class</span> <span class="type">ReadDbContext</span>
-    : <span class="type">DbContext</span>
+// Command handler
+public class CreateOrderCommandHandler
+    : ICommandHandler&lt;CreateOrderCommand&gt;
 {
-    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Order</span>&gt;
-        Orders { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DbSet</span>&lt;<span class="type">Customer</span>&gt;
-        Customers { <span class="kw">get</span>; <span class="kw">set</span>; }
+    private readonly IUnitOfWork _uow;
 
-    <span class="kw">protected override void</span>
-        <span class="type">OnConfiguring</span>(
-            <span class="type">DbContextOptionsBuilder</span>
-            builder)
+    public CreateOrderCommandHandler(IUnitOfWork uow) => _uow = uow;
+
+    public async Task ExecuteAsync(CreateOrderCommand cmd, CancellationToken cancellationToken = default)
     {
-        builder.<span class="type">UseSqlServer</span>(
-            <span class="str">"Server=.;..."</span>);
-    }
+        // Validate
+        var customer = await _uow.Customers.GetByIdAsync(cmd.CustomerId, cancellationToken);
+        if (customer is null)
+            throw new InvalidOperationException("Customer not found");
 
-    <span class="kw">protected override void</span>
-        <span class="type">OnModelCreating</span>(
-            <span class="type">ModelBuilder</span> builder)
-    {
-        <span class="comment">// Same schema as write,</span>
-        <span class="comment">// but queries always use</span>
-        <span class="comment">// AsNoTracking()</span>
-    }
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Write Command Handler</div>
-          <div class="code-content"><pre><span class="comment">// IRequestHandler handles writes</span>
-<span class="kw">public class</span>
-    <span class="type">CreateOrderCommandHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">CreateOrderCommand</span>,
-        <span class="type">CreateOrderResult</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">WriteDbContext</span> _context;
-
-    <span class="kw">public</span> <span class="type">CreateOrderCommandHandler</span>(
-        <span class="type">WriteDbContext</span> context)
-    {
-        _context = context;
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">CreateOrderResult</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">CreateOrderCommand</span> cmd,
-            <span class="type">CancellationToken</span> ct)
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>
+        // Create and persist
+        var order = new Order { CustomerId = cmd.CustomerId };
+        foreach (var item in cmd.Items)
         {
-            CustomerId =
-                cmd.CustomerId,
-            OrderDate = <span class="type">DateTime</span>
-                .<span class="type">UtcNow</span>
-        };
-
-        <span class="kw">foreach</span> (<span class="kw">var</span> item
-            <span class="kw">in</span> cmd.Items)
-        {
-            order.<span class="type">AddItem</span>(
-                <span class="kw">new</span> <span class="type">OrderItem</span> {
-                    ProductId =
-                        item.ProductId,
-                    Quantity =
-                        item.Quantity
-                });
+            order.Items.Add(new OrderItem
+            {
+                ProductId = item.ProductId,
+                Quantity = item.Quantity
+            });
         }
 
-        _context.Orders.<span class="type">Add</span>(order);
-        <span class="kw">await</span>
-            _context.<span class="type">SaveChangesAsync</span>(
-                ct);
-
-        <span class="kw">return new</span>
-            <span class="type">CreateOrderResult</span>
-        {
-            OrderId = order.Id
-        };
+        await _uow.Orders.AddAsync(order, cancellationToken);
+        await _uow.SaveAsync(cancellationToken);
     }
-}</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Read Query Handler</label>
-          <div class="code-content"><pre><span class="comment">// IRequestHandler handles reads</span>
-<span class="kw">public class</span>
-    <span class="type">GetOrderSummaryQueryHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">GetOrderSummaryQuery</span>,
-        <span class="type">OrderSummaryDto</span>&gt;
+}
+
+// Usage
+var cmd = new CreateOrderCommand
 {
-    <span class="kw">private readonly</span>
-        <span class="type">ReadDbContext</span> _context;
+    CustomerId = 5,
+    Items = new() { new OrderItemRequest { ProductId = 10, Quantity = 2 } }
+};
+await handler.ExecuteAsync(cmd);</pre></div>
+            </div>
+        </section>
 
-    <span class="kw">public</span>
-        <span class="type">GetOrderSummaryQueryHandler</span>(
-            <span class="type">ReadDbContext</span> context)
-    {
-        _context = context;
-    }
+        <!-- SECTION 03: Queries -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">03</span>
+                <h2 class="section-title">Queries (Reads)</h2>
+            </div>
 
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">OrderSummaryDto</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">GetOrderSummaryQuery</span> q,
-            <span class="type">CancellationToken</span> ct)
+            <div class="prose">
+                <p>Queries return data without side effects. They can query denormalized read models optimized for specific views.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Query Pattern</div>
+                <div class="code-content"><pre>// Define queries as classes
+public class GetCustomerDetailsQuery
+{
+    public int CustomerId { get; set; }
+}
+
+public class GetCustomerDetailsResult
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public int OrderCount { get; set; }
+    public decimal TotalSpent { get; set; }
+}
+
+// Query handler
+public class GetCustomerDetailsQueryHandler
+    : IQueryHandler&lt;GetCustomerDetailsQuery, GetCustomerDetailsResult&gt;
+{
+    private readonly DbContext _db;
+
+    public GetCustomerDetailsQueryHandler(DbContext db) => _db = db;
+
+    public async Task&lt;GetCustomerDetailsResult&gt; HandleAsync(
+        GetCustomerDetailsQuery query, CancellationToken cancellationToken = default)
     {
-        <span class="kw">return await</span>
-            _context.Orders
-            .<span class="type">AsNoTracking</span>()
-            .<span class="type">Where</span>(o =&gt;
-                o.Id == q.OrderId)
-            .<span class="type">Select</span>(o =&gt; <span class="kw">new</span>
-                <span class="type">OrderSummaryDto</span>
+        return await _db.Customers
+            .AsNoTracking()
+            .Where(c => c.Id == query.CustomerId)
+            .Select(c => new GetCustomerDetailsResult
             {
-                Id = o.Id,
-                CustomerId =
-                    o.CustomerId,
-                CustomerName =
-                    o.Customer.Name,
-                CustomerEmail =
-                    o.Customer.Email,
-                ItemCount =
-                    o.Items.<span class="type">Count</span>(),
-                TotalQuantity =
-                    o.Items
-                    .<span class="type">Sum</span>(i =&gt;
-                        i.Quantity),
-                OrderDate = o.OrderDate
+                Id = c.Id,
+                Name = c.Name,
+                Email = c.Email,
+                OrderCount = c.Orders.Count(),
+                TotalSpent = c.Orders.SelectMany(o => o.Items)
+                    .Sum(i => i.Price * i.Quantity)
             })
-            .<span class="type">FirstOrDefaultAsync</span>(
-                ct);
+            .FirstOrDefaultAsync(cancellationToken);
     }
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Both Contexts Share the Same Schema</div>
-        <div class="insight-text">
-          The WriteDbContext and ReadDbContext point to the same database and tables. The difference is how they use them: WriteDbContext enables change tracking and enforces relationships; ReadDbContext disables tracking and optimizes for speed. You only need two contexts if you want to force different defaults and prevent accidental mutation on reads.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 04 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">04</div>
-        <h2 class="section-title">CQRS with Dapper for Reads</h2>
-      </div>
-      <div class="prose">
-        <p>For maximum read performance, replace EF entirely on the read side with Dapper. Write with EF Core (normalized, validated), read with Dapper (raw SQL, denormalized views). This is the classic CQRS pattern: two tools, each optimized for its job.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Denormalized View for Reads</div>
-          <div class="code-content"><pre><span class="kw">CREATE VIEW</span> OrderSummaryView <span class="kw">AS</span>
-<span class="kw">SELECT</span>
-    o.Id,
-    o.CustomerId,
-    c.Name <span class="kw">AS</span> CustomerName,
-    c.Email <span class="kw">AS</span> CustomerEmail,
-    o.OrderDate,
-    <span class="kw">COUNT</span>(oi.Id) <span class="kw">AS</span>
-        ItemCount,
-    <span class="kw">SUM</span>(oi.Quantity) <span class="kw">AS</span>
-        TotalQuantity,
-    <span class="kw">SUM</span>(oi.Quantity * p.Price)
-        <span class="kw">AS</span> TotalPrice
-<span class="kw">FROM</span> Orders o
-<span class="kw">JOIN</span> Customers c
-    <span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">LEFT JOIN</span> OrderItems oi
-    <span class="kw">ON</span> oi.OrderId = o.Id
-<span class="kw">LEFT JOIN</span> Products p
-    <span class="kw">ON</span> p.Id = oi.ProductId
-<span class="kw">GROUP BY</span> o.Id, o.CustomerId,
-         c.Name, c.Email,
-         o.OrderDate;</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Dapper Query Handler</label>
-          <div class="code-content"><pre><span class="comment">// Using Dapper for reads</span>
-<span class="kw">public class</span>
-    <span class="type">GetOrderSummaryQueryHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">GetOrderSummaryQuery</span>,
-        <span class="type">OrderSummaryDto</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">IDbConnection</span> _db;
-
-    <span class="kw">public</span>
-        <span class="type">GetOrderSummaryQueryHandler</span>(
-            <span class="type">IDbConnection</span> db)
-    {
-        _db = db;
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">OrderSummaryDto</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">GetOrderSummaryQuery</span> q,
-            <span class="type">CancellationToken</span> ct)
-    {
-        <span class="kw">var</span> sql = <span class="str">@"
-            SELECT Id, CustomerId,
-                   CustomerName,
-                   CustomerEmail,
-                   OrderDate,
-                   ItemCount,
-                   TotalQuantity,
-                   TotalPrice
-            FROM OrderSummaryView
-            WHERE Id = @OrderId"</span>;
-
-        <span class="kw">return await</span> _db
-            .<span class="type">QuerySingleOrDefaultAsync</span>&lt;
-                <span class="type">OrderSummaryDto</span>&gt;(
-                sql,
-                <span class="kw">new</span> { q.OrderId });
-    }
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Query Syntax: LINQ</label>
-          <div class="code-content"><pre><span class="comment">// LINQ query syntax</span>
-<span class="comment">// (if using EF for reads)</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;
-    <span class="type">List</span>&lt;<span class="type">OrderSummaryDto</span>&gt;&gt;
-    <span class="type">GetRecentOrdersSyntax</span>()
-{
-    <span class="kw">var</span> result = <span class="kw">await</span> (
-        <span class="kw">from</span> o <span class="kw">in</span>
-            _context.Orders
-        <span class="kw">where</span> o.OrderDate &gt;=
-            <span class="type">DateTime</span>.UtcNow
-            .<span class="type">AddDays</span>(-<span class="num">7</span>)
-        <span class="kw">orderby</span> o.OrderDate
-            <span class="kw">descending</span>
-        <span class="kw">select new</span>
-            <span class="type">OrderSummaryDto</span>
-        {
-            Id = o.Id,
-            CustomerName =
-                o.Customer.Name,
-            ItemCount =
-                o.Items.<span class="type">Count</span>()
-        })
-        .<span class="type">AsNoTracking</span>()
-        .<span class="type">ToListAsync</span>();
-
-    <span class="kw">return</span> result;
-}</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Method Syntax: LINQ</label>
-          <div class="code-content"><pre><span class="comment">// LINQ method syntax</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;
-    <span class="type">List</span>&lt;<span class="type">OrderSummaryDto</span>&gt;&gt;
-    <span class="type">GetRecentOrdersMethod</span>()
-{
-    <span class="kw">var</span> result = <span class="kw">await</span>
-        _context.Orders
-        .<span class="type">AsNoTracking</span>()
-        .<span class="type">Where</span>(o =&gt;
-            o.OrderDate &gt;=
-            <span class="type">DateTime</span>.UtcNow
-            .<span class="type">AddDays</span>(-<span class="num">7</span>))
-        .<span class="type">OrderByDescending</span>(o =&gt;
-            o.OrderDate)
-        .<span class="type">Select</span>(o =&gt; <span class="kw">new</span>
-            <span class="type">OrderSummaryDto</span>
-        {
-            Id = o.Id,
-            CustomerName =
-                o.Customer.Name,
-            ItemCount =
-                o.Items.<span class="type">Count</span>()
-        })
-        .<span class="type">ToListAsync</span>();
-
-    <span class="kw">return</span> result;
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Dapper: When You Control the SQL</div>
-        <div class="insight-text">
-          Dapper is not an ORM. It's a lightweight mapper that executes raw SQL and maps results to objects. There's no query translation, no lazy loading, no surprises. For read-heavy workloads with complex denormalized queries, Dapper is faster and more predictable than EF Core. You write the SQL you know is efficient.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 05 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">05</div>
-        <h2 class="section-title">MediatR Integration: Clean Command and Query Handlers</h2>
-      </div>
-      <div class="prose">
-        <p>MediatR is a mediator pattern library that elegantly bridges CQRS and your application code. Instead of calling handlers directly, you send requests to the mediator, which routes them to the appropriate handler. This decouples your application logic from infrastructure.</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">MediatR Request and Handler Interface</div>
-        <div class="code-content"><pre><span class="comment">// Install: dotnet add package MediatR</span>
-
-<span class="comment">// Command: A request with a result</span>
-<span class="kw">public class</span> <span class="type">CreateOrderCommand</span>
-    : <span class="type">IRequest</span>&lt;<span class="type">int</span>&gt;
-{
-    <span class="kw">public int</span> CustomerId { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">OrderItemDto</span>&gt;
-        Items { <span class="kw">get</span>; <span class="kw">set</span>; }
 }
 
-<span class="comment">// Handler: Implements IRequestHandler</span>
-<span class="kw">public class</span>
-    <span class="type">CreateOrderCommandHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">CreateOrderCommand</span>, <span class="kw">int</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">WriteDbContext</span> _context;
+// Usage
+var query = new GetCustomerDetailsQuery { CustomerId = 5 };
+var result = await handler.HandleAsync(query);
+Console.WriteLine($"{result.Name}: {result.OrderCount} orders, ${result.TotalSpent}");</pre></div>
+            </div>
 
-    <span class="kw">public</span>
-        <span class="type">CreateOrderCommandHandler</span>(
-            <span class="type">WriteDbContext</span> context)
+            <div class="insight">
+                <strong class="insight-title">Optimization:</strong>
+                <p class="insight-text">Queries can hit a read-optimized database or cache layer completely separate from writes.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 04: Command/Query Bus -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">04</span>
+                <h2 class="section-title">Mediator Pattern (Bus)</h2>
+            </div>
+
+            <div class="prose">
+                <p>A mediator routes commands and queries to their handlers automatically, decoupling callers from handler implementations.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Simple Mediator</div>
+                <div class="code-content"><pre>public interface IMediator
+{
+    Task&lt;TResult&gt; HandleAsync&lt;TResult&gt;(IQuery&lt;TResult&gt; query);
+    Task ExecuteAsync&lt;TCommand&gt;(TCommand command);
+}
+
+public class Mediator : IMediator
+{
+    private readonly IServiceProvider _services;
+
+    public Mediator(IServiceProvider services) => _services = services;
+
+    public async Task&lt;TResult&gt; HandleAsync&lt;TResult&gt;(IQuery&lt;TResult&gt; query, CancellationToken cancellationToken = default)
     {
-        _context = context;
+        var handlerType = typeof(IQueryHandler&lt;,&gt;)
+            .MakeGenericType(query.GetType(), typeof(TResult));
+        var handler = _services.GetService(handlerType);
+
+        var method = handlerType.GetMethod("HandleAsync");
+        return await (Task&lt;TResult&gt;)method.Invoke(handler, new object[] { query, cancellationToken });
     }
 
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">int</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">CreateOrderCommand</span> cmd,
-            <span class="type">CancellationToken</span> ct)
+    public async Task ExecuteAsync&lt;TCommand&gt;(TCommand command, CancellationToken cancellationToken = default)
     {
-        <span class="comment">// Build entity, validate,</span>
-        <span class="comment">// save</span>
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>
+        var handlerType = typeof(ICommandHandler&lt;&gt;)
+            .MakeGenericType(command.GetType());
+        var handler = _services.GetService(handlerType);
+
+        var method = handlerType.GetMethod("ExecuteAsync");
+        await (Task)method.Invoke(handler, new object[] { command, cancellationToken });
+    }
+}
+
+// In controller
+public class OrderController
+{
+    private readonly IMediator _mediator;
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; CreateOrder(CreateOrderCommand cmd, CancellationToken cancellationToken)
+    {
+        await _mediator.ExecuteAsync(cmd, cancellationToken);
+        return Ok();
+    }
+
+    [HttpGet("{id}")]
+    public async Task&lt;IActionResult&gt; GetOrder(int id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.HandleAsync(new GetOrderDetailsQuery { Id = id }, cancellationToken);
+        return Ok(result);
+    }
+}</pre></div>
+            </div>
+        </section>
+
+        <!-- SECTION 05: With Event Sourcing -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">05</span>
+                <h2 class="section-title">CQRS with Event Sourcing</h2>
+            </div>
+
+            <div class="prose">
+                <p>Commands generate events. Event store stores immutable events; read model builds from them.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Event-Sourced CQRS</div>
+                <div class="code-content"><pre>// Events
+public abstract class Event
+{
+    public int AggregateId { get; set; }
+    public DateTime Timestamp { get; set; }
+}
+
+public class OrderCreatedEvent : Event
+{
+    public int CustomerId { get; set; }
+    public decimal Total { get; set; }
+}
+
+public class OrderShippedEvent : Event
+{
+    public DateTime ShippedDate { get; set; }
+}
+
+// Command handler persists events
+public class CreateOrderCommandHandler
+{
+    private readonly IEventStore _eventStore;
+
+    public async Task ExecuteAsync(CreateOrderCommand cmd, CancellationToken cancellationToken = default)
+    {
+        // Validate and create event
+        var @event = new OrderCreatedEvent
         {
-            CustomerId = cmd.CustomerId
+            AggregateId = cmd.OrderId,
+            CustomerId = cmd.CustomerId,
+            Total = cmd.Total,
+            Timestamp = DateTime.Now
         };
 
-        <span class="kw">foreach</span> (<span class="kw">var</span> item
-            <span class="kw">in</span> cmd.Items)
+        // Persist to event store
+        await _eventStore.AppendAsync(@event, cancellationToken);
+    }
+}
+
+// Read model built from events
+public class OrderReadModel
+{
+    private readonly IEventStore _eventStore;
+
+    public async Task&lt;OrderDetailsDto&gt; GetOrderAsync(int orderId, CancellationToken cancellationToken = default)
+    {
+        var events = await _eventStore.GetEventsAsync(orderId, cancellationToken);
+
+        var order = new OrderDetailsDto { Id = orderId };
+        foreach (var e in events)
         {
-            order.<span class="type">AddItem</span>(
-                <span class="kw">new</span> <span class="type">OrderItem</span>
-                {
-                    ProductId =
-                        item.ProductId,
-                    Quantity =
-                        item.Quantity
-                });
+            if (e is OrderCreatedEvent created)
+                order.CustomerId = created.CustomerId;
+            else if (e is OrderShippedEvent shipped)
+                order.ShippedDate = shipped.ShippedDate;
         }
 
-        _context.Orders.<span class="type">Add</span>(order);
-        <span class="kw">await</span>
-            _context
-            .<span class="type">SaveChangesAsync</span>(ct);
-
-        <span class="kw">return</span> order.Id;
+        return order;
     }
 }</pre></div>
-      </div>
+            </div>
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Using MediatR in Controller</label>
-          <div class="code-content"><pre><span class="comment">// Inject IMediator</span>
-<span class="kw">public class</span>
-    <span class="type">OrdersController</span>
-    : <span class="type">ControllerBase</span>
-{
-    <span class="kw">private readonly</span>
-        <span class="type">IMediator</span> _mediator;
+            <div class="insight">
+                <strong class="insight-title">Benefit:</strong>
+                <p class="insight-text">Event sourcing provides complete audit trail. Read models are eventually consistent but highly optimized.</p>
+            </div>
+        </section>
 
-    <span class="kw">public</span>
-        <span class="type">OrdersController</span>(
-            <span class="type">IMediator</span> mediator)
-    {
-        _mediator = mediator;
-    }
-
-    <span class="comment">// Send command</span>
-    [<span class="type">HttpPost</span>]
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">IActionResult</span>&gt;
-        <span class="type">CreateOrder</span>(
-            <span class="type">CreateOrderCommand</span> cmd)
-    {
-        <span class="kw">var</span> orderId =
-            <span class="kw">await</span> _mediator
-            .<span class="type">Send</span>(cmd);
-
-        <span class="kw">return</span>
-            <span class="type">CreatedAtAction</span>(
-                <span class="kw">nameof</span>(
-                    <span class="type">GetOrder</span>),
-                <span class="kw">new</span> { orderId });
-    }
-
-    <span class="comment">// Send query</span>
-    [<span class="type">HttpGet</span>(<span class="str">"{id}"</span>)]
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">IActionResult</span>&gt;
-        <span class="type">GetOrder</span>(<span class="kw">int</span> id)
-    {
-        <span class="kw">var</span> result =
-            <span class="kw">await</span> _mediator
-            .<span class="type">Send</span>(<span class="kw">new</span>
-                <span class="type">GetOrderSummaryQuery</span>
-                {
-                    OrderId = id
-                });
-
-        <span class="kw">return</span> <span class="type">Ok</span>(result);
-    }
-}</pre></div>
+        <!-- Key Takeaways -->
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>CQRS separates command (write) and query (read) models.</li>
+                <li>Commands are explicit, validated operations; queries are read-only projections.</li>
+                <li>Mediator pattern routes commands and queries to appropriate handlers.</li>
+                <li>Read models can be denormalized or cached for performance.</li>
+                <li>Event sourcing pairs well with CQRS for audit trails and eventual consistency.</li>
+                <li>Use CQRS when reads and writes have different scaling or optimization needs.</li>
+            </ul>
         </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Startup Configuration</label>
-          <div class="code-content"><pre><span class="comment">// Startup.cs or Program.cs</span>
-<span class="kw">var</span> builder =
-    <span class="type">WebApplication</span>
-    .<span class="type">CreateBuilder</span>(args);
 
-<span class="comment">// Register MediatR</span>
-builder.Services
-    .<span class="type">AddMediatR</span>(cfg =&gt;
-    {
-        cfg
-        .<span class="type">RegisterServicesFromAssembly</span>(
-            <span class="kw">typeof</span>(<span class="type">Program</span>)
-            .<span class="type">Assembly</span>);
-    });
-
-<span class="comment">// Register DbContexts</span>
-builder.Services
-    .<span class="type">AddScoped</span>&lt;
-        <span class="type">WriteDbContext</span>&gt;();
-builder.Services
-    .<span class="type">AddScoped</span>&lt;
-        <span class="type">ReadDbContext</span>&gt;();
-
-<span class="comment">// Register Dapper</span>
-<span class="comment">// (SQL connection)</span>
-builder.Services
-    .<span class="type">AddScoped</span>&lt;
-        <span class="type">IDbConnection</span>&gt;(sp =&gt;
-    <span class="kw">new</span>
-    <span class="type">SqlConnection</span>(
-        <span class="str">"Server=.;..."</span>));</pre></div>
+        <!-- Chapter Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch24-unit-of-work.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Unit of Work</span>
+            </a>
+            <a class="nav-item" href="ch26-choosing-the-right-tool.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Choosing the Right Tool</span>
+            </a>
         </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">MediatR Decouples Your Code</div>
-        <div class="insight-text">
-          With MediatR, your controller doesn't know if it's calling EF Core or Dapper. It doesn't know if validation happens in a behavior or in the handler. This separation makes testing easier: mock IMediator, control what it returns. It also makes it easy to add cross-cutting concerns (logging, caching, validation) via MediatR behaviors.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 06 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">06</div>
-        <h2 class="section-title">Event Sourcing and Eventual Consistency</h2>
-      </div>
-      <div class="prose">
-        <p>Advanced CQRS often includes event sourcing: instead of storing current state, store every change as an immutable event. From these events, you can rebuild the current state (write model) and project any number of denormalized read models. This provides an audit trail and enables complex queries.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Event Store (Append-Only)</div>
-          <div class="code-content"><pre><span class="comment">-- Immutable event store</span>
-<span class="comment">-- Events never updated/deleted</span>
-<span class="kw">CREATE TABLE</span> Events (
-    EventId <span class="kw">BIGINT</span>
-        <span class="kw">PRIMARY KEY</span>
-        <span class="kw">IDENTITY</span>,
-    AggregateId <span class="kw">INT</span> <span class="kw">NOT NULL</span>,
-    AggregateType
-        <span class="kw">VARCHAR</span>(<span class="num">100</span>),
-    EventType <span class="kw">VARCHAR</span>(<span class="num">100</span>),
-    EventData <span class="kw">NVARCHAR</span>(<span class="kw">MAX</span>),
-    <span class="comment">-- JSON payload</span>
-    Timestamp <span class="kw">DATETIME</span>
-        <span class="kw">DEFAULT</span>
-        <span class="type">GETUTCDATE</span>(),
-    <span class="kw">INDEX</span> IX_AggregateId
-        (AggregateId)
-);
-
-<span class="comment">-- Sample events for Order #123:</span>
-<span class="comment">-- 1. OrderCreatedEvent</span>
-<span class="comment">{</span>
-<span class="comment">--   "customerId": 456,</span>
-<span class="comment">--   "orderDate": "2024-01-15"</span>
-<span class="comment">-- }</span>
-
-<span class="comment">-- 2. OrderItemAddedEvent</span>
-<span class="comment">{</span>
-<span class="comment">--   "productId": 789,</span>
-<span class="comment">--   "quantity": 2</span>
-<span class="comment">-- }</span>
-
-<span class="comment">-- 3. OrderConfirmedEvent</span>
-<span class="comment">{</span>
-<span class="comment">--   "confirmationTime": "2024-01-15T10:30:00"</span>
-<span class="comment">-- }</span></pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Event Sourcing Handler</label>
-          <div class="code-content"><pre><span class="comment">// Domain event (immutable)</span>
-<span class="kw">public abstract class</span>
-    <span class="type">DomainEvent</span>
-{
-    <span class="kw">public</span> <span class="type">Guid</span> AggregateId
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DateTime</span>
-        Timestamp { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="kw">public class</span>
-    <span class="type">OrderCreatedEvent</span>
-    : <span class="type">DomainEvent</span>
-{
-    <span class="kw">public int</span> CustomerId
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">DateTime</span>
-        OrderDate { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// Rebuild aggregate from</span>
-<span class="comment">// event stream</span>
-<span class="kw">public class</span> <span class="type">Order</span>
-{
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> CustomerId
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">List</span>&lt;
-        <span class="type">DomainEvent</span>&gt; Events
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-
-    <span class="kw">public static</span> <span class="type">Order</span>
-        <span class="type">LoadFromEvents</span>(
-            <span class="type">List</span>&lt;<span class="type">DomainEvent</span>&gt;
-            events)
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>();
-
-        <span class="kw">foreach</span> (<span class="kw">var</span> @event
-            <span class="kw">in</span> events)
-        {
-            <span class="kw">if</span> (@event <span class="kw">is</span>
-                <span class="type">OrderCreatedEvent</span>
-                created)
-            {
-                order.Id =
-                    created.AggregateId
-                    .<span class="type">GetHashCode</span>();
-                order.CustomerId =
-                    created.CustomerId;
-            }
-        }
-
-        order.Events = events;
-        <span class="kw">return</span> order;
-    }
-}</pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Event Sourcing is Complex and Not Always Necessary</div>
-        <div class="insight-text">
-          Event sourcing is powerful: you have a complete audit trail, you can replay events to rebuild state, you can project multiple read models from the same events. But it's also complex: you need to handle event versioning, deal with eventual consistency, and manage event replay. Start with simple CQRS (EF writes, Dapper reads) before moving to event sourcing.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 07 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">07</div>
-        <h2 class="section-title">Command Validation and Handlers</h2>
-      </div>
-      <div class="prose">
-        <p>Commands must be validated before execution. Use FluentValidation or MediatR behaviors to validate commands before they reach the handler. This keeps your handlers clean and your validation testable.</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">FluentValidation for Commands</div>
-        <div class="code-content"><pre><span class="comment">// Install: dotnet add package</span>
-<span class="comment">//   FluentValidation.DependencyInjectionExtensions</span>
-
-<span class="comment">// Validator for CreateOrderCommand</span>
-<span class="kw">public class</span>
-    <span class="type">CreateOrderCommandValidator</span>
-    : <span class="type">AbstractValidator</span>&lt;
-        <span class="type">CreateOrderCommand</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">ReadDbContext</span> _context;
-
-    <span class="kw">public</span>
-        <span class="type">CreateOrderCommandValidator</span>(
-            <span class="type">ReadDbContext</span> context)
-    {
-        _context = context;
-
-        <span class="comment">// Customer must exist</span>
-        <span class="type">RuleFor</span>(cmd =&gt;
-            cmd.CustomerId)
-            .<span class="type">MustAsync</span>(
-                <span class="kw">async</span> (customerId,
-                ct) =&gt;
-                {
-                    <span class="kw">return await</span>
-                        _context.Customers
-                        .<span class="type">AsNoTracking</span>()
-                        .<span class="type">AnyAsync</span>(c =&gt;
-                            c.Id ==
-                            customerId,
-                            ct);
-                })
-            .<span class="type">WithMessage</span>(
-                <span class="str">"Customer not found"</span>);
-
-        <span class="comment">// Items required</span>
-        <span class="type">RuleFor</span>(cmd =&gt;
-            cmd.Items)
-            .<span class="type">NotEmpty</span>()
-            .<span class="type">WithMessage</span>(
-                <span class="str">"Order must have items"</span>);
-
-        <span class="comment">// Each item valid</span>
-        <span class="type">RuleForEach</span>(cmd =&gt;
-            cmd.Items)
-            .<span class="type">SetValidator</span>(
-                <span class="kw">new</span>
-                <span class="type">OrderItemValidator</span>());
-    }
-}
-
-<span class="kw">public class</span>
-    <span class="type">OrderItemValidator</span>
-    : <span class="type">AbstractValidator</span>&lt;
-        <span class="type">OrderItemDto</span>&gt;
-{
-    <span class="kw">public</span>
-        <span class="type">OrderItemValidator</span>()
-    {
-        <span class="type">RuleFor</span>(item =&gt;
-            item.Quantity)
-            .<span class="type">GreaterThan</span>(<span class="num">0</span>)
-            .<span class="type">WithMessage</span>(
-                <span class="str">
-                "Quantity must be &gt; 0"</span>);
-    }
-}</pre></div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">MediatR Behavior: Auto-Validate</label>
-          <div class="code-content"><pre><span class="comment">// Validation behavior (runs</span>
-<span class="comment">// before handler)</span>
-<span class="kw">public class</span>
-    <span class="type">ValidationBehavior</span>&lt;<span class="type">TRequest</span>,
-        <span class="type">TResponse</span>&gt;
-    : <span class="type">IPipelineBehavior</span>&lt;
-        <span class="type">TRequest</span>,
-        <span class="type">TResponse</span>&gt;
-    <span class="kw">where</span> <span class="type">TRequest</span>
-        : <span class="type">IRequest</span>&lt;
-            <span class="type">TResponse</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">IValidator</span>&lt;<span class="type">TRequest</span>&gt;
-            _validator;
-
-    <span class="kw">public</span>
-        <span class="type">ValidationBehavior</span>(
-            <span class="type">IValidator</span>&lt;
-                <span class="type">TRequest</span>&gt;
-            validator)
-    {
-        _validator = validator;
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">TResponse</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">TRequest</span> request,
-            <span class="type">RequestHandlerDelegate</span>&lt;
-                <span class="type">TResponse</span>&gt;
-            next,
-            <span class="type">CancellationToken</span> ct)
-    {
-        <span class="comment">// Run validation</span>
-        <span class="kw">var</span> result = <span class="kw">await</span>
-            _validator
-            .<span class="type">ValidateAsync</span>(
-                request, ct);
-
-        <span class="kw">if</span> (!result.IsValid)
-        {
-            <span class="kw">throw new</span>
-                <span class="type">ValidationException</span>(
-                    result.Errors);
-        }
-
-        <span class="comment">// Valid, call handler</span>
-        <span class="kw">return await</span> <span class="type">next</span>();
-    }
-}</pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Register Everything</label>
-          <div class="code-content"><pre><span class="comment">// Program.cs setup</span>
-<span class="kw">var</span> builder =
-    <span class="type">WebApplication</span>
-    .<span class="type">CreateBuilder</span>(args);
-
-<span class="comment">// Register MediatR</span>
-builder.Services
-    .<span class="type">AddMediatR</span>(cfg =&gt;
-    {
-        cfg
-        .<span class="type">RegisterServicesFromAssembly</span>(
-            <span class="kw">typeof</span>(<span class="type">Program</span>)
-            .<span class="type">Assembly</span>);
-        <span class="comment">// Add validation behavior</span>
-        cfg
-        .<span class="type">AddOpenBehavior</span>(
-            <span class="kw">typeof</span>(
-                <span class="type">ValidationBehavior</span>&lt;,&gt;));
-    });
-
-<span class="comment">// Register validators</span>
-builder.Services
-    .<span class="type">AddValidatorsFromAssembly</span>(
-        <span class="kw">typeof</span>(<span class="type">Program</span>)
-        .<span class="type">Assembly</span>);
-
-<span class="comment">// Now every command is</span>
-<span class="comment">// validated before handler runs</span></pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Validate Before Persistence</div>
-        <div class="insight-text">
-          Use FluentValidation with MediatR behaviors to validate commands before they reach the handler. This prevents invalid data from hitting the database, keeps handlers focused on business logic, and makes validation easy to test.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 08 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">08</div>
-        <h2 class="section-title">Query Optimization with Projections</h2>
-      </div>
-      <div class="prose">
-        <p>On the read side, use projections extensively. Instead of loading full entities and filtering in memory, project only needed fields directly in the database query. This reduces network traffic and memory usage dramatically.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Inefficient: Load Full Entities</label>
-          <div class="code-content"><pre><span class="comment">// SLOW: Loads full Orders</span>
-<span class="comment">// and Customers</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;
-    <span class="type">List</span>&lt;<span class="type">OrderDto</span>&gt;&gt;
-    <span class="type">GetOrdersInefficient</span>()
-{
-    <span class="kw">var</span> orders = <span class="kw">await</span>
-        _context.Orders
-        .<span class="type">Include</span>(o =&gt;
-            o.Customer)
-        .<span class="type">ToListAsync</span>();
-
-    <span class="comment">// Filter in memory</span>
-    <span class="kw">return</span> orders
-        .<span class="type">Where</span>(o =&gt;
-            o.Customer.IsActive)
-        .<span class="type">OrderByDescending</span>(o =&gt;
-            o.OrderDate)
-        .<span class="type">Take</span>(<span class="num">10</span>)
-        .<span class="type">Select</span>(o =&gt; <span class="kw">new</span>
-            <span class="type">OrderDto</span>
-        {
-            Id = o.Id,
-            CustomerName =
-                o.Customer.Name
-        })
-        .<span class="type">ToList</span>();
-}
-
-<span class="comment">// Loads ALL orders,</span>
-<span class="comment">// all customers,</span>
-<span class="comment">// filters in memory</span></pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Efficient: Project in Database</label>
-          <div class="code-content"><pre><span class="comment">// FAST: Database does</span>
-<span class="comment">// filtering, sorting, limit</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;
-    <span class="type">List</span>&lt;<span class="type">OrderDto</span>&gt;&gt;
-    <span class="type">GetOrdersEfficient</span>()
-{
-    <span class="kw">return await</span>
-        _context.Orders
-        .<span class="type">AsNoTracking</span>()
-        .<span class="type">Where</span>(o =&gt;
-            o.Customer.IsActive)
-        .<span class="type">OrderByDescending</span>(o =&gt;
-            o.OrderDate)
-        .<span class="type">Take</span>(<span class="num">10</span>)
-        .<span class="type">Select</span>(o =&gt; <span class="kw">new</span>
-            <span class="type">OrderDto</span>
-        {
-            Id = o.Id,
-            CustomerName =
-                o.Customer.Name
-        })
-        .<span class="type">ToListAsync</span>();
-}
-
-<span class="comment">// Database returns</span>
-<span class="comment">// only 10 rows with</span>
-<span class="comment">// 2 columns each</span></pre></div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Generated SQL: Inefficient</label>
-          <div class="code-content"><pre><span class="comment">-- Loads all orders and customers</span>
-<span class="kw">SELECT</span> o.*, c.*
-<span class="kw">FROM</span> Orders o
-<span class="kw">JOIN</span> Customers c
-<span class="kw">ON</span> c.Id = o.CustomerId;
-
-<span class="comment">-- Then in-memory filtering</span>
-<span class="comment">-- for IsActive, ordering, limit</span></pre></div>
-        </div>
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Generated SQL: Efficient</label>
-          <div class="code-content"><pre><span class="comment">-- Filtering, ordering, limit</span>
-<span class="comment">-- all in SQL</span>
-<span class="kw">SELECT TOP</span> <span class="num">10</span>
-    o.Id, c.Name
-<span class="kw">FROM</span> Orders o
-<span class="kw">JOIN</span> Customers c
-<span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">WHERE</span> c.IsActive = <span class="num">1</span>
-<span class="kw">ORDER BY</span> o.OrderDate <span class="kw">DESC</span>;
-
-<span class="comment">-- Returns exactly 10 rows</span>
-<span class="comment">-- with 2 columns each</span></pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Projection First, Then Filtering</div>
-        <div class="insight-text">
-          When using EF, always apply Where and OrderBy before Select. This way, EF translates the entire operation to SQL. If you Select first and then Where, EF loads all data into memory and filters there. This is the opposite of what you want.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 09 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">09</div>
-        <h2 class="section-title">When NOT to Use CQRS</h2>
-      </div>
-      <div class="prose">
-        <p>CQRS is a powerful pattern, but it adds complexity. Two DbContexts, separate command and query handlers, more code to maintain. Sometimes the simplest approach wins.</p>
-        <ul>
-          <li><strong>Early-stage applications:</strong> You don't know your read patterns yet. Start with a simple ORM, optimize later if needed.</li>
-          <li><strong>Simple CRUD apps:</strong> If every read is just "get by ID" and writes are simple inserts, CQRS overhead outweighs benefits.</li>
-          <li><strong>Low traffic systems:</strong> Performance differences matter when you have 1000s of requests/sec. For 10 requests/sec, simpler code wins.</li>
-          <li><strong>Team unfamiliarity:</strong> If your team doesn't understand CQRS, the complexity cost is high. Build expertise first.</li>
-        </ul>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">When Simple CRUD Works</label>
-          <div class="code-content"><pre><span class="comment">// A simple blog app:</span>
-<span class="comment">// - ~100 posts</span>
-<span class="comment">// - ~1000 views/day</span>
-<span class="comment">// - Simple read: get by ID</span>
-<span class="comment">// - Simple write: create/edit</span>
-
-<span class="kw">public class</span> <span class="type">Post</span>
-{
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Title
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Content
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// Simple repository</span>
-<span class="kw">public class</span> <span class="type">PostRepository</span>
-{
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">Post</span>&gt;
-        <span class="type">GetById</span>(<span class="kw">int</span> id)
-    {
-        <span class="kw">return await</span>
-            _context.Posts
-            .<span class="type">FindAsync</span>(id);
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>
-        <span class="type">Create</span>(<span class="type">Post</span> post)
-    {
-        _context.Posts.<span class="type">Add</span>(post);
-        <span class="kw">await</span>
-            _context
-            .<span class="type">SaveChangesAsync</span>();
-    }
-}
-
-<span class="comment">// Good enough!</span></pre></div>
-        </div>
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">When CQRS is Worth It</label>
-          <div class="code-content"><pre><span class="comment">// A high-volume e-commerce:</span>
-<span class="comment">// - 100,000 products</span>
-<span class="comment">// - 1M requests/day</span>
-<span class="comment">// - Complex read queries</span>
-<span class="comment">//   (search, filter, sort)</span>
-<span class="comment">// - Complex writes</span>
-<span class="comment">//   (inventory updates)</span>
-
-<span class="comment">// CQRS shines here:</span>
-<span class="comment">// - Reads optimized with views,</span>
-<span class="comment">//   projections, Dapper</span>
-<span class="comment">// - Writes with EF validation</span>
-<span class="comment">//   and change tracking</span>
-<span class="comment">// - Different teams can own</span>
-<span class="comment">//   read and write paths</span>
-<span class="comment">// - Easy to cache read models</span>
-<span class="comment">// - Easy to replicate reads</span>
-<span class="comment">//   to read-only database</span></pre></div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Start Simple, Evolve if Needed</div>
-        <div class="insight-text">
-          Begin with a simple repository pattern or minimal CQRS. If performance analysis shows reads are slow, add CQRS: separate the query code, introduce Dapper, create denormalized views. If writes are slow, optimize EF. You can evolve incrementally without a complete rewrite.
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 10 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">10</div>
-        <h2 class="section-title">Practical Implementation: Step by Step</h2>
-      </div>
-      <div class="prose">
-        <p>Here's a complete walkthrough of implementing CQRS from scratch:</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">Step 1: Define Write and Read Models</div>
-        <div class="code-content"><pre><span class="comment">// Domain model (write)</span>
-<span class="kw">public class</span> <span class="type">Product</span>
-{
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Name
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public decimal</span> Price
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> StockQuantity
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> CategoryId
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="type">Category</span> Category
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// Read model (DTO)</span>
-<span class="kw">public class</span>
-    <span class="type">ProductListItemDto</span>
-{
-    <span class="kw">public int</span> Id
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Name
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public decimal</span> Price
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span>
-        CategoryName { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public bool</span> InStock
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-}</pre></div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">Step 2: Define Commands and Queries</div>
-        <div class="code-content"><pre><span class="comment">// Command</span>
-<span class="kw">public class</span>
-    <span class="type">CreateProductCommand</span>
-    : <span class="type">IRequest</span>&lt;<span class="kw">int</span>&gt;
-{
-    <span class="kw">public string</span> Name
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public decimal</span> Price
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> StockQuantity
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> CategoryId
-        { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// Query</span>
-<span class="kw">public class</span>
-    <span class="type">SearchProductsQuery</span>
-    : <span class="type">IRequest</span>&lt;<span class="type">List</span>&lt;
-        <span class="type">ProductListItemDto</span>&gt;&gt;
-{
-    <span class="kw">public string</span>
-        SearchTerm { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> PageNumber
-        { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="num">1</span>;
-    <span class="kw">public int</span> PageSize
-        { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="num">20</span>;
-}</pre></div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">Step 3: Implement Command Handler (EF)</div>
-        <div class="code-content"><pre><span class="kw">public class</span>
-    <span class="type">CreateProductCommandHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">CreateProductCommand</span>,
-        <span class="kw">int</span>&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">WriteDbContext</span> _context;
-
-    <span class="kw">public</span>
-        <span class="type">CreateProductCommandHandler</span>(
-            <span class="type">WriteDbContext</span> context)
-    {
-        _context = context;
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">int</span>&gt;
-        <span class="type">Handle</span>(
-            <span class="type">CreateProductCommand</span> cmd,
-            <span class="type">CancellationToken</span> ct)
-    {
-        <span class="comment">// Validation handled</span>
-        <span class="comment">// by FluentValidation</span>
-        <span class="comment">// before this handler</span>
-
-        <span class="kw">var</span> product =
-            <span class="kw">new</span> <span class="type">Product</span>
-        {
-            Name = cmd.Name,
-            Price = cmd.Price,
-            StockQuantity =
-                cmd.StockQuantity,
-            CategoryId = cmd.CategoryId
-        };
-
-        _context.Products
-            .<span class="type">Add</span>(product);
-        <span class="kw">await</span>
-            _context
-            .<span class="type">SaveChangesAsync</span>(ct);
-
-        <span class="kw">return</span> product.Id;
-    }
-}</pre></div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">Step 4: Implement Query Handler (Dapper)</div>
-        <div class="code-content"><pre><span class="kw">public class</span>
-    <span class="type">SearchProductsQueryHandler</span>
-    : <span class="type">IRequestHandler</span>&lt;
-        <span class="type">SearchProductsQuery</span>,
-        <span class="type">List</span>&lt;
-            <span class="type">ProductListItemDto</span>&gt;&gt;
-{
-    <span class="kw">private readonly</span>
-        <span class="type">IDbConnection</span> _db;
-
-    <span class="kw">public</span>
-        <span class="type">SearchProductsQueryHandler</span>(
-            <span class="type">IDbConnection</span> db)
-    {
-        _db = db;
-    }
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;
-        <span class="type">List</span>&lt;
-            <span class="type">ProductListItemDto</span>&gt;&gt;
-        <span class="type">Handle</span>(
-            <span class="type">SearchProductsQuery</span> q,
-            <span class="type">CancellationToken</span> ct)
-    {
-        <span class="kw">var</span> sql = <span class="str">@"
-            SELECT p.Id, p.Name,
-                   p.Price, c.Name
-                   AS CategoryName,
-                   (CASE
-                       WHEN p.StockQuantity
-                           &gt; 0
-                       THEN 1
-                       ELSE 0
-                   END) AS InStock
-            FROM Products p
-            JOIN Categories c
-                ON c.Id = p.CategoryId
-            WHERE p.Name LIKE
-                @Search
-            ORDER BY p.Name
-            OFFSET (@Page - 1) *
-                @PageSize
-            ROWS FETCH NEXT
-                @PageSize ROWS ONLY"</span>;
-
-        <span class="kw">var</span> search = <span class="str">$"%{q.SearchTerm}%"</span>;
-        <span class="kw">var</span> offset =
-            (q.PageNumber - <span class="num">1</span>) *
-            q.PageSize;
-
-        <span class="kw">return</span> (<span class="kw">await</span>
-            _db
-            .<span class="type">QueryAsync</span>&lt;
-                <span class="type">ProductListItemDto</span>&gt;(
-                sql,
-                <span class="kw">new</span>
-                {
-                    Search = search,
-                    Page = q.PageNumber,
-                    PageSize = q.PageSize
-                }))
-            .<span class="type">ToList</span>();
-    }
-}</pre></div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">Step 5: Wire It Up in Startup</div>
-        <div class="code-content"><pre><span class="comment">// Program.cs</span>
-<span class="kw">var</span> builder =
-    <span class="type">WebApplication</span>
-    .<span class="type">CreateBuilder</span>(args);
-
-<span class="comment">// Add DbContexts</span>
-builder.Services
-    .<span class="type">AddScoped</span>&lt;
-        <span class="type">WriteDbContext</span>&gt;();
-
-<span class="comment">// Add Dapper connection</span>
-builder.Services
-    .<span class="type">AddScoped</span>&lt;
-        <span class="type">IDbConnection</span>&gt;(sp =&gt;
-    <span class="kw">new</span>
-    <span class="type">SqlConnection</span>(
-        builder.Configuration
-        .<span class="type">GetConnectionString</span>(
-            <span class="str">"Default"</span>)));
-
-<span class="comment">// Add MediatR</span>
-builder.Services
-    .<span class="type">AddMediatR</span>(cfg =&gt;
-    {
-        cfg
-        .<span class="type">RegisterServicesFromAssembly</span>(
-            <span class="kw">typeof</span>(<span class="type">Program</span>)
-            .<span class="type">Assembly</span>);
-        cfg
-        .<span class="type">AddOpenBehavior</span>(
-            <span class="kw">typeof</span>(
-                <span class="type">ValidationBehavior</span>&lt;,&gt;));
-    });
-
-<span class="comment">// Add validators</span>
-builder.Services
-    .<span class="type">AddValidatorsFromAssembly</span>(
-        <span class="kw">typeof</span>(<span class="type">Program</span>)
-        .<span class="type">Assembly</span>);</pre></div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Done! Your First CQRS Implementation</div>
-        <div class="insight-text">
-          You now have a working CQRS system: commands route through EF Core with validation and change tracking, queries route through Dapper with raw SQL for speed. The mediator pattern keeps everything decoupled. Start here, add complexity only when profiling shows you need it.
-        </div>
-      </div>
-    </section>
-
-    <!-- Key Takeaways -->
-    <div class="key-takeaways">
-      <h3>Key Takeaways</h3>
-      <ul>
-        <li>CQRS separates read and write code paths, mirroring how databases use normalized tables for writes and denormalized views for reads.</li>
-        <li>Use EF Core for commands (validated writes with change tracking) and Dapper for queries (fast reads with raw SQL).</li>
-        <li>Separate write models (entities with relationships) from read models (flattened DTOs) without guilt—they solve different problems.</li>
-        <li>MediatR elegantly routes commands and queries to handlers, keeping your controllers thin and logic testable.</li>
-        <li>FluentValidation with MediatR behaviors ensures commands are validated before persistence, keeping handlers focused on business logic.</li>
-        <li>Always project in the database (Where → OrderBy → Select) rather than loading full entities and filtering in memory.</li>
-        <li>Event sourcing is powerful but complex; start with simple CQRS before graduating to event-based systems.</li>
-        <li>CQRS adds complexity. For simple CRUD apps or early-stage projects, simpler patterns (basic repositories) often win.</li>
-        <li>Evolve incrementally: start simple, profile, add CQRS where performance analysis shows reads or writes are bottlenecked.</li>
-        <li>The biggest win: reads and writes are now optimized independently. Your team can scale the read pipeline without touching write logic.</li>
-      </ul>
-    </div>
-
-    <!-- Navigation -->
-    <div class="nav-buttons">
-      <a href="ch24-unit-of-work.html" class="nav-button prev">← Chapter 24: Unit of Work</a>
-      <a href="ch26-choosing-the-right-tool.html" class="nav-button next">Chapter 26: Choosing the Right Tool →</a>
-    </div>
-  </main>
-
-  <footer>
-    <p>SQL to C# Book — Building solid data access layers with C# and SQL</p>
-    <p><a href="#">Home</a> · <a href="#">Table of Contents</a> · <a href="#">GitHub</a></p>
-  </footer>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

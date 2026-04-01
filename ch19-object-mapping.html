@@ -1,1240 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 19: Object Mapping — SQL Results to C# Objects</title>
-<meta name="description" content="Master Dapper's object mapping: conventions, column aliases, type handlers, records, structs, QueryMultiple, dynamic results, and practical patterns for mapping SQL to C# objects.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-  --amber: #7a5200;
-  --amber-l: #fdf8ec;
-  --amber-b: #e8d08a;
-}
-
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
-
-.nav-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
-
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
-
-.nav-links a:hover { color: var(--acc); }
-
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-
-.chapter-header h1 {
-  font-size: 38px;
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 750px;
-}
-
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-
-.section {
-  margin-bottom: 70px;
-}
-
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-}
-
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--rule);
-}
-
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 20px;
-  max-width: 750px;
-}
-
-.section-text em {
-  font-style: italic;
-  font-weight: 400;
-  color: var(--ink);
-}
-
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.code-block {
-  border-radius: 8px;
-  padding: 24px;
-  overflow-x: auto;
-}
-
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-
-.code-block.csharp {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-
-.code-block.csharp .code-label {
-  color: var(--blue);
-}
-
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.code-block.sql code {
-  color: #e8e4db;
-}
-
-.code-block.csharp code {
-  color: var(--ink);
-}
-
-.code-block-single {
-  border-radius: 8px;
-  padding: 24px;
-  overflow-x: auto;
-  margin-bottom: 28px;
-}
-
-.code-block-single.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-
-.code-block-single.sql code {
-  color: #e8e4db;
-}
-
-.code-block-single.csharp {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-
-.code-block-single.csharp code {
-  color: var(--ink);
-}
-
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 30px;
-  margin: 80px 0;
-}
-
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-  line-height: 1.7;
-}
-
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item.prev {
-  align-items: flex-start;
-}
-
-.nav-item.next {
-  align-items: flex-end;
-}
-
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-
-.footer-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
-}
-
-.footer-section h4 {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 12px;
-}
-
-.footer-section p,
-.footer-section a {
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
-  color: var(--ink2);
-  text-decoration: none;
-  line-height: 1.7;
-}
-
-.footer-section a:hover {
-  color: var(--acc);
-}
-
-.footer-section ul {
-  list-style: none;
-}
-
-.footer-section li {
-  padding: 4px 0;
-}
-
-.footer-bottom {
-  border-top: 1px solid var(--rule);
-  padding-top: 30px;
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
-  color: var(--ink3);
-}
-
-@media (max-width: 768px) {
-  .code-comparison {
-    grid-template-columns: 1fr;
-  }
-
-  .footer-content {
-    grid-template-columns: 1fr;
-  }
-
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chapter 19: Object Mapping with Dapper — Map SQL results to C# objects, handle column name mismatches, use records and structs, and query multiple result sets.">
+    <title>Chapter 19: Object Mapping with Dapper | SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3;
+            --bg2: #f0ede6;
+            --bg3: #e8e4db;
+            --white: #ffffff;
+            --ink: #1c1a17;
+            --ink2: #3d3a34;
+            --ink3: #6b6760;
+            --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e;
+            --acc-l: #fdf3eb;
+            --acc-b: #f5c99a;
+            --green: #1d6b45;
+            --green-l: #edf8f2;
+            --green-b: #9fd9bc;
+            --blue: #1a4f8a;
+            --blue-l: #edf2fb;
+            --blue-b: #afc8ef;
+            --amber: #7a5200;
+            --amber-l: #fdf8ec;
+            --amber-b: #e8d08a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            font-family: 'Source Serif 4', serif;
+            background-color: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+        }
+
+        nav {
+            position: sticky; top: 0; height: 54px;
+            background: rgba(248,247,243,0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--rule);
+            display: flex; align-items: center;
+            padding: 0 2rem; z-index: 1000;
+        }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background-color: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 64px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background-color: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 16px; }
+        .section-prose { font-size: 15px; color: var(--ink2); line-height: 1.7; margin-bottom: 20px; }
+        .section-prose p { margin-bottom: 10px; }
+
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .code-block { border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background-color: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background-color: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+        .code-full-width { margin-bottom: 24px; }
+
+        .insight {
+            background-color: var(--acc-l); border-left: 4px solid var(--acc);
+            padding: 16px 20px; border-radius: 0 8px 8px 0;
+            margin-bottom: 24px; font-size: 14px; line-height: 1.6; color: var(--ink2);
+        }
+
+        table {
+            width: 100%; border-collapse: collapse; margin-bottom: 24px;
+            background-color: var(--white); border: 1px solid var(--rule);
+            border-radius: 10px; overflow: hidden;
+        }
+        thead { background-color: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 13px; }
+        td { padding: 10px 16px; border-bottom: 1px solid var(--bg3); font-size: 13px; }
+        td code { font-family: 'JetBrains Mono', monospace; background-color: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+        tr:last-child td { border-bottom: none; }
+
+        .key-takeaways {
+            background-color: var(--green-l); border-left: 4px solid var(--green);
+            padding: 24px 28px; border-radius: 0 12px 12px 0; margin-bottom: 48px;
+        }
+        .key-takeaways h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+        .key-takeaways ul { list-style: none; padding-left: 0; }
+        .key-takeaways li { margin-bottom: 8px; padding-left: 24px; position: relative; font-size: 14px; line-height: 1.6; color: var(--ink2); }
+        .key-takeaways li::before { content: "\2713"; position: absolute; left: 0; color: var(--green); font-weight: bold; }
+
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
+        .nav-item { background-color: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background-color: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 19</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<nav>
-  <div class="wrap nav-inner">
-    <a href="index.html" class="nav-brand">
-      SQL to C#
-      <span class="nav-pill">Chapter 19</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">← All Chapters</a></li>
-    </ul>
-  </div>
-</nav>
-
-<main>
-  <div class="wrap">
-    <header class="chapter-header">
-      <div class="chapter-num">Part 5: Dapper and Micro-ORMs</div>
-      <h1>Object Mapping — SQL Results to C# Objects<br>Conventions, Handlers, and Advanced Techniques</h1>
-      <p class="chapter-desc">Dapper's greatest strength is its ability to map SQL query results directly to C# objects with minimal configuration. Understanding how Dapper maps columns to properties, how to handle type conversions, and when to use dynamic results vs typed objects will make you a proficient Dapper developer. This chapter covers convention-based mapping, type handlers, records, QueryMultiple, and practical patterns for every mapping scenario.</p>
-    </header>
-
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>How Dapper Maps Results — Reflection-based convention matching and caching</li>
-        <li>Convention-Based Mapping — Case-insensitive column-to-property matching</li>
-        <li>Column Aliases for Name Mismatches — Bridging SQL names and C# property names</li>
-        <li>Custom Type Handlers — Mapping custom types, DateOnly, TimeOnly, JSON columns</li>
-        <li>Mapping to Records, Structs, and Value Objects — Beyond classes</li>
-        <li>QueryMultiple: Multiple Result Sets — Getting multiple queries in one round trip</li>
-        <li>Dynamic Results and When to Use Them — ExpandoObject, Dictionary, and dynamic types</li>
-      </ul>
-    </div>
-
-    <section class="section">
-      <div class="section-num">01</div>
-      <h2>How Dapper Maps Results</h2>
-      <p class="section-text">
-        Dapper uses reflection to map SQL result columns to C# object properties. When you call <code>connection.Query<Customer>("SELECT * FROM Customers")</code>, Dapper examines the Customer class, finds its public properties, then matches them against the SQL result columns by name (case-insensitive). Each matching column value is assigned to the corresponding property via its setter. For performance, Dapper caches this mapping after the first execution, so subsequent calls are extremely fast.
-      </p>
-      <p class="section-text">
-        The algorithm is straightforward: for each column in the result set, find a property on the target class with the same name (ignoring case). If found, assign the value. If a column doesn't have a matching property, it's silently ignored. If a property doesn't have a matching column, it remains uninitialized (null for reference types, default for value types). This convention is so common that it requires almost no configuration in typical scenarios.
-      </p>
-      <p class="section-text">
-        The caching mechanism is crucial for Dapper's performance. The first time you execute a query mapping to Customer, Dapper builds and caches the mapping strategy using IL code generation. Subsequent executions reuse the cached strategy, avoiding reflection overhead entirely. This is why Dapper can be faster than Entity Framework for simple queries—there's minimal overhead once the cache is warm. The cache is per-type per-query result shape, so different queries mapping to the same class still benefit from caching.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Result Columns</span>
-          <code>-- SQL returns columns with specific names
-SELECT
-  Id,
-  FirstName,
-  LastName,
-  Email,
-  CreatedAt
-FROM Customers
-WHERE Id = 5;
-
--- Result columns (metadata):
--- Column 0: Id (INT)
--- Column 1: FirstName (NVARCHAR)
--- Column 2: LastName (NVARCHAR)
--- Column 3: Email (NVARCHAR)
--- Column 4: CreatedAt (DATETIME2)
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 19</div>
+            <h1>Object Mapping with Dapper</h1>
+            <p class="chapter-intro">Map SQL results to C# objects by property name convention, handle column name mismatches, and work with records, structs, and dynamic objects.</p>
         </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Property Mapping</span>
-          <code>// C# class with properties matching SQL columns
+
+        <!-- SECTION 01: Convention Mapping -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">01</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Convention-Based Mapping</h2>
+
+            <div class="section-prose">
+                <p>Dapper matches SQL column names to C# property names (case-insensitive). The SQL column name must exactly match the property name.</p>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT Id, FirstName, LastName, Email
+FROM Customers</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Customer
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Email { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight">
+                <strong>Matching rule:</strong> Column names are matched case-insensitively to property names. <code>FirstName</code> in SQL maps to <code>FirstName</code> in C#.
+            </div>
+        </section>
+
+        <!-- SECTION 02: Column Name Mismatches -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">02</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Handling Column Name Mismatches</h2>
+
+            <div class="section-prose">
+                <p>When SQL column names don't match C# properties, use SQL aliases to rename columns.</p>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL with Aliases</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT user_id AS Id,
+       first_name AS FirstName,
+       last_name AS LastName
+FROM users</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C#</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await connection.QueryAsync&lt;Customer&gt;(sql);
+
 public class Customer
 {
-  public int Id { get; set; }
-  public string FirstName { get; set; }
-  public string LastName { get; set; }
-  public string Email { get; set; }
-  public DateTime CreatedAt { get; set; }
-}
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
 
-// Dapper's mapping algorithm:
-// 1. Read result column metadata (names, types)
-// 2. For each column, find property by name (case-insensitive)
-// 3. Convert SQL value to CLR type if needed
-// 4. Assign to property via setter
-// 5. Cache the mapping strategy for future queries
+            <div class="insight">
+                <strong>Aliasing:</strong> Always use <code>AS PropertyName</code> in your SQL query to match C# property names exactly.
+            </div>
+        </section>
 
-// Usage:
-var customers = connection.Query<Customer>(
-  "SELECT Id, FirstName, LastName, Email, CreatedAt FROM Customers"
-).ToList();
+        <!-- SECTION 03: Records & Readonly Structs -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">03</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Records and Readonly Structs</h2>
 
-// Dapper internally:
-// SqlDataReader reader = cmd.ExecuteReader();
-// var mapping = GetOrBuildMapping(reader, typeof(Customer));
-// while (reader.Read())
-// {
-//   var customer = new Customer();
-//   customer.Id = (int)reader[0];
-//   customer.FirstName = (string)reader[1];
-//   customer.LastName = (string)reader[2];
-//   customer.Email = (string)reader[3];
-//   customer.CreatedAt = (DateTime)reader[4];
-//   yield return customer;
-// }
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Property Mapping and Caching</span>
-          <code>public class Customer
+            <div class="section-prose">
+                <p>Dapper supports records (C# 9+) and structs for immutable mapping targets. Perfect for read-only query results.</p>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C# — Record Class</div>
+                <div class="code-block csharp-block">
+                    <pre>public record Customer(int Id, string FirstName, string LastName, string Email);
+
+var customers = await connection.QueryAsync&lt;Customer&gt;(sql);
+// Results are immutable records</pre>
+                </div>
+            </div>
+
+            <div class="code-full-width">
+                <div class="code-label">C# — Readonly Struct</div>
+                <div class="code-block csharp-block">
+                    <pre>public readonly struct CustomerInfo
 {
-  public int Id { get; set; }
-  public string FirstName { get; set; }
-  public string LastName { get; set; }
-  public string Email { get; set; }
-  public DateTime CreatedAt { get; set; }
+    public int Id { get; init; }
+    public string FirstName { get; init; }
+    public string LastName { get; init; }
 }
 
-// Usage with Dapper
-var customers = connection.Query<Customer>(
-  "SELECT Id, FirstName, LastName, Email, CreatedAt FROM Customers"
-).ToList();
+var customers = await connection.QueryAsync&lt;CustomerInfo&gt;(sql);</pre>
+                </div>
+            </div>
 
-// First execution: Dapper builds mapping via reflection and IL
-// Second execution: Dapper reuses cached mapping (very fast)
-// Third+ executions: Cache hit every time
+            <div class="insight">
+                <strong>When to use:</strong> Records for immutable DTOs. Structs for value-type semantics or memory efficiency in large collections.
+            </div>
+        </section>
 
-        </div>
+        <!-- SECTION 04: Dynamic Objects -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">04</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Dynamic Results</h2>
 
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Dapper caches mappings for performance. First execution builds the mapping via reflection. Subsequent executions reuse the cached strategy. This makes Dapper very fast once warmed up. The cache is per-type-per-query-result-shape, so different queries to the same class benefit from caching.</p>
-      </div>
-    </section>
+            <div class="section-prose">
+                <p>Query without defining a class using <code>Query&lt;dynamic&gt;</code>. Each row is a <code>DynamicObject</code> with properties matching column names.</p>
+            </div>
 
-    <section class="section">
-      <div class="section-num">02</div>
-      <h2>Convention-Based Mapping</h2>
-      <p class="section-text">
-        Dapper's convention is simple: column names (case-insensitive) are matched to property names. FirstName matches firstname, FIRSTNAME, or FirstName. But first_name does not match FirstName. This is Dapper's straightforward approach—no complex name transformations.
-      </p>
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>var results = await connection.QueryAsync&lt;dynamic&gt;(
+    "SELECT Id, FirstName, LastName FROM Customers");
 
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Mapping Scenarios</span>
-        <code>// Scenario 1: Perfect PascalCase match
-var perfect = connection.Query<Customer>(
-  "SELECT Id, FirstName, LastName, Email FROM Customers"
-).ToList();
-// All columns match perfectly
-
-// Scenario 2: Case-insensitive (all work the same)
-var lowercase = connection.Query<Customer>(
-  "SELECT id, firstname, lastname, email FROM customers"
-).ToList();
-// Still matches (case is ignored)
-
-// Scenario 3: snake_case DOES NOT match PascalCase
-var snakecase = connection.Query<Customer>(
-  "SELECT id, first_name, last_name, email FROM customers"
-).ToList();
-// first_name does NOT match FirstName!
-// FirstName property will be null (mistake!)
-
-// Solution: Use aliases for snake_case
-var withAlias = connection.Query<Customer>(
-  "SELECT id AS Id, first_name AS FirstName, " +
-  "last_name AS LastName, email AS Email FROM customers"
-).ToList();
-// Now it works perfectly
-        </div>
-
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Column naming must match property names exactly (case-insensitive). Snake_case doesn't automatically convert to PascalCase. Use SQL aliases to bridge naming mismatches. This is the most common source of mapping bugs.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">03</div>
-      <h2>Column Aliases for Name Mismatches</h2>
-      <p class="section-text">
-        SQL aliases solve naming mismatches when you can't change the C# class or the database schema. SELECT customer_id AS CustomerId creates an alias that Dapper sees as the column name. This is the standard solution for legacy databases with snake_case columns and modern C# classes with PascalCase properties.
-      </p>
-
-      <div class="code-block-single sql">
-        <span class="code-label">SQL: Using Aliases</span>
-        <code>SELECT
-  customer_id AS CustomerId,
-  full_name AS FullName,
-  email_address AS Email,
-  created_at AS CreatedAt
-FROM legacy_customers
-WHERE customer_id = 5;</code>
-      </div>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Mapping with Aliases</span>
-        <code>public class Customer
+foreach (dynamic customer in results)
 {
-  public int CustomerId { get; set; }
-  public string FullName { get; set; }
-  public string Email { get; set; }
-  public DateTime CreatedAt { get; set; }
-}
+    Console.WriteLine($"{customer.FirstName} {customer.LastName}");
+    int id = (int)customer.Id;  // Must cast primitive types
+}</pre>
+                </div>
+            </div>
 
-// With aliases: perfect mapping
-var customers = connection.Query<Customer>(
-  "SELECT customer_id AS CustomerId, full_name AS FullName, " +
-  "email_address AS Email, created_at AS CreatedAt FROM customers"
-).ToList();
+            <div class="insight">
+                <strong>Dynamic trade-off:</strong> Flexible but no compile-time type safety. Requires casting for primitives. Use for exploratory queries only.
+            </div>
+        </section>
 
-        </div>
+        <!-- SECTION 05: QueryMultiple -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">05</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Multiple Result Sets</h2>
 
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Aliases are the standard solution for schema naming mismatches. Use them liberally when you can't change C# classes or database columns. This is professional, production-grade code—never assume names will match.</p>
-      </div>
+            <div class="section-prose">
+                <p>Use <code>QueryMultiple</code> to execute multiple SELECT statements in one round trip and get multiple result sets back.</p>
+            </div>
 
-      <p class="section-text">
-        In real projects, you'll encounter legacy databases with inconsistent naming. Some tables use snake_case, others camelCase, some abbreviate column names cryptically. SQL aliases bridge this gap elegantly. As a best practice, your SELECT statements should always use clear, meaningful aliases that match your C# properties, regardless of how the database names columns.
-      </p>
+            <div class="code-full-width">
+                <div class="code-label">SQL</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT * FROM Customers;
+SELECT * FROM Orders;</pre>
+                </div>
+            </div>
 
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Comprehensive Aliasing Example</span>
-        <code>// Legacy messy database
-// Tables: tblCustomer, tblOrder
-// Columns: cust_id, cust_name, ord_date, ord_amt
+            <div class="code-full-width">
+                <div class="code-label">C#</div>
+                <div class="code-block csharp-block">
+                    <pre>var sql = @"SELECT * FROM Customers;
+            SELECT * FROM Orders;";
 
-public class CustomerSummary
-{
-  public int CustomerId { get; set; }
-  public string CustomerName { get; set; }
-  public int OrderCount { get; set; }
-  public decimal TotalAmount { get; set; }
-}
+using var multi = await connection.QueryMultipleAsync(sql);
+var customers = await multi.ReadAsync&lt;Customer&gt;();
+var orders = await multi.ReadAsync&lt;Order&gt;();</pre>
+                </div>
+            </div>
 
-// Clean SQL with aliases
-var query = @"
-SELECT
-  c.cust_id AS CustomerId,
-  c.cust_name AS CustomerName,
-  COUNT(o.ord_id) AS OrderCount,
-  COALESCE(SUM(o.ord_amt), 0) AS TotalAmount
-FROM tblCustomer c
-LEFT JOIN tblOrder o ON c.cust_id = o.cust_id
-GROUP BY c.cust_id, c.cust_name
-";
+            <div class="insight">
+                <strong>Efficiency:</strong> One network round trip for multiple queries. Each <code>Read&lt;T&gt;()</code> consumes the next result set in order.
+            </div>
+        </section>
 
-var results = connection.Query<CustomerSummary>(query).ToList();
-// Perfect mapping despite messy database names
+        <!-- SECTION 06: Custom Type Handlers -->
+        <section class="section">
+            <div class="section-header">
+                <span class="sec-num">06</span>
+                <div class="sec-rule"></div>
+            </div>
+            <h2>Custom Type Handlers</h2>
 
-        </div>
+            <div class="section-prose">
+                <p>Handle custom types or unsupported database types with <code>SqlMapper.AddTypeHandler&lt;T&gt;</code>.</p>
+            </div>
 
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Aliases bridge naming gaps between database and C#. Use them liberally for snake_case or abbreviated column names. Your SELECT statement is where the mapping happens—make it explicit and clear.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">04</div>
-      <h2>Custom Type Handlers</h2>
-      <p class="section-text">
-        Sometimes Dapper can't automatically convert a SQL type to a C# type. DateOnly (C# 6.0+) doesn't have a direct SQL Server equivalent. JSON columns are stored as NVARCHAR but need to map to objects. Custom type handlers register converters for specific types. Register them once at startup, and Dapper uses them automatically.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Custom Type Handlers</span>
-        <code>// Handler for DateOnly
-public class DateOnlyHandler : SqlMapper.TypeHandler<DateOnly>
-{
-  public override DateOnly Parse(object value)
-  {
-    return DateOnly.FromDateTime((DateTime)value);
-  }
-
-  public override void SetValue(IDbDataParameter parameter, DateOnly value)
-  {
-    parameter.Value = value.ToDateTime(TimeOnly.MinValue);
-  }
-}
-
-// Register at startup
-SqlMapper.AddTypeHandler(new DateOnlyHandler());
-
-// Now this works:
-public class Event
-{
-  public int Id { get; set; }
-  public DateOnly EventDate { get; set; }
-}
-
-var events = connection.Query<Event>(
-  "SELECT Id, EventDate FROM Events"
-).ToList();
-// EventDate (DATETIME in SQL) auto-converts to DateOnly
-
-// JSON handler example
-public class JsonHandler<T> : SqlMapper.TypeHandler<T>
-  where T : class
-{
-  public override T Parse(object value)
-  {
-    var json = (string)value;
-    return JsonConvert.DeserializeObject<T>(json);
-  }
-
-  public override void SetValue(IDbDataParameter parameter, T value)
-  {
-    parameter.Value = JsonConvert.SerializeObject(value);
-  }
-}
-
-// Register JSON handler for specific types
-SqlMapper.AddTypeHandler(
-  new JsonHandler<List<string>>()
+            <div class="code-full-width">
+                <div class="code-label">C# — Custom Type Handler</div>
+                <div class="code-block csharp-block">
+                    <pre>// Register a handler for a custom type
+SqlMapper.AddTypeHandler&lt;MyCustomType&gt;(
+    parse: (value) => {
+        // Convert from DB value (object) to MyCustomType
+        return new MyCustomType((string)value);
+    },
+    setNull: (cmd, param, dbType) => {
+        cmd.Parameters.Add(param).Value = DBNull.Value;
+    }
 );
 
-public class Product
-{
-  public int Id { get; set; }
-  public string Name { get; set; }
-  public List<string> Tags { get; set; }  // Maps from JSON column
-}
+// Now queries work transparently
+var result = connection.Query&lt;MyClass&gt;("SELECT ... FROM ...").ToList();</pre>
+                </div>
+            </div>
 
-var products = connection.Query<Product>(
-  "SELECT Id, Name, Tags FROM Products"
-).ToList();
-// Tags (JSON_NVARCHAR in SQL) auto-deserializes to List<string>
+            <div class="insight">
+                <strong>Use case:</strong> Map database JSON/XML to C# objects, or handle database-specific types like PostgreSQL enums.
+            </div>
+        </section>
 
+        <!-- Key Takeaways -->
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Dapper maps columns to properties by name (case-insensitive).</li>
+                <li>Use SQL aliases (<code>AS PropertyName</code>) when column names don't match properties.</li>
+                <li>Support for records, structs, and classes — choose based on immutability needs.</li>
+                <li><code>Query&lt;dynamic&gt;</code> for schemaless results, but lose compile-time safety.</li>
+                <li><code>QueryMultiple</code> combines multiple SELECT statements in one round trip.</li>
+                <li>Custom type handlers map unsupported database types to C# types.</li>
+            </ul>
         </div>
 
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Custom type handlers extend Dapper's mapping capabilities. Register them once at startup, and Dapper uses them automatically for all queries. This is the mechanism for supporting modern C# types (DateOnly, TimeOnly) and custom scenarios (JSON columns, enums).</p>
-      </div>
-
-      <p class="section-text">
-        Type handlers are powerful for bridging SQL and C# type systems. DateOnly is a C# 6.0+ type with no direct SQL equivalent—you store it as DATETIME2, then convert on read/write. JSON columns in SQL Server (JSON datatype or NVARCHAR with JSON content) need deserialization. Custom value types or domain objects need handlers. The handler pattern is extensible and clean.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: More Type Handlers</span>
-        <code>// Enum handler
-public class EnumHandler<T> : SqlMapper.TypeHandler<T>
-  where T : struct, Enum
-{
-  public override T Parse(object value)
-  {
-    if (value == null) return default;
-    if (value is T) return (T)value;
-    if (value is string str)
-      return Enum.Parse<T>(str, ignoreCase: true);
-    return (T)Enum.ToObject(typeof(T), value);
-  }
-
-  public override void SetValue(IDbDataParameter parameter, T value)
-  {
-    parameter.Value = value.ToString();
-  }
-}
-
-// TimeOnly handler
-public class TimeOnlyHandler : SqlMapper.TypeHandler<TimeOnly>
-{
-  public override TimeOnly Parse(object value)
-  {
-    var ts = (TimeSpan)value;
-    return TimeOnly.FromTimeSpan(ts);
-  }
-
-  public override void SetValue(IDbDataParameter parameter, TimeOnly value)
-  {
-    parameter.Value = value.ToTimeSpan();
-  }
-}
-
-// Register at startup
-SqlMapper.AddTypeHandler(new TimeOnlyHandler());
-SqlMapper.AddTypeHandler(new EnumHandler<OrderStatus>());
-
-// Now use them:
-public enum OrderStatus { Pending, Shipped, Delivered }
-
-public class Order
-{
-  public int Id { get; set; }
-  public TimeOnly DeliveryTime { get; set; }
-  public OrderStatus Status { get; set; }
-}
-
-var orders = connection.Query<Order>(
-  "SELECT Id, DeliveryTime, Status FROM Orders"
-).ToList();
-// TimeOnlyHandler and EnumHandler are used automatically
-
+        <!-- Chapter Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch18-dapper-connection.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Connection & Queries</span>
+            </a>
+            <a class="nav-item" href="ch20-multi-mapping.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Multi-Mapping</span>
+            </a>
         </div>
+    </main>
 
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Custom type handlers register converters for types Dapper doesn't natively support. Register once at startup, use everywhere. This is clean, reusable, and follows the handler pattern.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">05</div>
-      <h2>Mapping to Records, Structs, and Value Objects</h2>
-      <p class="section-text">
-        Dapper works with more than just classes. C# 9 records provide immutable mapping targets. Structs map similarly to classes. This flexibility lets you use the right C# type for each situation.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Records, Structs, and Value Objects</span>
-        <code>// Record: immutable mapping target
-public record Customer(int Id, string FirstName, string LastName, string Email);
-
-var customers = connection.Query<Customer>(
-  "SELECT Id, FirstName, LastName, Email FROM Customers"
-).ToList();
-// Dapper constructs records via positional parameters
-
-// Struct: value type mapping
-public struct CustomerId
-{
-  public int Value { get; set; }
-}
-
-// Readonly struct (immutable)
-public readonly struct Money
-{
-  public decimal Amount { get; init; }
-  public string Currency { get; init; }
-}
-
-// Init-only properties (C# 9)
-public class Order
-{
-  public int Id { get; init; }
-  public DateTime CreatedAt { get; init; }
-  public decimal Total { get; init; }
-}
-
-var orders = connection.Query<Order>(
-  "SELECT Id, CreatedAt, Total FROM Orders"
-).ToList();
-// Dapper assigns to init properties
-
-        </div>
-
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Records provide immutable, concise mapping targets. Structs are value types useful for small objects. Init-only properties create read-only semantics. Choose based on your domain model needs, not just convenience.</p>
-      </div>
-
-      <p class="section-text">
-        Records (C# 9+) are ideal for DTOs and immutable value objects. They support positional construction, which Dapper uses automatically. Structs are value types, useful for small, frequently-copied objects. Init-only properties (init accessor, C# 9+) create immutability after construction. All work seamlessly with Dapper's mapping.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Advanced Record and Value Object Patterns</span>
-        <code>// Record with positional constructor
-public record CustomerRecord(
-  int Id,
-  string FirstName,
-  string LastName,
-  string Email);
-
-var customers = connection.Query<CustomerRecord>(
-  "SELECT Id, FirstName, LastName, Email FROM Customers"
-).ToList();
-// Dapper constructs records via positional parameters
-
-// Record with named parameters (alternative syntax)
-public record Product
-{
-  public int Id { get; init; }
-  public string Name { get; init; }
-  public decimal Price { get; init; }
-}
-
-var products = connection.Query<Product>(
-  "SELECT Id, Name, Price FROM Products"
-).ToList();
-// Init properties provide immutability
-
-// Nested record
-public record OrderData(
-  int OrderId,
-  CustomerRecord Customer,
-  decimal Total)
-{
-  // Note: nested objects don't auto-populate in Dapper
-  // You'd need to handle this with projection or multi-mapping
-}
-
-// Value type for IDs (strong typing)
-public readonly record struct CustomerId(int Value);
-public readonly record struct OrderId(int Value);
-
-// Prevents mixing Customer IDs and Order IDs by mistake
-public class OrderWithStrongTypes
-{
-  public OrderId Id { get; init; }
-  public CustomerId CustomerId { get; init; }
-  public DateTime CreatedAt { get; init; }
-}
-
-// Mapping with value record structs
-var orders = connection.Query<OrderWithStrongTypes>(
-  "SELECT Id, CustomerId, CreatedAt FROM Orders"
-).ToList();
-// Dapper creates CustomerId(value) and OrderId(value) automatically
-      <h2>QueryMultiple: Multiple Result Sets</h2>
-      <p class="section-text">
-        QueryMultiple executes multiple SQL queries and returns their results together in a single round trip to the database. This is useful when you need multiple datasets: customers and their orders, or product list and categories. You read results sequentially via Read<T>().
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: QueryMultiple Example</span>
-        <code>var sql = @"
-SELECT Id, FirstName, Email FROM Customers;
-SELECT Id, CustomerId, OrderDate, Total FROM Orders;
-SELECT COUNT(*) FROM Products;
-";
-
-using (var multi = connection.QueryMultiple(sql))
-{
-  var customers = multi.Read<Customer>().ToList();
-  var orders = multi.Read<Order>().ToList();
-  var productCount = multi.ReadSingle<int>();
-
-  Console.WriteLine($"Customers: {customers.Count}");
-  Console.WriteLine($"Orders: {orders.Count}");
-  Console.WriteLine($"Products: {productCount}");
-}
-
-// All three queries execute in one round trip
-// More efficient than three separate connections
-
-        </div>
-
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>QueryMultiple batches multiple SQL queries in one round trip. No connection overhead between queries. Ideal for fetching related data: a customer and their orders, a product and its reviews. More efficient than multiple separate Query() calls.</p>
-      </div>
-
-      <p class="section-text">
-        Network round trips are expensive. Each Query() call opens a connection, executes, reads results, and closes. QueryMultiple executes all queries in one connection. The results are read sequentially via Read<T>(), ReadSingle<T>(), or ReadSingleOrDefault<T>(). This is essential for performance-conscious code.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Advanced QueryMultiple Patterns</span>
-        <code>// Complex multi-query scenario
-var sql = @"
--- Query 1: Get customer
-SELECT Id, FirstName, Email FROM Customers WHERE Id = @CustomerId;
-
--- Query 2: Get their orders
-SELECT Id, OrderDate, Total FROM Orders WHERE CustomerId = @CustomerId ORDER BY OrderDate DESC;
-
--- Query 3: Get product recommendations
-SELECT p.Id, p.Name, p.Price
-FROM Products p
-WHERE p.CategoryId IN (
-  SELECT DISTINCT CategoryId FROM OrderItems oi
-  JOIN Orders o ON oi.OrderId = o.Id
-  WHERE o.CustomerId = @CustomerId
-)
-LIMIT 5;
-
--- Query 4: Get summary stats
-SELECT COUNT(*) as TotalOrders, SUM(Total) as LifetimeValue
-FROM Orders WHERE CustomerId = @CustomerId;
-";
-
-using (var multi = connection.QueryMultiple(sql, new { CustomerId = 5 }))
-{
-  var customer = multi.ReadSingle<Customer>();
-  var orders = multi.Read<Order>().ToList();
-  var recommendations = multi.Read<Product>().ToList();
-  var stats = multi.ReadSingle<OrderStats>();
-
-  Console.WriteLine($\"{customer.FirstName} ({orders.Count} orders)\");
-  Console.WriteLine($\"Lifetime value: {stats.LifetimeValue:C}\");
-}
-
-// Best practice: reusable method
-public (Customer, List<Order>, List<Product>, OrderStats) GetCustomerData(int customerId)
-{
-  var sql = @"[multi-query SQL above]";
-  using (var multi = connection.QueryMultiple(sql, new { customerId }))
-  {
-    var customer = multi.ReadSingle<Customer>();
-    var orders = multi.Read<Order>().ToList();
-    var products = multi.Read<Product>().ToList();
-    var stats = multi.ReadSingle<OrderStats>();
-    return (customer, orders, products, stats);
-  }
-}
-
-        </div>
-
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>QueryMultiple reduces network round trips and improves performance. Batch related queries together. Ideal for fetching a parent with related children, or fetching summary data alongside detailed data.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">07</div>
-      <h2>Dynamic Results and When to Use Them</h2>
-      <p class="section-text">
-        Dapper can return dynamic objects instead of typed classes. No class definition needed. Dynamic is flexible but loses IntelliSense and type safety. Use it for reporting queries, exploratory data work, or legacy adapters where you don't know the schema in advance. For production APIs and domain code, always use typed objects.
-      </p>
-      <p class="section-text">
-        When you call Query without a generic type (or use Query<dynamic>), Dapper returns dynamic objects. You access columns by property name: row.FirstName, row.Email. If you misspell a column name, you get a runtime error—there's no compile-time checking. This flexibility comes at a cost: slower due to runtime reflection and harder to debug and maintain.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Dynamic Mapping</span>
-        <code>// Dynamic: no class needed
-var customers = connection.Query("SELECT * FROM Customers").ToList();
-dynamic first = customers[0];
-Console.WriteLine(first.FirstName);  // No intellisense
-
-// ExpandoObject: dict-like dynamic
-var customers2 = connection.Query<dynamic>(
-  "SELECT * FROM Customers"
-).ToList();
-IDictionary<string, object> row = customers2[0];
-Console.WriteLine(row["FirstName"]);
-
-// Dictionary: explicit key-value
-var customers3 = connection.Query<Dictionary<string, object>>(
-  "SELECT * FROM Customers"
-).ToList();
-Console.WriteLine(customers3[0]["FirstName"]);
-
-// Pros: flexible, no class needed
-// Cons: no type checking, slower, no intellisense
-// Use: exploratory queries, dynamic reports, legacy adapters
-
-        </div>
-
-      <div class="key-insight">
-        <strong>Key Insight:</strong>
-        <p>Dynamic objects are flexible but sacrifice type safety and performance. Use typed objects for production code. Use dynamic only for truly dynamic scenarios (reporting, exploratory queries, legacy adapters).</p>
-      </div>
-
-      <p class="section-text">
-        Dynamic results are appropriate in a few scenarios: building a generic data export tool (where schema is unknown), ad-hoc reporting (users query arbitrary tables), or adapting legacy systems. For all permanent business code, use typed objects. Types provide compile-time checking, IntelliSense, performance, and maintainability.
-      </p>
-
-      <div class="code-block-single csharp">
-        <span class="code-label">C#: Typed vs Dynamic Comparison</span>
-        <code>// TYPED: Best for production code
-public class Customer
-{
-  public int Id { get; set; }
-  public string FirstName { get; set; }
-  public string Email { get; set; }
-}
-
-var typedCustomers = connection.Query<Customer>(
-  "SELECT Id, FirstName, Email FROM Customers"
-).ToList();
-
-foreach (var c in typedCustomers)
-{
-  Console.WriteLine(c.FirstName);  // IntelliSense ✓
-  // Compile-time checking ✓
-  // Fast ✓
-}
-
-// DYNAMIC: Only for special cases
-var dynamicCustomers = connection.Query(
-  "SELECT Id, FirstName, Email FROM Customers"
-).ToList();
-
-foreach (var c in dynamicCustomers)
-{
-  Console.WriteLine(c.FirstName);  // No IntelliSense
-  // Runtime errors if column misspelled
-  // Slower due to reflection
-}
-
-// RULE: Use typed for 95% of code, dynamic for 5% (special cases)
-      <h3>Key Takeaways</h3>
-      <ul>
-        <li>Dapper's mapping uses reflection to match SQL column names to C# property names, case-insensitively. The mapping is cached for performance.</li>
-        <li>Column names must match property names exactly (case-insensitive). FirstName matches firstname but NOT first_name.</li>
-        <li>Use SQL aliases to bridge naming mismatches. SELECT column_name AS PropertyName converts snake_case to PascalCase.</li>
-        <li>Custom type handlers register converters for types Dapper doesn't natively support (DateOnly, JSON columns, etc.).</li>
-        <li>Map to records (immutable), structs, classes, or even dictionaries. Choose based on your needs.</li>
-        <li>QueryMultiple executes multiple SQL queries in a single round trip, efficient for fetching related datasets.</li>
-        <li>Dynamic objects offer flexibility but lose type safety and performance. Use typed objects in production code.</li>
-        <li>Always verify your column names match your property names. This is the most common mapping bug.</li>
-        <li>Dapper's simplicity and speed come from its straightforward mapping algorithm. No magic, just convention.</li>
-        <li>For complex scenarios (many relationships, nested objects), consider Entity Framework. For simple CRUD with performance, Dapper wins.</li>
-        <li>Register custom type handlers at startup (in Startup.cs or Program.cs). They apply to all subsequent queries automatically.</li>
-        <li>Records provide concise, immutable mapping targets. Prefer records for DTOs and read-only data.</li>
-        <li>QueryMultiple is essential for performance. Batch multiple related queries in one round trip instead of separate calls.</li>
-        <li>Understand the impedance mismatch: SQL returns flat rows; C# has objects with properties. Dapper bridges this gap with mapping.</li>
-        <li>Caching is automatic and transparent. Don't worry about performance of the first query—subsequent queries use the cached mapping.</li>
-        <li>Test your mappings! Verify that all SQL columns map to properties correctly. A missing column becomes a null property with no warning.</li>
-        <li>Document unusual mappings or complex type handlers. Future maintainers need to understand why the mapping exists.</li>
-        <li>Dapper is fastest when you know your schema and can write precise, simple queries. The fewer columns you select, the faster the mapping.</li>
-      </ul>
-    </div>
-
-    <div class="chapter-nav">
-      <a href="ch18-dapper-connection.html" class="nav-item prev">
-        <span class="nav-label">← Previous Chapter</span>
-        <span class="nav-title">Dapper Connection</span>
-      </a>
-      <a href="ch20-multi-mapping.html" class="nav-item next">
-        <span class="nav-label">Next Chapter →</span>
-        <span class="nav-title">Multi-Mapping</span>
-      </a>
-    </div>
-  </div>
-</main>
-
-<footer>
-  <div class="wrap">
-    <div class="footer-content">
-      <div class="footer-section">
-        <h4>About This Book</h4>
-        <p>SQL to C# is a comprehensive guide to data access in .NET. Learn to think in both SQL and object-oriented programming, and master LINQ, Entity Framework, and Dapper.</p>
-      </div>
-      <div class="footer-section">
-        <h4>Quick Links</h4>
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="index.html#chapters">All Chapters</a></li>
-          <li><a href="https://github.com/yousafzainasir9">GitHub</a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4>Topics Covered</h4>
-        <ul>
-          <li><a href="#">LINQ & Lambda Expressions</a></li>
-          <li><a href="#">Entity Framework Core</a></li>
-          <li><a href="#">Dapper & Micro-ORMs</a></li>
-          <li><a href="#">Query Optimization</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; 2026 SQL to C#. Built for developers who think in both SQL and C#.</p>
-    </div>
-  </div>
-</footer>
-
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

@@ -1,1339 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 14: Loading Strategies — Eager, Lazy, Explicit — SQL to C#</title>
-<meta name="description" content="Master EF Core loading strategies: eager with Include/ThenInclude, lazy with virtual properties, explicit loading, N+1 detection, AsSplitQuery, and projection-based loading.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff; --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e; --rule: #dedad3; --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a; --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc; --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
-nav { position: sticky; top: 0; z-index: 100; height: 54px; display: flex; align-items: center; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--acc); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.nav-pill { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; background: var(--acc); color: var(--white); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-.nav-links { display: flex; gap: 24px; list-style: none; }
-.nav-links a { font-size: 13px; font-weight: 500; color: var(--ink3); text-decoration: none; transition: color .2s; }
-.nav-links a:hover { color: var(--acc); }
-.chapter-header { padding: 60px 0 50px; border-bottom: 1px solid var(--rule); margin-bottom: 50px; }
-.chapter-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: var(--acc); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
-.chapter-header h1 { font-size: clamp(32px, 4vw, 42px); font-weight: 800; line-height: 1.1; margin-bottom: 15px; color: var(--ink); }
-.chapter-desc { font-family: 'Source Serif 4', serif; font-size: 17px; font-weight: 300; color: var(--ink2); line-height: 1.7; max-width: 640px; }
-.in-this-chapter { background: var(--white); border: 1px solid var(--rule); border-radius: 12px; padding: 30px; margin-bottom: 60px; }
-.in-this-chapter h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink); margin-bottom: 16px; }
-.in-this-chapter ul { list-style: none; padding: 0; }
-.in-this-chapter li { font-family: 'Source Serif 4', serif; font-size: 15px; color: var(--ink2); padding: 6px 0; padding-left: 20px; position: relative; }
-.in-this-chapter li:before { content: "→"; position: absolute; left: 0; color: var(--acc); font-weight: 600; }
-.section { margin-bottom: 70px; }
-.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; color: var(--acc); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-.section-num::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
-.section h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--ink); line-height: 1.15; }
-.section-text { font-family: 'Source Serif 4', serif; font-size: 16px; font-weight: 300; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; max-width: 750px; }
-.section-text p { margin-bottom: 14px; }
-.code-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-.code-comparison.two-col { grid-template-columns: 1fr 1fr; }
-.code-block { border-radius: 12px; padding: 24px; overflow-x: auto; }
-.code-block.sql { background: var(--ink); border: 1px solid #2a2824; }
-.code-block.csharp { background: var(--blue-l); border: 1px solid var(--blue-b); }
-.code-block.csharp-query { background: #f0e8f8; border: 1px solid #dcc8e8; }
-.code-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px; display: block; }
-.code-block.sql .code-label { color: var(--acc-b); }
-.code-block.csharp .code-label { color: var(--blue); }
-.code-block.csharp-query .code-label { color: #6b4d9a; }
-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 400; line-height: 1.6; display: block; white-space: pre-wrap; word-break: break-word; }
-.code-block.sql code { color: #e8e4db; }
-.code-block.csharp code { color: var(--ink); }
-.code-block.csharp-query code { color: #2a1a4a; }
-.code-single { margin-bottom: 28px; }
-.code-single .code-block { max-width: 100%; }
-.key-insight { border-left: 4px solid var(--acc); background: var(--acc-l); padding: 20px; padding-left: 24px; border-radius: 4px; margin-bottom: 28px; }
-.key-insight strong { font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; font-size: 14px; text-transform: uppercase; letter-spacing: .05em; }
-.key-insight p { font-family: 'Source Serif 4', serif; font-size: 15px; color: var(--ink2); margin: 0; line-height: 1.7; }
-.comparison-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; font-family: 'Source Serif 4', serif; font-size: 14px; }
-.comparison-table th { background: var(--bg3); border: 1px solid var(--rule); padding: 12px; text-align: left; font-weight: 600; color: var(--ink); }
-.comparison-table td { border: 1px solid var(--rule); padding: 12px; color: var(--ink2); }
-.comparison-table tr:nth-child(even) { background: var(--bg2); }
-.comparison-table .good { color: var(--green); font-weight: 600; }
-.comparison-table .bad { color: #c95f1a; font-weight: 600; }
-.comparison-table .neutral { color: var(--ink3); }
-.performance-metric { background: var(--green-l); border-left: 4px solid var(--green); padding: 15px; border-radius: 4px; margin-bottom: 20px; font-family: 'Source Serif 4', serif; }
-.performance-metric strong { color: var(--green); font-weight: 600; display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
-.performance-metric p { color: var(--ink2); font-size: 14px; margin: 0; }
-.key-takeaways { background: var(--white); border: 1px solid var(--rule); border-radius: 12px; padding: 30px; margin: 80px 0; }
-.key-takeaways h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ink); margin-bottom: 16px; }
-.key-takeaways ul { list-style: none; padding: 0; }
-.key-takeaways li { font-family: 'Source Serif 4', serif; font-size: 15px; color: var(--ink2); padding: 8px 0; padding-left: 20px; position: relative; }
-.key-takeaways li:before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
-.chapter-nav { display: flex; justify-content: space-between; align-items: center; padding: 40px 0; margin-top: 80px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
-.nav-item { text-decoration: none; display: flex; flex-direction: column; gap: 4px; }
-.nav-item.prev { align-items: flex-start; }
-.nav-item.next { align-items: flex-end; }
-.nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink3); font-weight: 600; }
-.nav-title { font-size: 16px; font-weight: 700; color: var(--acc); transition: color .2s; }
-.nav-item:hover .nav-title { color: var(--ink); }
-footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 60px 0; margin-top: 100px; }
-.footer-inner { text-align: center; font-family: 'Source Serif 4', serif; font-size: 14px; color: var(--ink3); }
-@media (max-width: 768px) { .code-comparison { grid-template-columns: 1fr; } .chapter-nav { flex-direction: column; gap: 30px; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 14: Loading Strategies — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
+
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-<nav>
-  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
-    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
-    </ul>
-  </div>
-</nav>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 14</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<div class="wrap">
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 14</div>
+            <h1>Loading Strategies</h1>
+            <p class="chapter-intro">Requirement: "Show customer details with their orders." How do you load related data? SQL developers write JOINs. C# developers choose between eager loading (Include), lazy loading (on-access), and explicit loading (manual). Each has trade-offs.</p>
+        </div>
 
-<div class="chapter-header">
-  <div class="chapter-num">Chapter 14</div>
-  <h1>Loading Strategies — Eager, Lazy, Explicit</h1>
-  <p class="chapter-desc">Master the art of loading related data in Entity Framework Core. Learn eager loading with Include/ThenInclude, lazy loading with virtual properties, explicit loading for on-demand access, detecting and preventing N+1 problems, AsSplitQuery patterns, and projection-based loading for optimal performance. Understand how ORM loading strategies solve the object-relational impedance mismatch and translate to different SQL queries.</p>
-</div>
+        <!-- 01: Eager Loading / Include -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Customer with All Their Orders"</h2>
 
-<div class="in-this-chapter">
-  <h3>In This Chapter</h3>
-  <ul>
-    <li>The object-relational impedance mismatch: how to load related data efficiently in ORM vs raw SQL</li>
-    <li>Eager loading with Include() and ThenInclude(): translating to SQL JOINs and their performance implications</li>
-    <li>LINQ method syntax and LINQ query syntax for Include chains and nested relationships</li>
-    <li>Lazy loading setup: virtual navigation properties, proxy generation, and automatic query firing</li>
-    <li>Lazy loading dangers: detecting the N+1 problem in development and avoiding performance disasters</li>
-    <li>Explicit loading with Entry().Collection() and Entry().Reference() for fine-grained control</li>
-    <li>The N+1 query problem: anatomy of 1 parent query plus N child queries and real-world performance impact</li>
-    <li>Detection tools: query logging, profiling, and how to spot N+1 in production code</li>
-    <li>AsSplitQuery vs AsSingleQuery: cartesian explosion, roundtrip tradeoffs, and when to use each</li>
-    <li>Projection with Select() as an alternative loading strategy: generating optimal SQL from DTOs</li>
-    <li>Filtered includes: loading selective related data based on EF Core 5+ query extensions</li>
-    <li>Deep theory: object graphs, change tracking, and how ORMs materialize relational data into objects</li>
-    <li>Performance metrics, benchmarking strategies, and choosing the right loading pattern for your workload</li>
-  </ul>
-</div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer detail page needs customer info and all orders in one query. No delays. Load everything up front.
+            </div>
 
-<div class="section">
-  <div class="section-num">01 — THE OBJECT-RELATIONAL IMPEDANCE MISMATCH</div>
-  <h2>Why Loading Strategy Matters: SQL vs ORM Perspectives</h2>
-  <div class="section-text">
-    <p>In SQL, you explicitly write every query and control exactly what data is fetched. You decide: do I need a single LEFT JOIN that loads customers and orders together, or do I execute two separate queries? The decision is deliberate and visible in your code. Entity Framework abstracts this decision into a loading strategy abstraction. When you query context.Customers, related Orders might not load automatically. You declare your intent through Include() (eager loading), virtual properties (lazy loading), or Entry().Collection() (explicit loading). This abstraction solves a deep problem: the object-relational impedance mismatch—the fundamental difference between how relational databases represent data (normalized tables with foreign keys) and how object-oriented languages represent data (objects with references to other objects).</p>
-    <p>The mismatch manifests when loading related data. In SQL, you write joins. In C#, you access properties. An ORM bridges this gap by providing loading strategies that translate property access into appropriate SQL queries. Wrong strategy choices cause severe performance degradation: N+1 problems from lazy loading in loops, cartesian explosion from too many eager joins, or unnecessary memory usage from loading data you don't need. Understanding these strategies is essential for building performant applications because the performance impact can be dramatic—the difference between a 50ms query and a 10-second application freeze.</p>
-  </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SELECT with JOIN &mdash; one query gets everything. The database combines customer and order rows. I get all the data I need in a single round trip.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Include(c =&gt; c.Orders) &mdash; EF generates the JOIN for me. I just tell it which navigation property to load, and it creates the SQL.
+                </div>
+            </div>
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL Explicit Control</span>
-      <pre><code>-- You decide the strategy
--- Option 1: Single query with JOIN
-SELECT c.Id, c.Name, o.Id, o.Total
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT
+    c.Id, c.Name, c.Email,
+    o.Id, o.Total, o.OrderDate
 FROM Customers c
 LEFT JOIN Orders o ON c.Id = o.CustomerId
-WHERE c.IsActive = 1;
+WHERE c.Id = @CustomerId
+ORDER BY o.OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Include</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customer = await db.Customers
+    .Include(c =&gt; c.Orders)
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
 
--- Option 2: Multiple queries
-SELECT * FROM Customers WHERE IsActive = 1;
+// customer.Orders is now loaded
+var orders = customer?.Orders ?? new();</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — ThenInclude for Deep Loading</div>
+                <div class="code-block csharp-block">
+                    <pre>var customer = await db.Customers
+    .Include(c =&gt; c.Orders)
+        .ThenInclude(o =&gt; o.Items) // Order items
+    .Include(c =&gt; c.Addresses) // Multiple includes
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
+
+// Three levels deep: Customer &gt; Orders &gt; Items
+var items = customer?.Orders
+    .FirstOrDefault()?.Items ?? new();</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: Lazy Loading -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Load Orders Only If User Clicks Expand"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer list loads fast. Orders load only when user clicks to expand. Avoid loading 1000 customers with 10,000 orders if most are never viewed.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Run a second query when needed. First query: SELECT * FROM Customers. If user expands, second query: SELECT * FROM Orders WHERE CustomerId = @Id.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Lazy loading proxies &mdash; navigation property triggers a query on first access. Customer loads. When code accesses customer.Orders, EF fires a second query automatically.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Two Queries</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Query 1: Get all customers
+SELECT Id, Name, Email FROM Customers;
+
+-- Query 2: Load orders when needed
+SELECT Id, Total, OrderDate
+FROM Orders
+WHERE CustomerId = @CustomerId;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Lazy Loading</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Query 1: Get customer (no orders loaded)
+var customer = await db.Customers
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
+
+// Query 2: Fires automatically on access
+var orders = customer?.Orders; // EF queries here
+
+// Navigation property must be virtual
+public virtual ICollection&lt;Order&gt; Orders { get; }</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Enable Lazy Loading in DbContext</div>
+                <div class="code-block ef-block">
+                    <pre>services.AddDbContext&lt;AppDb&gt;(options =&gt;
+{
+    options.UseSqlServer(connectionString);
+    // Enable lazy loading
+    options.UseLazyLoadingProxies();
+});</pre>
+                </div>
+            </div>
+
+            <div class="requirement" style="margin-top: 16px;">
+                <strong>The N+1 Danger</strong><br>
+                Load 1000 customers without Include, then loop: <code>foreach (var c in customers) var o = c.Orders;</code> Triggers 1001 queries total (1 for customers + 1000 for each customer's orders). Lazy loading can silently cause this.
+            </div>
+        </section>
+
+        <!-- 03: Explicit Loading -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Load Related Data Conditionally"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                After fetching a customer, decide at runtime whether to load orders based on business logic. "Show detailed view? Load orders. Show list view? Skip orders."
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Run a separate SELECT when needed. First: get customer. Then, if business logic says yes: run a second SELECT for orders.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    context.Entry(customer).Collection(c =&gt; c.Orders).LoadAsync() &mdash; Manual load after the fact. Fetch customer, check a flag, then explicitly load orders if needed.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Separate Query</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Query 1: Get customer
+SELECT * FROM Customers WHERE Id = @CustomerId;
+
+-- Query 2 (conditional): Load orders only if needed
 SELECT * FROM Orders
-  WHERE CustomerId IN (...);
+WHERE CustomerId = @CustomerId
+ORDER BY OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Explicit Load</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customer = await db.Customers
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
 
--- Option 3: Separate targeted query
-SELECT * FROM Customers WHERE IsActive = 1;
--- Then later:
-SELECT * FROM Orders WHERE CustomerId = 5;</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">EF Declares Intent via Strategy</span>
-      <pre><code>// Eager: "Load all related data upfront"
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Where(c => c.IsActive)
-  .ToList();
+if (customer != null &amp;&amp; showDetails)
+{
+    // Load orders explicitly only if needed
+    await db.Entry(customer)
+        .Collection(c =&gt; c.Orders)
+        .LoadAsync(ct);
+}
 
-// Lazy: "Load on access automatically"
-var customers = context.Customers
-  .Where(c => c.IsActive)
-  .ToList();
-var orders = customers[0].Orders; // Trigger!
+var orders = customer?.Orders ?? new();</pre>
+                    </div>
+                </div>
+            </div>
 
-// Explicit: "Load when I say so"
-var customer = context.Customers.Find(1);
-await context.Entry(customer)
-  .Collection(c => c.Orders)
-  .LoadAsync();</code></pre>
-    </div>
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax Alternative</span>
-      <pre><code>// Eager with query syntax
-var customers = from c in context.Customers
-                  .Include(c => c.Orders)
-                where c.IsActive
-                select c;
+            <div class="code-full">
+                <div class="code-label">Explicit Load with Filter</div>
+                <div class="code-block csharp-block">
+                    <pre>var customer = await db.Customers
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
 
-// Query syntax doesn't hide the Include call
-// Include() is a method that must be called
-// even in query syntax
-var result = customers.ToList();</code></pre>
-    </div>
-  </div>
+if (customer != null)
+{
+    // Load only orders from the last 30 days
+    await db.Entry(customer)
+        .Collection(c =&gt; c.Orders)
+        .Query() // Access the IQueryable
+        .Where(o =&gt; o.OrderDate &gt;= DateTime.Now.AddDays(-30))
+        .LoadAsync(ct);
+}
 
-  <div class="key-insight">
-    <strong>Impedance Mismatch Resolved Through Abstraction</strong>
-    <p>SQL requires explicit query writing; EF requires declaring loading intent. The mismatch is that databases optimize for JOINs across tables, but objects are designed for navigable references. EF's loading strategies bridge this by mapping property access patterns to appropriate SQL. Understand your access patterns first, then choose your strategy: always need Orders with Customers? Use eager loading. Sometimes access Orders? Use lazy loading (carefully) or explicit loading. Never need Orders? Use projection to select only what's needed.</p>
-  </div>
+var recentOrders = customer?.Orders ?? new();</pre>
+                </div>
+            </div>
+        </section>
 
-  <div class="section-text">
-    <p>The three core strategies map to fundamentally different SQL patterns and performance characteristics. Eager loading generates a single query with JOINs (AsSingleQuery, default) or multiple queries (AsSplitQuery). Lazy loading generates the initial query, then additional queries on-demand when navigation properties are accessed. Explicit loading defers loading until you explicitly call LoadAsync() or Load(). Each has profound tradeoffs in terms of database roundtrips, memory usage, data duplication, and overall query execution efficiency. Choosing wisely can be the difference between a responsive application and one that struggles under load.</p>
-  </div>
-</div>
+        <!-- 04: Select vs Include -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "API Returns Only Specific Fields"</h2>
 
-<div class="section">
-  <div class="section-num">02 — EAGER LOADING WITH INCLUDE</div>
-  <h2>Loading All Related Data Upfront via Include and ThenInclude</h2>
-  <div class="section-text">
-    <p>Eager loading requests all related data in the initial query via the Include() method. ThenInclude() chains further to load nested relationships multiple levels deep. EF generates a single query with LEFT JOINs for each Include level (default), or multiple queries if AsSplitQuery is enabled. The result is a single roundtrip to the database and complete object graphs available in memory immediately. Eager loading is optimal when you know you will access the related data because it prevents N+1 problems by loading everything upfront in the initial query, eliminating hidden additional queries later.</p>
-    <p>Include() is fluent and chainable: call it multiple times to include different navigation properties at the same level. ThenInclude() goes deeper into nested relationships: after Include(c => c.Orders), you can call ThenInclude(o => o.OrderItems). The generated SQL contains LEFT JOINs that combine parent and child data in a single result set that EF then materializes into object graphs with all relationships intact.</p>
-  </div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Mobile API needs customer name and order count only. Don't load full entities. Keep payload small.
+            </div>
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL Generated JOINs</span>
-      <pre><code>-- Eager loading generates JOINs
-SELECT c.Id, c.Name, c.Email,
-       o.Id, o.OrderDate, o.Total,
-       oi.Id, oi.ProductId, oi.Quantity
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SELECT c.Name, COUNT(o.Id) AS OrderCount FROM Customers c LEFT JOIN Orders o ON c.Id = o.CustomerId &mdash; projection is natural. Get exactly what you need.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Select(c =&gt; new { c.Name, OrderCount = c.Orders.Count() }) &mdash; Projection is better than Include for APIs. You load only what you need, not full entities.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Projection</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT
+    c.Name,
+    COUNT(o.Id) AS OrderCount
 FROM Customers c
-LEFT JOIN Orders o
-  ON c.Id = o.CustomerId
-LEFT JOIN OrderItems oi
-  ON o.Id = oi.OrderId
-WHERE c.IsActive = 1
-ORDER BY c.Id, o.Id, oi.Id;</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# Include with ThenInclude</span>
-      <pre><code>// Method syntax for nested includes
-var customers = context.Customers
-  .Include(c => c.Orders)
-    .ThenInclude(o => o.OrderItems)
-  .Include(c => c.Contacts)
-  .Where(c => c.IsActive)
-  .ToList();
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Include (Wrong)</div>
+                    <div class="code-block csharp-block">
+                        <pre>// BAD: Loads full Customer and Order entities
+var customers = await db.Customers
+    .Include(c =&gt; c.Orders)
+    .ToListAsync(ct);
 
-// Now access data without additional queries
-foreach (var customer in customers)
-{
-  Console.WriteLine(customer.Name);
-  foreach (var order in customer.Orders)
-  {
-    Console.WriteLine($"  {order.OrderDate}: {order.Total}");
-    foreach (var item in order.OrderItems)
+var dto = customers.Select(c =&gt; new {
+    c.Name,
+    OrderCount = c.Orders.Count
+}).ToList();
+// Inefficient: returns many entities</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Select (Correct)</div>
+                <div class="code-block csharp-block">
+                    <pre>// GOOD: Loads only what you need
+var customers = await db.Customers
+    .AsNoTracking() // Read-only, better performance
+    .Select(c =&gt; new
     {
-      Console.WriteLine($"    Item: {item.ProductId}");
-    }
-  }
-}</code></pre>
-    </div>
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax Alternative</span>
-      <pre><code>// Method syntax is more intuitive for Include
-// but can be mixed with query syntax
-var customers = from c in context.Customers
-                  .Include(c => c.Orders)
-                    .ThenInclude(o => o.OrderItems)
-                  .Include(c => c.Contacts)
-                where c.IsActive
-                select c;
-
-// Or apply Include after the query
-var customers = (from c in context.Customers
-                 where c.IsActive
-                 select c)
-  .Include(c => c.Orders)
-  .ThenInclude(o => o.OrderItems)
-  .ToList();</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Include Chains Translate to Multiple JOINs</strong>
-    <p>Each Include() becomes a LEFT JOIN in SQL. Multiple includes on the same parent create multiple JOINs. Critical: cartesian explosion can occur when you include multiple collections. If Customers has 10 Orders and each Order has 5 OrderItems, a single-query join returns 50 rows per customer with heavy duplication of Customer and Order data. For 100 customers this is 5000 rows. AsSplitQuery eliminates this by executing 3 separate queries instead of 1 large JOIN.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Eager loading is powerful because it prevents N+1 query problems that commonly occur with lazy loading. However, you must be careful about loading too much data or causing cartesian explosion with multiple levels of includes. Always profile to ensure your eager loaded query is efficient and uses the appropriate split-query strategy for your data volumes. Monitor the SQL generated by logging to ensure you understand what's being executed.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">03 — LAZY LOADING SETUP AND RISKS</div>
-  <h2>Virtual Properties, Proxies, and Auto-Loading Dangers</h2>
-  <div class="section-text">
-    <p>Lazy loading defers loading related data until a navigation property is accessed. It requires two things: the virtual keyword on all navigation properties, and the Microsoft.EntityFrameworkCore.Proxies package installed. When you access customer.Orders, if Orders aren't already loaded, EF creates and configures a dynamic proxy that intercepts property access and triggers a separate query automatically. This is convenient for development but dangerous in production code because it hides queries and can cause N+1 problems silently in loops where you don't expect additional queries.</p>
-    <p>Lazy loading setup is deceptively simple: mark navigation properties as virtual and call UseLazyLoadingProxies() on the DbContextOptions builder. But the danger is equally simple: a loop iterating 100 customers accessing customer.Orders triggers 100 hidden queries you might not notice. The application works fine during development with small datasets, then experiences severe performance degradation in production under load. This is why many teams disable lazy loading by default and opt for explicit loading or eager loading strategies.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp">
-      <span class="code-label">Lazy Loading Configuration</span>
-      <pre><code>// Step 1: Install Microsoft.EntityFrameworkCore.Proxies
-// dotnet add package Microsoft.EntityFrameworkCore.Proxies
-
-// Step 2: Mark navigation properties as virtual
-public class Customer
-{
-  public int Id { get; set; }
-  public string Name { get; set; }
-  // Virtual allows lazy loading via proxy
-  public virtual ICollection<Order> Orders { get; set; }
-  public virtual Address Address { get; set; }
-}
-
-public class Order
-{
-  public int Id { get; set; }
-  public int CustomerId { get; set; }
-  public DateTime OrderDate { get; set; }
-  // Must be virtual for lazy loading
-  public virtual ICollection<OrderItem> OrderItems { get; set; }
-}</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">Enable Lazy Loading in Context</span>
-      <pre><code>public class AppDbContext : DbContext
-{
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder options)
-  {
-    options
-      .UseSqlServer("connection-string")
-      // Enable lazy loading proxies
-      .UseLazyLoadingProxies();
-  }
-}
-
-// Usage - lazy loading happens automatically
-var customer = context.Customers.Find(1);
-// At this point, Orders are NOT loaded
-
-// Accessing Orders triggers a query
-var orders = customer.Orders;
-// Query executes: SELECT * FROM Orders
-//   WHERE CustomerId = 1
-// Now Orders are loaded</code></pre>
-    </div>
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax With Lazy Loading</span>
-      <pre><code>// Query syntax works with lazy loading
-var customer = (from c in context.Customers
-                where c.Id == 1
-                select c).FirstOrDefault();
-
-// Lazy loading still works after query execution
-// Accessing Orders triggers automatic query
-var orders = customer.Orders;
-
-// But in loops, lazy loading creates N+1
-var customers = (from c in context.Customers
-                 select c).ToList();
-
-foreach (var c in customers)
-{
-  // Each access triggers a query!
-  var count = c.Orders.Count();
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Lazy Loading is Insidious in Loops: N+1 Problem</strong>
-    <p>Lazy loading in loops creates N+1 problems silently without any obvious indication that multiple queries are being executed. Fetch 100 customers with one query, then access Orders for each in a loop = 100 additional queries = 101 total. This can turn a millisecond operation into a multi-second bottleneck. The code looks innocent: you're just accessing a property. But under the hood, EF is executing queries you never explicitly wrote. Disable lazy loading by default and use Include() or Explicit() instead. If you must use lazy loading, ensure you enable query logging during development to spot N+1 problems immediately.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Lazy loading can be useful in scenarios with unpredictable access patterns, such as a generic repository or a framework that doesn't know what data callers need ahead of time. However, the performance cost is usually not worth it. Most teams find explicit loading or eager loading with Include() provides better visibility and control. At minimum, always enable query logging in development to see how many queries are executing and catch lazy loading surprises early.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">04 — EXPLICIT LOADING FOR CONTROL</div>
-  <h2>On-Demand Loading with Entry Collection and Reference</h2>
-  <div class="section-text">
-    <p>Explicit loading gives you fine-grained, predictable control over when related data is loaded. Use context.Entry(entity).Collection() for loading collections (ICollection<T>) or .Reference() for single navigation properties (Foreign key relationships). You can filter related data before loading or just load the entire relationship. Explicit loading is visible, predictable, and avoids lazy loading surprises. You control exactly when queries execute by explicitly calling LoadAsync() or Load(), making query execution visible in code and easy to understand.</p>
-    <p>Explicit loading is particularly useful when you want to load related data selectively based on application logic: load Orders only if the customer is in a certain status, load filtered OrderItems (only items totaling more than $100), or load a reference only when you need it. The cost is slightly more verbose code, but the benefit is complete visibility and control over database operations.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Explicit Loading Patterns and Techniques</span>
-      <pre><code>var customer = context.Customers.Find(1);
-
-// Pattern 1: Load all orders for this customer
-await context.Entry(customer)
-  .Collection(c => c.Orders)
-  .LoadAsync();
-
-// Pattern 2: Load with filter applied during load
-// (only orders over $100)
-await context.Entry(customer)
-  .Collection(c => c.Orders)
-  .Query()
-  .Where(o => o.Total > 100)
-  .LoadAsync();
-
-// Pattern 3: Load single reference (Foreign key relation)
-await context.Entry(customer)
-  .Reference(c => c.Address)
-  .LoadAsync();
-
-// Pattern 4: Check if already loaded (avoid reload)
-var entry = context.Entry(customer);
-bool ordersLoaded = entry.Collection(c => c.Orders).IsLoaded;
-if (!ordersLoaded)
-{
-  await entry.Collection(c => c.Orders).LoadAsync();
-}
-
-// Pattern 5: Load with Include on the loaded data
-await context.Entry(customer)
-  .Collection(c => c.Orders)
-  .Query()
-  .Include(o => o.OrderItems)
-  .LoadAsync();
-
-// Synchronous version (blocking, not recommended for async APIs)
-context.Entry(customer)
-  .Collection(c => c.Orders)
-  .Load();
-
-// Pattern 6: Load with select/projection
-var orders = await context.Entry(customer)
-  .Collection(c => c.Orders)
-  .Query()
-  .Select(o => new { o.Id, o.Total })
-  .ToListAsync();</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Explicit Loading Best Practices</strong>
-    <p>Explicit loading shines when you need conditional loading or filtered data. Always check IsLoaded before loading to avoid unnecessary queries. Use async/await (LoadAsync) in web applications. Combine with Query() to filter or project data before materializing into memory. This pattern is ideal for APIs where you conditionally load related data based on query parameters or user permissions.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Explicit loading is ideal for web APIs and services where access patterns are unpredictable or conditional. Instead of always eagerly loading all related data, you load it on-demand based on the specific request. This provides flexibility, good performance, and clear code that shows exactly what's being loaded and when.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">05 — THE N+1 QUERY PROBLEM</div>
-  <h2>Anatomy of One Parent Query Plus N Child Queries</h2>
-  <div class="section-text">
-    <p>The N+1 problem is the primary performance pitfall with ORMs like Entity Framework. You execute 1 query to fetch N parent entities, then N additional queries to fetch children for each parent (or access a property that triggers loading). This equals N+1 total queries, which causes severe performance degradation. For 100 customers, instead of 1-2 efficient queries, you run 101 queries. The database server spends most time on connection setup, network roundtrips, and query parsing rather than actual data transfer. The application becomes unresponsive as the number of roundtrips becomes the bottleneck.</p>
-    <p>The N+1 problem happens with lazy loading or when you load parents without including children, then iterate and access the navigation property. It's insidious because the code looks correct and works fine during development with small datasets (10 customers, 10 queries feels fast). Performance degradation becomes apparent only under load with large datasets (1000 customers, 1000 queries = catastrophic slowdown). Always use query logging during development to detect N+1 problems early. Profile before deploying to production.</p>
-  </div>
-
-  <div class="code-comparison two-col">
-    <div class="code-block csharp">
-      <span class="code-label">The N+1 Problem Pattern</span>
-      <pre><code>// PROBLEM: N Plus One Queries
-var customers = context.Customers
-  .ToList(); // 1 query
-
-foreach (var c in customers)
-{
-  // Each iteration triggers a query!
-  var orderCount = c.Orders.Count();
-  Console.WriteLine(c.Name + ": " + orderCount);
-}
-// Total: 1 + N queries
-// For 100 customers: 101 queries!
-
-// SQL Generated:
-// Query 1: SELECT * FROM Customers
-// Query 2: SELECT COUNT(*) FROM Orders
-//   WHERE CustomerId = 1
-// Query 3: SELECT COUNT(*) FROM Orders
-//   WHERE CustomerId = 2
-// ... (100 more similar queries)</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">Three Solutions to N+1</span>
-      <pre><code>// SOLUTION 1: Eager Loading Include
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ToList(); // 1 query with JOIN
-
-// SOLUTION 2: Projection Select
-var stats = context.Customers
-  .Select(c => new
-  {
-    c.Name,
-    OrderCount = c.Orders.Count()
-  })
-  .ToList(); // 1 query with subquery
-
-// SOLUTION 3: Explicit Loading
-var customers = context.Customers.ToList();
-await context.Entry(customers[0])
-  .Collection(c => c.Orders)
-  .LoadAsync(); // Load specific customer only
-
-// SOLUTION 4: Split Query with GroupBy
-var stats = context.Orders
-  .GroupBy(o => o.CustomerId)
-  .Select(g => new
-  {
-    CustomerId = g.Key,
-    OrderCount = g.Count()
-  })
-  .ToList();
-// Then join with customers client-side</code></pre>
-    </div>
-  </div>
-
-  <div class="performance-metric">
-    <strong>Real-World Impact Example</strong>
-    <p>N+1 with 100 customers: 101 queries × 10ms per roundtrip = 1010ms minimum (1 second). Include() with JOIN: 1 query × 100ms for larger result set = 100ms. Projection: 1 query × 15ms with subquery = 15ms. The difference compounds under load: at 100 concurrent users, 1 second becomes 100 seconds total database time. The server becomes resource-starved and becomes unresponsive to all users.</p>
-  </div>
-
-  <div class="section-text">
-    <p>The N+1 problem is prevented by using eager loading with Include() or projection with Select(). Always enable query logging during development to see the actual queries being executed. Write integration tests that assert on query counts: ensure your repository methods execute the expected number of queries. If you see N+1 patterns in logs, refactor immediately before committing code.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">06 — DETECTING N+1 WITH QUERY LOGGING</div>
-  <h2>Enable Logging to Spot Hidden Queries</h2>
-  <div class="section-text">
-    <p>The N+1 problem is silent—there's no error, just performance degradation. You discover it through query logging: enabling EF Core to output executed queries to console, file, or structured logs. You can also set breakpoints and inspect context.ChangeTracker to see what queries have been executed. Profiling tools can capture database metrics showing unexpected query counts and slow requests.</p>
-  </div>
-
-  <div class="code-comparison two-col">
-    <div class="code-block csharp">
-      <span class="code-label">Enable Console Query Logging</span>
-      <pre><code>var options = new DbContextOptionsBuilder<AppDbContext>()
-  .UseSqlServer("connection-string")
-  .LogTo(
-    Console.WriteLine,
-    LogLevel.Information)
-  .EnableSensitiveDataLogging()
-  .Options;
-
-using var context = new AppDbContext(options);
-
-// Now every query prints to console
-var customers = context.Customers.ToList();
-// Output: SELECT [c].[Id], [c].[Name] FROM [Customers]
-
-// And lazy loading queries appear:
-var orders = customers[0].Orders;
-// Output: SELECT [o].[Id], [o].[OrderDate]...
-//   FROM [Orders] WHERE [o].[CustomerId] = 1</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">Integration Test to Assert Query Count</span>
-      <pre><code>// NUnit/xUnit test
-[Test]
-public async Task GetCustomers_ShouldExecuteOnlyOneQuery()
-{
-  var listener = new DiagnosticListener("Microsoft.EntityFrameworkCore.Database.Command");
-  int queryCount = 0;
-
-  listener.Subscribe(new QueryCountDiagnosticObserver(
-    () => queryCount++));
-
-  using var context = CreateTestContext();
-  var customers = await context.Customers
-    .Include(c => c.Orders)
-    .ToListAsync();
-
-  Assert.That(queryCount, Is.EqualTo(1),
-    "Expected 1 query but got " + queryCount);
-  Assert.That(customers, Has.Count.GreaterThan(0));
-}
-
-// Test fails if queries > expected
-// Catches N+1 problems in CI/CD</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Make Query Logging Part of Development Workflow</strong>
-    <p>Enable query logging in development, write tests that assert on query counts, and review log output regularly. This catches N+1 problems early before they reach production. Many teams add query-count assertions to integration tests: if a method is supposed to execute 2 queries and it executes 10, the test fails immediately.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">07 — ASSPLITQUERY VS ASSINGLQUERY</div>
-  <h2>Tradeoffs: Single Roundtrip with Cartesian Explosion vs Multiple Roundtrips with Clean Data</h2>
-  <div class="section-text">
-    <p>Include() with multiple levels causes cartesian explosion: data duplication in the result set when one parent has multiple children. AsSingleQuery (default) executes one query with all JOINs, minimizing roundtrips but returning large result sets with duplication. AsSplitQuery executes separate queries per relationship, avoiding duplication but requiring more roundtrips. Choose based on your data volume, network latency, and database server load. For small result sets, AsSingleQuery is faster. For large result sets with many includes, AsSplitQuery is often more efficient.</p>
-    <p>The tradeoff is fundamental: single queries with multiple JOINs reduce roundtrips (good for high-latency networks) but increase result set size with duplication (bad for memory and bandwidth). Multiple queries eliminate duplication but increase roundtrips (bad for high-latency networks, good for low-latency local connections). Profile both strategies with your actual data and network conditions to determine which is faster.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp">
-      <span class="code-label">AsSingleQuery Default Strategy</span>
-      <pre><code>// Default: Single query with all JOINs
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Contacts)
-  .AsSingleQuery()
-  .ToList();
-
-// SQL Generated (simplified):
-// SELECT c.*, o.*, ct.* FROM Customers c
-//   LEFT JOIN Orders o ON c.Id = o.CustomerId
-//   LEFT JOIN Contacts ct ON c.Id = ct.CustomerId
-
-// Result: 100 customers × 5 orders × 3 contacts
-//   = 1500 rows (same Customer repeated 15 times!)
-// Result set size: ~150KB
-// Memory usage: High (duplication)
-// Roundtrips: 1 (fast for high-latency networks)
-// Processing: EF must deduplicate rows to reconstruct graphs</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">AsSplitQuery Split Strategy</span>
-      <pre><code>// Alternative: Multiple queries, no duplication
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Contacts)
-  .AsSplitQuery()
-  .ToList();
-
-// SQL Generated (3 queries):
-// Query 1: SELECT * FROM Customers
-// Query 2: SELECT * FROM Orders
-//   WHERE CustomerId IN (1,2,3,...100)
-// Query 3: SELECT * FROM Contacts
-//   WHERE CustomerId IN (1,2,3,...100)
-
-// Result: 100 + 500 + 300 = 900 rows (no duplication!)
-// Result set size: ~90KB
-// Memory usage: Low (clean data, no duplication)
-// Roundtrips: 3 (slower for high-latency networks)
-// Processing: EF simply matches IDs, fast deduplication</code></pre>
-    </div>
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax with Split Query</span>
-      <pre><code>// Query syntax with AsSplitQuery
-var customers = (from c in context.Customers
-                 .Include(c => c.Orders)
-                 .Include(c => c.Contacts)
-                 .AsSplitQuery()
-                 select c)
-  .ToList();
-
-// Same result as method syntax
-// AsSplitQuery can be called on IQueryable
-// before or after select</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>When to Use Each Strategy</strong>
-    <p>Use AsSingleQuery for small result sets with few includes (avoids roundtrips). Use AsSplitQuery for large result sets with many includes (avoids data duplication and memory waste). Always profile both to determine which is faster for your specific data volume and network conditions. For Azure SQL, AsSingleQuery is often preferred (low latency). For distant servers or APIs, AsSplitQuery may be better (result set size matters). Monitor query execution time and result set sizes in production to validate your choice.</p>
-  </div>
-
-  <div class="section-text">
-    <p>The choice between strategies is data-dependent and requires profiling. Some rules of thumb: if your result set is under 1000 rows, AsSingleQuery is usually faster. If your result set is over 10,000 rows with heavy duplication, AsSplitQuery is usually better. Always measure, don't guess. Use SQL Server profiler or EF Core logging to see query times and result set sizes. Then make an informed decision based on your actual workload.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">08 — PROJECTION AS ADVANCED LOADING STRATEGY</div>
-  <h2>Select for Optimal Data Shapes and Client-Side Processing</h2>
-  <div class="section-text">
-    <p>Projection with Select() is often more efficient than Include() because it generates targeted SQL that fetches exactly what you need. Instead of loading entire entity graphs with all properties, you select specific properties and computed values. This reduces data transfer and memory usage, and forces you to think about what data you actually need. The generated SQL is often more efficient because EF can push aggregates and filters into the database query, avoiding client-side LINQ to Objects processing.</p>
-    <p>Projection is particularly useful for APIs, reports, and read-only scenarios where you don't need full entity objects, just specific data for the response. The smaller result sets and more efficient SQL often make projection faster than Include() approaches. You pay a small cost in code verbosity (defining DTOs), but gain significant performance benefits and memory savings.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block csharp">
-      <span class="code-label">Include vs Projection Performance</span>
-      <pre><code>// Include: Loads entire objects
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ToList();
-
-// Memory: Full Customer and Order entities,
-//   all properties, change tracking overhead
-// SQL: SELECT c.*, o.* (all columns)
-// Usage: When you need mutable entities
-
-// Projection: Loads only needed data
-var summaries = context.Customers
-  .Select(c => new CustomerSummary
-  {
-    Id = c.Id,
-    Name = c.Name,
-    OrderCount = c.Orders.Count(),
-    TotalSpent = c.Orders.Sum(o => o.Total),
-    RecentOrders = c.Orders
-      .Where(o => o.OrderDate >
-        DateTime.Now.AddYears(-1))
-      .Select(o => new { o.Id, o.Total })
-      .ToList()
-  })
-  .ToList();
-
-// Memory: Only DTO properties
-// SQL: SELECT c.Id, c.Name, (SELECT COUNT(*)...),
-//        (SELECT SUM(...)...)
-// Usage: API responses, reports, read-only scenarios</code></pre>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">Complex Projection with Nested Data</span>
-      <pre><code>var results = context.Customers
-  .Select(c => new
-  {
-    c.Id,
-    c.Name,
-    OrderStats = new
-    {
-      Total = c.Orders.Count(),
-      Revenue = c.Orders.Sum(o => o.Total),
-      Average = c.Orders.Average(o => o.Total)
-    },
-    RecentOrders = c.Orders
-      .Where(o => o.OrderDate >=
-        DateTime.Now.AddMonths(-1))
-      .OrderByDescending(o => o.OrderDate)
-      .Take(5)
-      .Select(o => new
-      {
-        o.Id,
-        o.OrderDate,
-        o.Total,
-        ItemCount = o.OrderItems.Count()
-      })
-      .ToList()
-  })
-  .ToList();
-
-// SQL: Single query with subqueries
-// Result: Only needed data, lightweight DTOs
-// Memory: Minimal, no change tracking overhead</code></pre>
-    </div>
-    <div class="code-block csharp-query">
-      <span class="code-label">LINQ Query Syntax Projection</span>
-      <pre><code>var summaries = from c in context.Customers
-                select new CustomerSummary
-                {
-                  Id = c.Id,
-                  Name = c.Name,
-                  OrderCount = c.Orders.Count(),
-                  TotalSpent = c.Orders.Sum(o => o.Total)
-                };
-
-// Lazy - not executed until ToList()
-var list = summaries.ToList();
-
-// Or compose projections
-var filtered = from s in summaries
-               where s.TotalSpent > 1000
-               select s;
-
-var final = filtered.ToList();</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Projection Generates Better SQL Than Include</strong>
-    <p>Projection often generates better SQL than Include() because EF pushes aggregates and filters to the database via SQL subqueries and WHERE clauses, not client-side LINQ to Objects processing. The result is smaller result sets, less data transfer, less memory usage, and no change tracking overhead. Perfect for APIs and read-only scenarios.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Projection is ideal for web APIs, reports, and any scenario where you don't need mutable entity objects. Define simple DTOs containing only the properties you need, then use Select() to project entities to DTOs. This pattern is highly efficient and produces clean separation between your persistence layer (entities) and your API layer (DTOs).</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">09 — FILTERED INCLUDES (EF CORE 5+)</div>
-  <h2>Selective Loading of Related Data Based on Predicates</h2>
-  <div class="section-text">
-    <p>EF Core 5.0 introduced filtered includes: you can now filter related data during the Include() call using Where(). This allows loading only relevant child records instead of all children. For example, load only recent orders instead of all orders, or only comments with positive ratings. The filter is applied during the query execution, so only filtered data is retrieved from the database and loaded into memory. This is more efficient than loading all children then filtering client-side in LINQ to Objects.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Filtered Includes with Where</span>
-      <pre><code>// EF Core 5+ only
-// Load customers with only recent orders
-var customers = context.Customers
-  .Include(c => c.Orders
-    .Where(o => o.OrderDate >= DateTime.Now.AddMonths(-3))
-    .OrderByDescending(o => o.OrderDate))
-  .ToList();
-
-// Load orders with only expensive items
-var orders = context.Orders
-  .Include(o => o.OrderItems
-    .Where(oi => oi.Price > 100))
-  .ToList();
-
-// Nested filtered includes
-var customers = context.Customers
-  .Include(c => c.Orders
-    .Where(o => o.Total > 500))
-    .ThenInclude(o => o.OrderItems
-      .Where(oi => oi.Quantity > 1))
-  .ToList();
-
-// Compare to manual filtering (inefficient)
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ToList();
-// Then filter client-side (loads ALL orders first)
-var filtered = customers
-  .Select(c => new
-  {
-    c.Id,
-    c.Name,
-    Orders = c.Orders
-      .Where(o => o.OrderDate >= DateTime.Now.AddMonths(-3))
-      .ToList()
-  })
-  .ToList();
-// This loads all orders then filters, inefficient!
-
-// SQL generated by filtered include:
-// SELECT c.*, o.* FROM Customers c
-//   LEFT JOIN Orders o ON c.Id = o.CustomerId
-//     AND o.OrderDate >= '2024-01-01'
-//   ORDER BY c.Id, o.OrderDate DESC</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Filtered Includes Push Filters to SQL</strong>
-    <p>Filtered includes eliminate the inefficiency of loading all related data then filtering client-side. The filter is applied in the SQL WHERE clause, so only relevant data is returned from the database. This can significantly reduce result set size and memory usage, especially when you're filtering out large amounts of data.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">10 — LOADING STRATEGIES COMPARISON TABLE</div>
-  <h2>Choose Your Strategy: Eager vs Lazy vs Explicit vs Projection</h2>
-  <div class="section-text">
-    <p>Each loading strategy has different performance characteristics, tradeoffs, and use cases. This table summarizes the key differences to help you choose the right strategy for your scenario.</p>
-  </div>
-
-  <table class="comparison-table">
-    <thead>
-      <tr>
-        <th>Strategy</th>
-        <th>Queries</th>
-        <th>Roundtrips</th>
-        <th>Memory</th>
-        <th>Best For</th>
-        <th>Risks</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Eager Loading (Include)</strong></td>
-        <td><span class="good">1 with JOINs</span></td>
-        <td>1</td>
-        <td><span class="bad">High (duplication)</span></td>
-        <td>Small-medium result sets, always need related data</td>
-        <td>Cartesian explosion with many includes</td>
-      </tr>
-      <tr>
-        <td><strong>Eager + AsSplitQuery</strong></td>
-        <td><span class="good">Multiple (no JOIN)</span></td>
-        <td>N+1</td>
-        <td><span class="good">Low (clean data)</span></td>
-        <td>Large result sets, many includes, low cartesian product</td>
-        <td>High-latency networks suffer from roundtrips</td>
-      </tr>
-      <tr>
-        <td><strong>Lazy Loading</strong></td>
-        <td><span class="bad">1 + N (hidden)</span></td>
-        <td>N+1</td>
-        <td>Low initially</td>
-        <td>Unpredictable access patterns</td>
-        <td><span class="bad">N+1 in loops (DANGER!)</span></td>
-      </tr>
-      <tr>
-        <td><strong>Explicit Loading</strong></td>
-        <td><span class="good">1 + selective</span></td>
-        <td>1+</td>
-        <td>Low (load only needed)</td>
-        <td>Conditional loading, selective filtering</td>
-        <td>More verbose code</td>
-      </tr>
-      <tr>
-        <td><strong>Projection (Select)</strong></td>
-        <td><span class="good">1 optimized</span></td>
-        <td>1</td>
-        <td><span class="good">Very low (DTOs only)</span></td>
-        <td>APIs, reports, read-only, specific columns</td>
-        <td>No entities (read-only), requires DTOs</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="key-insight">
-    <strong>Decision Framework: Choose Your Strategy</strong>
-    <p>Ask these questions: (1) Do I always need related data? Use Include(). (2) Will result set be large with many includes? Use AsSplitQuery. (3) Do I need only specific data for API response? Use Projection. (4) Is access pattern unpredictable but I need control? Use Explicit Loading. (5) Do I need mutable entities with change tracking? Avoid Projection. (6) Is performance critical? Avoid Lazy Loading. Default to Explicit or Projection, use Include() only when you know you always need related data.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">11 — REAL PERFORMANCE METRICS AND BENCHMARKING</div>
-  <h2>Measuring Query Performance and Memory Usage</h2>
-  <div class="section-text">
-    <p>Performance is data-dependent, network-dependent, and workload-dependent. The only way to know which strategy is best for your scenario is to measure. Use BenchmarkDotNet or simple stopwatches to measure query execution time. Monitor query counts with diagnostic listeners. Measure memory usage with .NET profilers. Measure result set sizes with SQL Server profiler. Then make informed decisions based on your actual data characteristics and workload.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Simple Performance Measurement Pattern</span>
-      <pre><code>// Measure query execution time
-var sw = System.Diagnostics.Stopwatch.StartNew();
-
-var customers = context.Customers
-  .Include(c => c.Orders)
-    .ThenInclude(o => o.OrderItems)
-  .ToList();
-
-sw.Stop();
-Console.WriteLine($"Query time: {sw.ElapsedMilliseconds}ms");
-Console.WriteLine($"Customers: {customers.Count}");
-Console.WriteLine($"Orders: {customers.Sum(c => c.Orders.Count)}");
-
-// Measure with different strategies
-// Strategy 1: Include (AsSingleQuery default)
-// Result: 150ms, 1500 rows, 15KB/sec network
-
-// Strategy 2: Include (AsSplitQuery)
-// Result: 45ms, 900 rows, 20KB/sec network
-
-// Strategy 3: Projection
-// Result: 20ms, 100 rows (only needed fields), 5KB/sec
-
-// Conclusion: Projection 7.5x faster than Include for this workload
-
-// Measure memory with GC
-var before = GC.GetTotalMemory(true);
-
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ToList();
-
-var after = GC.GetTotalMemory(false);
-Console.WriteLine($"Memory: {(after - before) / 1024}KB");
-
-// Strategy 1 (Include): 5MB
-// Strategy 3 (Projection): 200KB
-// Projection uses 25x less memory!</code></pre>
-    </div>
-  </div>
-
-  <div class="performance-metric">
-    <strong>Benchmark Example: 1000 Customers with 10 Orders Each</strong>
-    <p>Include (AsSingleQuery): 500ms, 10,000 rows, 2MB memory. Include (AsSplitQuery): 150ms, 11,000 rows, 1.5MB memory. Lazy loading in loop: 2000ms, 11,000 rows, 1.2MB memory + 1000+ database roundtrips. Projection: 80ms, 1,000 rows, 200KB memory. The benchmarks show projection is fastest for this workload. Your workload may be different—measure your own data.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Always profile with realistic data volumes before finalizing your strategy. Small differences in benchmarks can be noise; look for order-of-magnitude differences (3x faster is significant, 10% faster is a rounding error). Test with actual network latency conditions: local development may show different results than production with distant servers. Monitor production performance after deployment and adjust strategies based on real-world metrics.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">12 — DEEP THEORY: OBJECT-RELATIONAL MAPPING AND MATERIALIZATION</div>
-  <h2>How ORMs Solve the Impedance Mismatch Through Loading Strategies</h2>
-  <div class="section-text">
-    <p>The object-relational impedance mismatch is the fundamental problem ORMs exist to solve. Databases organize data as normalized relational tables with foreign keys. Objects organize data as interconnected graphs with references. Mapping from relational to object requires solving several problems: (1) How to reconstruct object graphs from normalized table rows? (2) When to load related objects? (3) How to track changes to objects and map them back to relational updates? Loading strategies are the answer to #2.</p>
-    <p>When EF executes a query like context.Customers.Include(c => c.Orders), several things happen: (1) EF generates SQL with a JOIN. (2) The database returns rows: each row contains Customer columns repeated for each Order. (3) EF's materialization engine reads rows and reconstructs object graphs: creates Customer objects, creates Order objects, links them through the Orders collection. (4) The change tracker registers each object for potential updates. The choice of loading strategy directly affects this process: eager loading materializes all relationships in one query, lazy loading defers materialization until access, explicit loading lets you control when materialization happens.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">How EF Materializes Object Graphs</span>
-      <pre><code>// Simple query with Include
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Where(c => c.IsActive)
-  .ToList();
-
-// Behind the scenes:
-// 1. EF translates to SQL with JOIN
-// 2. Database returns rows (Customer data repeated per Order)
-// 3. EF's materialization engine processes rows:
-//    - Reads Customer row 1, creates Customer object 1
-//    - Reads Order row 1, creates Order object 1,
-//      links to Customer 1
-//    - Reads Order row 2, creates Order object 2,
-//      links to Customer 1
-//    - Reads Customer row 2, creates Customer object 2
-//    - Reads Order row 3 (CustomerId=2), links to Customer 2
-// 4. Change tracker registers each object
-// 5. Returns List<Customer> with fully populated Orders collections
-
-// The key insight: EF deduplicates Customer objects
-// It sees Customer ID 1 twice (repeated with orders)
-// But creates only one Customer object
-// Both orders reference the same Customer 1 object
-
-// This is why lazy loading with loops is dangerous:
-// Loop doesn't have Orders loaded
-// Accessing customer.Orders triggers a new query
-// But that query is hidden from your code
-
-// And why projection is efficient:
-// No object graph materialization needed
-// No change tracking overhead
-// Just simple DTO construction</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Materialization, Deduplication, and Change Tracking</strong>
-    <p>EF's materialization engine is sophisticated: it deduplicates parent objects (avoids creating the same Customer twice), reconstructs relationships correctly, and registers each object with the change tracker. This complexity is hidden from you, but understanding it helps you choose better loading strategies. Lazy loading works because proxies intercept property access and trigger materialization on-demand. Include() works because EF materializes everything upfront. Projection is efficient because it skips materialization entirely. Each strategy has different performance characteristics because materialization, deduplication, and change tracking have costs.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Understanding how ORMs work internally helps you make better choices about loading strategies. You're not just choosing between Include() and Projection arbitrarily; you're choosing between different materialization strategies with different performance tradeoffs. Include() materializes everything immediately but deduplicates well and provides mutable objects. Projection skips materialization but gives you read-only DTOs. Lazy loading defers materialization but hides queries. Each choice has consequences for performance, memory, and code clarity.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">13 — BEST PRACTICES AND ANTI-PATTERNS</div>
-  <h2>What to Do and What to Avoid for Optimal Loading Strategy Usage</h2>
-  <div class="section-text">
-    <p>Loading strategies are powerful but easy to use incorrectly. Follow these best practices to avoid common pitfalls and build performant applications.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Best Practices and Common Pitfalls</span>
-      <pre><code>// BEST PRACTICE 1: Default to explicit loading or projection
-// Only use Include() when you know you always need related data
-var customers = context.Customers
-  .Select(c => new CustomerDTO
-  {
-    Id = c.Id,
-    Name = c.Name,
-    OrderCount = c.Orders.Count()
-  })
-  .ToList(); // Efficient projection
-
-// ANTI-PATTERN 1: Lazy loading in loops
-// NEVER do this (generates N+1 queries)
-var customers = context.Customers.ToList();
-foreach (var c in customers)
-{
-  var orders = c.Orders; // DANGER: query per customer!
-}
-
-// BEST PRACTICE 2: Disable lazy loading globally
-public class AppDbContext : DbContext
-{
-  protected override void OnConfiguring(DbContextOptionsBuilder options)
-  {
-    options
-      .UseSqlServer("connection-string")
-      // Don't enable lazy loading
-      // .UseLazyLoadingProxies()
-      ;
-  }
-}
-// Force explicit loading or Include()
-
-// BEST PRACTICE 3: Enable query logging in development
-// Catch N+1 problems immediately
-var options = new DbContextOptionsBuilder<AppDbContext>()
-  .UseSqlServer("connection-string")
-  .LogTo(Console.WriteLine)
-  .Options;
-
-// ANTI-PATTERN 2: Include unnecessary data
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Contacts)
-  .Include(c => c.Addresses)
-  .Include(c => c.PaymentMethods)
-  .Include(c => c.Preferences)
-  .ToList(); // Loading 100 things you don't need!
-
-// BEST PRACTICE 4: Load only what you need
-// Use filtered includes or projection
-var customers = context.Customers
-  .Select(c => new
-  {
-    c.Id,
-    c.Name,
-    RecentOrders = c.Orders
-      .Where(o => o.OrderDate >= DateTime.Now.AddMonths(-3))
-      .Take(5)
-  })
-  .ToList();
-
-// ANTI-PATTERN 3: Include with AsSingleQuery on large result sets
-// Cartesian explosion, huge memory usage
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Contacts)
-  .AsSingleQuery()
-  .ToList(); // 100 customers × 10 orders × 5 contacts = 5000 rows!
-
-// BEST PRACTICE 5: Use AsSplitQuery for large result sets
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Contacts)
-  .AsSplitQuery()
-  .ToList(); // 3 queries, 615 rows, no duplication
-
-// BEST PRACTICE 6: Profile before and after changes
-var sw = Stopwatch.StartNew();
-var result = LoadCustomersOptimized();
-sw.Stop();
-Console.WriteLine($"Optimized: {sw.ElapsedMilliseconds}ms");
-
-// ANTI-PATTERN 4: Lazy loading in library/framework code
-// Don't assume callers will set up lazy loading proxies
-// Always include data explicitly or use explicit loading
-
-// BEST PRACTICE 7: Use entry.IsLoaded to avoid redundant loading
-var customer = context.Customers.Find(1);
-var entry = context.Entry(customer);
-
-if (!entry.Collection(c => c.Orders).IsLoaded)
-{
-  await entry.Collection(c => c.Orders).LoadAsync();
-}
-
-// BEST PRACTICE 8: Compose queries intentionally
-// Use queryable methods (Include, Where, Select) before ToList()
-var query = context.Customers.AsQueryable();
-
-if (needOrders)
-{
-  query = query.Include(c => c.Orders);
-}
-
-var customers = await query.ToListAsync();</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Core Principles for Loading Strategy Success</strong>
-    <p>First: Know your access patterns (what data will be needed?). Second: Measure (don't guess about performance). Third: Avoid lazy loading in production code (hides queries). Fourth: Use Include() only when you always need data. Fifth: Prefer explicit loading or projection for flexibility. Sixth: Enable logging in development to spot N+1 problems. Seventh: Profile with realistic data volumes. Eighth: Monitor production performance and adjust based on real-world metrics.</p>
-  </div>
-</div>
-
-<!-- COMMON LOADING STRATEGY MISTAKES SECTION -->
-<div class="main-section">
-  <h2>Common Loading Strategy Mistakes</h2>
-  <p>Even experienced developers fall into loading strategy traps. Understanding these anti-patterns and their solutions will save hours of debugging and database optimization.</p>
-
-  <div class="example-block">
-    <h3>Mistake 1: Cartesian Explosion with Multiple Includes</h3>
-    <p>When you Include() multiple one-to-many relationships, the result set multiplies. If Customer has 10 Orders and each Order has 5 OrderItems, you get 50 rows per customer.</p>
-    <pre><code>// WRONG: Results in cartesian explosion
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Invoices)
-  .Include(c => c.SalesNotes)
-  .ToList(); // If each customer has 10 orders, 5 invoices, 2 notes = 100 rows per customer</code></pre>
-    <p><strong>Solution:</strong> Use AsSplitQuery() to execute separate queries, or use projection to fetch only needed data.</p>
-    <pre><code>// CORRECT: AsSplitQuery avoids cartesian multiplication
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Invoices)
-  .AsSplitQuery()
-  .ToList(); // 3 separate queries, no cartesian explosion
-
-// BETTER: Projection fetches exactly what you need
-var customerDtos = context.Customers
-  .Select(c => new CustomerDTO
-  {
-    Id = c.Id,
-    Name = c.Name,
-    OrderCount = c.Orders.Count(),
-    InvoiceTotal = c.Invoices.Sum(i => i.Amount)
-  })
-  .ToList(); // Single query, minimal data transfer</code></pre>
-  </div>
-
-  <div class="example-block">
-    <h3>Mistake 2: Accessing Navigation Properties After Materialization</h3>
-    <p>If you call ToList() before accessing related data, lazy loading triggers queries. In a loop, this becomes an N+1 nightmare.</p>
-    <pre><code>// WRONG: N+1 problem
-var customers = context.Customers.ToList(); // 1 query
-foreach (var customer in customers)
-{
-  var orderCount = customer.Orders.Count(); // N queries (1 per customer)
-}</code></pre>
-    <p><strong>Solution:</strong> Include related data before calling ToList().</p>
-    <pre><code>// CORRECT: Single query with join
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ToList();
-
-foreach (var customer in customers)
-{
-  var orderCount = customer.Orders.Count(); // No queries—data already loaded
-}</code></pre>
-  </div>
-
-  <div class="example-block">
-    <h3>Mistake 3: Using Include() with Where() on Collections</h3>
-    <p>You cannot use Include() to filter related collections in a single query. This is a common misconception that leads to logic errors.</p>
-    <pre><code>// WRONG: This doesn't filter orders—it loads all orders and the condition is ignored
-var customers = context.Customers
-  .Include(c => c.Orders.Where(o => o.Status == "Completed"))
-  .ToList();
-// EF loads ALL orders anyway; the Where() clause is evaluated in-memory</code></pre>
-    <p><strong>Solution:</strong> Use filtered includes (EF 5+), or project and filter explicitly.</p>
-    <pre><code>// CORRECT: Filtered includes work with collections
-var customers = context.Customers
-  .Include(c => c.Orders.Where(o => o.Status == "Completed"))
-  .AsSplitQuery()
-  .ToList();
-
-// ALTERNATIVE: Project to DTO with explicit filtering
-var customerDtos = context.Customers
-  .Select(c => new
-  {
-    c.Id,
-    c.Name,
-    CompletedOrders = c.Orders.Where(o => o.Status == "Completed").ToList()
-  })
-  .ToList();</code></pre>
-  </div>
-
-  <div class="example-block">
-    <h3>Mistake 4: Lazy Loading in Multi-Tier Applications</h3>
-    <p>In a web API, entities are often materialized and serialized outside the DbContext lifetime. Lazy loading proxies fail when the context is disposed.</p>
-    <pre><code>// WRONG: Lazy loading fails after context disposal
-public OrderDTO GetOrderWithCustomer(int orderId)
-{
-  using (var context = new AppDbContext())
-  {
-    var order = context.Orders.Find(orderId); // Customer not loaded
-    return new OrderDTO
-    {
-      Id = order.Id,
-      CustomerName = order.Customer.Name // Context disposed, lazy load fails!
-    };
-  }
-}</code></pre>
-    <p><strong>Solution:</strong> Always explicitly load related data before exiting the context scope.</p>
-    <pre><code>// CORRECT: Include or explicit load before disposal
-public OrderDTO GetOrderWithCustomer(int orderId)
-{
-  using (var context = new AppDbContext())
-  {
-    var order = context.Orders
-      .Include(o => o.Customer)
-      .First(o => o.Id == orderId);
-
-    return new OrderDTO
-    {
-      Id = order.Id,
-      CustomerName = order.Customer.Name // Data loaded while context is alive
-    };
-  }
-}</code></pre>
-  </div>
-
-  <div class="example-block">
-    <h3>Mistake 5: Including Same Relation Multiple Times</h3>
-    <p>Redundant includes waste resources and duplicate data in memory.</p>
-    <pre><code>// WRONG: Orders included twice
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .Include(c => c.Orders)
-  .ToList();
-// Second Include() is wasted</code></pre>
-    <p><strong>Solution:</strong> Include each relation once, or use chained includes for deep navigation.</p>
-    <pre><code>// CORRECT: Each relation included once
-var customers = context.Customers
-  .Include(c => c.Orders)
-  .ThenInclude(o => o.OrderItems)
-  .ToList();
-
-// Verify no duplicates in your Include structure
-// One Include per relation path</code></pre>
-  </div>
-
-  <div class="example-block">
-    <h3>Mistake 6: Ignoring Query Logs During Development</h3>
-    <p>Without query logging enabled, N+1 problems and inefficient loads are invisible. Developers guess at solutions instead of measuring.</p>
-    <pre><code>// WRONG: No visibility into actual queries
-var customers = context.Customers
-  .Where(c => c.Status == "Active")
-  .ToList();
-
-foreach (var customer in customers)
-{
-  var orders = customer.Orders.ToList(); // Hidden queries—developer doesn't see the N+1 problem
-}</code></pre>
-    <p><strong>Solution:</strong> Enable query logging in development to see actual SQL executed.</p>
-    <pre><code>// CORRECT: Enable logging to identify problems
-var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
-  .UseLoggerFactory(loggerFactory)
-  .UseSqlServer(connectionString)
-  .Build();
-
-var context = new AppDbContext(options);
-
-// Now you see every query executed
-// Count queries: if N+1 exists, you'll see "N+1" queries
-// Adjust strategy based on actual SQL logged</code></pre>
-  </div>
-
-</div>
-
-<div class="key-takeaways">
-  <h3>Key Takeaways</h3>
-  <ul>
-    <li>Loading strategy directly translates to SQL queries, roundtrips, memory usage, and overall performance</li>
-    <li>Eager loading with Include() executes single query with JOINs; prevents N+1 problems but can cause cartesian explosion</li>
-    <li>Lazy loading with virtual properties triggers queries on access; convenient but extremely dangerous in loops (N+1 problem)</li>
-    <li>Explicit loading gives fine-grained control via Entry().Collection().Load(); visible, predictable, no hidden queries</li>
-    <li>N+1 problem: 1 parent query plus N child queries; typically caused by lazy loading in loops or accessing navigation properties without eager loading</li>
-    <li>Detect N+1 with query logging during development; add query-count assertions to integration tests to catch regressions early</li>
-    <li>AsSingleQuery joins everything (1 roundtrip but cartesian explosion); AsSplitQuery uses multiple queries (more roundtrips but no duplication)</li>
-    <li>Projection with Select() often beats Include() by generating targeted SQL and avoiding change tracking overhead; ideal for APIs and reports</li>
-    <li>Filtered includes (EF 5+) allow loading selective related data with Where(); reduces result set size and memory usage vs loading all children</li>
-    <li>Choose strategy based on access patterns, data volume, network latency, and whether you need mutable entities with change tracking</li>
-    <li>Always profile with realistic data volumes; small differences are noise, look for order-of-magnitude improvements before refactoring</li>
-    <li>Deep principle: ORMs solve impedance mismatch by providing loading strategies; each strategy has different materialization, deduplication, and tracking costs</li>
-  </ul>
-</div>
-
-<div class="chapter-nav">
-  <a href="ch13-migrations.html" class="nav-item prev">
-    <div class="nav-label">Previous Chapter</div>
-    <div class="nav-title">Migrations</div>
-  </a>
-  <a href="ch15-change-tracking.html" class="nav-item next">
-    <div class="nav-label">Next Chapter</div>
-    <div class="nav-title">Change Tracking</div>
-  </a>
-</div>
-
-</div>
-
-<footer>
-  <div class="wrap">
-    <div class="footer-inner">
-      <p>SQL to C#: A Practical Guide to Entity Framework and Modern Database Patterns</p>
-      <p style="margin-top: 10px; font-size: 12px; color: var(--ink4);">Chapter 14 — Loading Strategies Eager Lazy Explicit</p>
-    </div>
-  </div>
-</footer>
-
+        c.Name,
+        OrderCount = c.Orders.Count()
+    })
+    .ToListAsync(ct);
+
+// Returns exactly what SQL query would return
+// EF generates the JOIN and COUNT in SQL, not in memory</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Cartesian Explosion -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Page Load Is Slow &mdash; Too Much Data"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer detail page includes orders and addresses. Customer has 100 orders and 50 addresses. Include both and the query returns 5000 rows (100 &times; 50). Cartesian explosion.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    JOINing two collections causes explosion. 100 orders &times; 50 addresses = 5000 rows, with customer data duplicated 5000 times. Use separate queries or SELECT with aggregation.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Include() with multiple collections hits the same problem. Use AsSplitQuery() to run separate SELECTs instead of one big JOIN.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Problem: Cartesian Explosion</div>
+                    <div class="code-block sql-block">
+                        <pre>-- BAD: Returns 5000 rows
+SELECT
+    c.Id, c.Name,
+    o.Id, o.Total,
+    a.Id, a.Street
+FROM Customers c
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+LEFT JOIN Addresses a ON c.Id = a.CustomerId
+WHERE c.Id = @CustomerId;
+
+-- Result: 100 orders × 50 addresses = 5000 rows
+-- Customer data repeated 5000 times</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Split Query</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customer = await db.Customers
+    .AsSplitQuery() // Run separate queries
+    .Include(c =&gt; c.Orders)
+    .Include(c =&gt; c.Addresses)
+    .FirstOrDefaultAsync(c =&gt; c.Id == id, ct);
+
+// EF generates:
+// Query 1: SELECT * FROM Customers WHERE Id = @id
+// Query 2: SELECT * FROM Orders WHERE CustomerId = @id
+// Query 3: SELECT * FROM Addresses WHERE CustomerId = @id
+// No duplication, 151 total rows returned</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: Decision Table -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Which Loading Strategy When?</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Strategy</th>
+                        <th>Why</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Detail page: customer + orders + addresses</td>
+                        <td>Eager: .Include().AsSplitQuery()</td>
+                        <td>Load everything needed; split query avoids cartesian</td>
+                    </tr>
+                    <tr>
+                        <td>List page: customer names only</td>
+                        <td>Select projection</td>
+                        <td>Load minimal data; efficient network payload</td>
+                    </tr>
+                    <tr>
+                        <td>API endpoint: customer + order count</td>
+                        <td>Select { Name, Count }</td>
+                        <td>Exact columns needed; aggregation in SQL</td>
+                    </tr>
+                    <tr>
+                        <td>Load orders conditionally (if flag = true)</td>
+                        <td>Explicit: Entry().Collection().LoadAsync()</td>
+                        <td>Manual control; load only when needed</td>
+                    </tr>
+                    <tr>
+                        <td>Lazy loading: access on demand</td>
+                        <td>Virtual nav props + UseLazyLoadingProxies()</td>
+                        <td>Transparent; but watch for N+1</td>
+                    </tr>
+                    <tr>
+                        <td>Read-only query: no modifications</td>
+                        <td>AsNoTracking()</td>
+                        <td>Skip change tracking; faster execution</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch13-migrations.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Migrations</span>
+            </a>
+            <a class="nav-item" href="ch15-change-tracking.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Change Tracking</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

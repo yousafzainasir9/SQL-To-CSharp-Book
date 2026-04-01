@@ -4,12 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chapter 27: Database Indexing — Performance from Both Sides — SQL to C#</title>
-<meta name="description" content="Master database indexing in SQL and C#. Learn B-Tree indexes, execution plans, and how to optimize query performance from both sides of the stack.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
   --bg: #f8f7f3;
@@ -38,7 +35,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Source Serif 4', serif;
   background: var(--bg);
   color: var(--ink);
   line-height: 1.6;
@@ -51,7 +48,6 @@ body {
   padding: 0 2rem;
 }
 
-/* ── NAV ── */
 nav {
   position: sticky;
   top: 0;
@@ -61,7 +57,6 @@ nav {
   align-items: center;
   background: rgba(248,247,243,0.96);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -109,7 +104,6 @@ nav {
 
 .nav-links a:hover { color: var(--acc); }
 
-/* ── CHAPTER HEADER ── */
 .chapter-header {
   padding: 60px 0 50px;
   border-bottom: 1px solid var(--rule);
@@ -143,7 +137,6 @@ nav {
   max-width: 640px;
 }
 
-/* ── IN THIS CHAPTER BOX ── */
 .in-this-chapter {
   background: var(--white);
   border: 1px solid var(--rule);
@@ -170,8 +163,7 @@ nav {
   font-family: 'Source Serif 4', serif;
   font-size: 15px;
   color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
+  padding: 6px 0 6px 20px;
   position: relative;
 }
 
@@ -183,7 +175,10 @@ nav {
   font-weight: 600;
 }
 
-/* ── CONTENT SECTIONS ── */
+main {
+  padding-bottom: 40px;
+}
+
 .section {
   margin-bottom: 70px;
 }
@@ -216,7 +211,6 @@ nav {
   max-width: 750px;
 }
 
-/* ── CODE COMPARISON ── */
 .code-comparison {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -276,7 +270,6 @@ code {
   color: var(--ink);
 }
 
-/* ── KEY INSIGHT CALLOUT ── */
 .key-insight {
   border-left: 5px solid var(--acc);
   background: var(--acc-l);
@@ -298,1143 +291,352 @@ code {
 
 .key-insight p {
   font-family: 'Source Serif 4', serif;
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
 }
 
-/* ── KEY TAKEAWAYS ── */
-.key-takeaways {
+table {
+  width: 100%;
+  border-collapse: collapse;
   background: var(--white);
   border: 1px solid var(--rule);
   border-radius: 8px;
-  padding: 30px;
-  margin: 80px 0;
+  overflow: hidden;
+  margin-bottom: 28px;
 }
 
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
+thead {
+  background: var(--bg2);
 }
 
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-/* ── CHAPTER NAV ── */
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
+th {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
   border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--bg3);
+  font-size: 13px;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.chapter-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 60px 0;
 }
 
 .nav-item {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 20px;
   text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  transition: all 0.2s;
 }
 
-.nav-item.prev {
-  align-items: flex-start;
-}
+.nav-item:hover { border-color: var(--acc); }
 
-.nav-item.next {
-  align-items: flex-end;
-}
+.nav-item.prev { text-align: right; }
 
-.nav-label {
+.nav-item-label {
+  font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
+  color: var(--ink4);
   text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.nav-item-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
   font-weight: 600;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-
-.nav-item:hover .nav-title {
   color: var(--ink);
 }
 
-/* ── FOOTER ── */
+.nav-item:hover .nav-item-title { color: var(--acc); }
+
 footer {
   background: var(--bg2);
   border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-
-.footer-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
-}
-
-.footer-section h4 {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 12px;
-}
-
-.footer-section p,
-.footer-section a {
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
-  color: var(--ink2);
-  text-decoration: none;
-  line-height: 1.7;
-}
-
-.footer-section a:hover {
-  color: var(--acc);
-}
-
-.footer-section ul {
-  list-style: none;
-}
-
-.footer-section li {
-  padding: 4px 0;
-}
-
-.footer-bottom {
-  border-top: 1px solid var(--rule);
-  padding-top: 30px;
+  padding: 32px 2rem;
   text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
   color: var(--ink3);
+  font-size: 13px;
+  margin-top: 40px;
 }
 
 @media (max-width: 768px) {
-  .code-comparison {
-    grid-template-columns: 1fr;
-  }
-  .footer-content {
-    grid-template-columns: 1fr;
-  }
-  .chapter-header h1 {
-    font-size: 28px;
-  }
-  .section h2 {
-    font-size: 22px;
-  }
+  .code-comparison { grid-template-columns: 1fr; }
+  .chapter-nav { grid-template-columns: 1fr; }
+  .nav-item.prev { text-align: left; }
 }
 </style>
 </head>
 <body>
+    <nav>
+        <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+            <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">CH 27</span></a>
+            <a href="index.html" style="font-size:13px;color:var(--ink3);text-decoration:none;">&larr; All Chapters</a>
+        </div>
+    </nav>
 
-<nav class="wrap">
-  <div class="nav-inner">
-    <a href="index.html" class="nav-brand">SQL to C#</a>
-    <span class="nav-pill">Chapter 27</span>
-    <ul class="nav-links">
-      <li><a href="#section-01">What Are Indexes</a></li>
-      <li><a href="#section-02">Creating Indexes</a></li>
-      <li><a href="#section-03">Composite Indexes</a></li>
-    </ul>
-  </div>
-</nav>
+    <div class="wrap">
+        <div class="chapter-header">
+            <div class="chapter-num">Chapter 27</div>
+            <h1>Database Indexing</h1>
+            <p class="chapter-desc">Speed up queries with proper indexing. Understand B-trees, execution plans, and when to index.</p>
+        </div>
 
-<main class="wrap">
+        <div class="in-this-chapter">
+            <h3>In This Chapter</h3>
+            <ul>
+                <li>What indexes are and how they work</li>
+                <li>Single-column, composite, and filtered indexes</li>
+                <li>Clustered vs non-clustered indexes</li>
+                <li>Query execution plans</li>
+                <li>When and how to index</li>
+                <li>Creating indexes in EF Core</li>
+            </ul>
+        </div>
 
-<div class="chapter-header">
-  <div class="chapter-num">Chapter 27</div>
-  <h1>Database Indexing — Performance from Both Sides</h1>
-  <p class="chapter-desc">Master the fundamentals of database indexes in SQL and their direct relationship to query performance in C#. Learn how B-Tree structures work, recognize when you need indexes, and understand the critical tradeoff between read and write performance.</p>
-</div>
+        <!-- SECTION 01 -->
+        <section class="section">
+            <div class="section-num">01</div>
+            <h2>What is an Index?</h2>
+            <p class="section-text">An index is a sorted data structure that speeds up lookups. Without an index, the database scans every row. With an index, it jumps directly to matches.</p>
 
-<div class="in-this-chapter">
-  <h3>In This Chapter</h3>
-  <ul>
-    <li>Understanding B-Tree indexes and full table scans</li>
-    <li>Creating indexes with SQL CREATE INDEX and EF Fluent API</li>
-    <li>Composite indexes and the leftmost prefix rule</li>
-    <li>Covering indexes with INCLUDE clauses</li>
-    <li>The write performance penalty of indexes</li>
-    <li>Reading SQL execution plans and identifying bottlenecks</li>
-  </ul>
-</div>
+            <table>
+                <thead>
+                    <tr><th>Operation</th><th>Without Index</th><th>With Index</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Find customer by ID</td><td>Table scan (1M rows)</td><td>B-tree lookup (log time)</td></tr>
+                    <tr><td>Find orders by date range</td><td>Scan all rows</td><td>Index seek + range scan</td></tr>
+                    <tr><td>JOIN on customer ID</td><td>Nested loop (slow)</td><td>Index join (fast)</td></tr>
+                </tbody>
+            </table>
 
-<!-- Section 01 -->
-<div class="section" id="section-01">
-  <div class="section-num">01 — What Are Indexes and Why They Matter</div>
-  <h2>Understanding B-Tree Indexes and Full Table Scans</h2>
+            <div class="key-insight">
+                <strong>Rule of Thumb:</strong>
+                <p>Index columns you filter on (<code>WHERE</code>), join on (<code>ON</code>), and sort on (<code>ORDER BY</code>).</p>
+            </div>
+        </section>
 
-  <p class="section-text">
-    At their core, database indexes are data structures that enable faster lookups. Without indexes, a query must perform a full table scan: reading every single row in the table and checking if it matches your WHERE clause. With millions of rows, this becomes prohibitively slow. Indexes—typically implemented as B-Tree structures—organize data in a way that allows the database to jump directly to the rows you want.
-  </p>
+        <!-- SECTION 02 -->
+        <section class="section">
+            <div class="section-num">02</div>
+            <h2>Index Types</h2>
+            <p class="section-text">Different index types optimize different queries.</p>
 
-  <p class="section-text">
-    A B-Tree is a balanced tree structure where each node can contain multiple keys and pointers to child nodes. The key insight is that the tree stays balanced, meaning lookups always take roughly O(log N) time instead of O(N). With a million rows, a table scan might require checking 1,000,000 rows; a B-Tree index might require checking only 20 nodes to find the exact row you need.
-  </p>
+            <div class="code-comparison">
+                <div class="code-block sql">
+                    <span class="code-label">SQL</span>
+                    <code>-- Single-column index
+CREATE INDEX IX_Customers_Email ON Customers(Email);
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Without Index (Full Table Scan)</span>
-      <code>-- This query scans every row in Orders table
--- With 1 million rows, this is expensive
-SELECT *
-FROM Orders
-WHERE CustomerId = 5;
+-- Composite index (multiple columns)
+CREATE INDEX IX_Orders_CustomerDate
+  ON Orders(CustomerId, CreatedAt);
 
--- Without index, SQL Server must check 1,000,000 rows
--- With index on CustomerId, SQL Server can:
--- 1. Use B-Tree to find first matching row
--- 2. Follow pointer to retrieve full row
--- Result: 20-30 page reads vs 5000+ page reads</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — How EF Core Benefits from Indexing</span>
-      <code>// Without index: slow query
-var orders = dbContext.Orders
-  .Where(o => o.CustomerId == 5)
-  .ToList();  // Slow! Scans 1M rows
+-- Unique index (prevents duplicates)
+CREATE UNIQUE INDEX IX_Customers_EmailUnique
+  ON Customers(Email);
 
-// With index: fast query (same code, better performance)
-var orders = dbContext.Orders
-  .Where(o => o.CustomerId == 5)
-  .ToList();  // Fast! Uses index seek, ~20 rows read
+-- Filtered index (only active rows)
+CREATE INDEX IX_Customers_Active
+  ON Customers(Name)
+  WHERE IsActive = 1;</code>
+                    </div>
+                <div class="code-block csharp">
+                    <span class="code-label">EF Core</span>
+                    <code>// Single-column
+e.HasIndex(c => c.Email);
 
-// The C# code is identical. The difference is entirely
-// on the database side. When you add an index, EF's
-// execution time drops dramatically without any changes
-// to your application code.</code>
-    </div>
-  </div>
+// Composite
+e.HasIndex(o => new { o.CustomerId, o.CreatedAt });
 
-  <div class="key-insight">
-    <strong>Key Insight: Indexes Don't Change Your Code</strong>
-    <p>The remarkable thing about indexes is that they require no changes to your C# application code. The same LINQ query that was slow becomes fast once you add the appropriate index on the database side. This is why understanding indexing is crucial—a single well-placed index can multiply query performance by 100x or more.</p>
-  </div>
+// Unique
+e.HasIndex(c => c.Email).IsUnique();
 
-  <p class="section-text">
-    To see the difference, you can use SET STATISTICS IO in SQL Server to count logical page reads:
-  </p>
+// Filtered
+e.HasIndex(c => c.Name)
+  .HasFilter("[IsActive] = 1");</code>
+                </div>
+            </div>
 
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Measuring Impact with STATISTICS IO</span>
-      <code>-- Enable detailed statistics
+            <div class="key-insight">
+                <strong>Composite Order Matters:</strong>
+                <p>Index on (CustomerId, CreatedAt) helps queries filtering on CustomerId, but not on CreatedAt alone.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 03 -->
+        <section class="section">
+            <div class="section-num">03</div>
+            <h2>Clustered vs Non-Clustered</h2>
+            <p class="section-text">Clustered index is the table's primary sort order. Non-clustered indexes are separate structures.</p>
+
+            <table>
+                <thead>
+                    <tr><th>Aspect</th><th>Clustered</th><th>Non-Clustered</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Count per table</td><td>One (usually PK)</td><td>Many</td></tr>
+                    <tr><td>Storage</td><td>IS the table</td><td>Separate structure</td></tr>
+                    <tr><td>Performance</td><td>Fast lookups</td><td>Fast lookups + extra hop</td></tr>
+                    <tr><td>Typical</td><td>Primary key (Id)</td><td>Foreign keys, search columns</td></tr>
+                </tbody>
+            </table>
+
+            <div class="code-comparison">
+                <div class="code-block sql">
+                    <span class="code-label">SQL Server</span>
+                    <code>-- Primary key = clustered by default
+CREATE TABLE Customers (
+  Id INT PRIMARY KEY,  -- Clustered
+  Email NVARCHAR(255),
+  Name NVARCHAR(100)
+);
+
+-- Add non-clustered index
+CREATE NONCLUSTERED INDEX IX_Customers_Email
+  ON Customers(Email);
+
+-- Query uses Email index, then jumps to clustered key
+SELECT * FROM Customers
+  WHERE Email = 'alice@example.com';</code>
+                    </div>
+                <div class="code-block csharp">
+                    <span class="code-label">EF Core</span>
+                    <code>modelBuilder.Entity&lt;Customer&gt;(e =>
+{
+    e.HasKey(c => c.Id);  // Clustered by default
+
+    // Non-clustered index
+    e.HasIndex(c => c.Email)
+      .IsUnique()
+      .IsClustered(false);
+
+    // For SQL Server: override with NONCLUSTERED
+    e.ToTable("Customers", t =>
+        t.HasIndex("IX_Customers_Email")
+         .IsClustered(false));
+});</code>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 04 -->
+        <section class="section">
+            <div class="section-num">04</div>
+            <h2>Query Execution Plans</h2>
+            <p class="section-text">Use execution plans to see if your query uses indexes or scans the table.</p>
+
+            <div class="code-block sql">
+                <span class="code-label">SQL Server: Check Execution Plan</span>
+                <code>-- Enable actual execution plan (CTRL+L in SSMS)
 SET STATISTICS IO ON;
 
--- Query WITHOUT index (or before creating it)
-SELECT * FROM Orders WHERE CustomerId = 5;
--- Table 'Orders'. Scan count 1, logical reads 5000
+-- Query with index
+SELECT * FROM Customers WHERE Email = 'alice@example.com';
+-- Output: Scan count 1, logical reads: 2 (index seek = good)
 
--- Now create index
-CREATE INDEX IX_Orders_CustomerId
-ON Orders(CustomerId);
+-- Query without index
+SELECT * FROM Customers WHERE Name LIKE '%Alice%';
+-- Output: Scan count 1, logical reads: 5000 (table scan = bad)</code>
+            </div>
 
--- Same query WITH index
-SELECT * FROM Orders WHERE CustomerId = 5;
--- Table 'Orders'. Scan count 1, logical reads 15
+            <div class="key-insight">
+                <strong>Good Signs:</strong>
+                <p><code>Index Seek</code> = efficient. <code>Table Scan</code> = missing index or wrong WHERE clause.</p>
+            </div>
+        </section>
 
--- That's a 333x improvement in I/O operations!</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Observing Performance in EF Core</span>
-      <code>// Enable logging to see SQL generated and timings
-var options = new DbContextOptionsBuilder<OrderContext>()
-  .UseSqlServer(connectionString)
-  .LogTo(Console.WriteLine, LogLevel.Information)
-  .Build();
+        <!-- SECTION 05 -->
+        <section class="section">
+            <div class="section-num">05</div>
+            <h2>Indexing Strategy</h2>
+            <p class="section-text">Don't index everything. Balance read performance against write cost.</p>
 
-using var context = new OrderContext(options);
+            <table>
+                <thead>
+                    <tr><th>Column Usage</th><th>Index?</th><th>Why</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>WHERE Email = '...'</td><td>Yes</td><td>Direct lookup</td></tr>
+                    <tr><td>JOIN Orders ON CustomerId</td><td>Yes</td><td>Join optimization</td></tr>
+                    <tr><td>WHERE CreatedAt > '2024-01-01'</td><td>Yes</td><td>Range scan</td></tr>
+                    <tr><td>ORDER BY Name</td><td>Maybe</td><td>Sort optimization (if large)</td></tr>
+                    <tr><td>SELECT in projection</td><td>No</td><td>No filter benefit</td></tr>
+                    <tr><td>WHERE rare_column = 1</td><td>No</td><td>Low selectivity</td></tr>
+                </tbody>
+            </table>
 
-// Before index: query takes ~2.5 seconds
-// "Executed DbCommand (2500ms) [Parameters=...]"
-var orders = context.Orders
-  .Where(o => o.CustomerId == 5)
-  .ToList();
+            <div class="key-insight">
+                <strong>Cost of Indexes:</strong>
+                <p>Every INSERT/UPDATE/DELETE must maintain all indexes. Each index adds disk and memory overhead.</p>
+            </div>
+        </section>
 
-// After adding index on database: same code, ~10ms
-// "Executed DbCommand (10ms) [Parameters=...]"
-// Your C# code doesn't change—only DB performance changes</code>
-    </div>
-  </div>
+        <!-- SECTION 06 -->
+        <section class="section">
+            <div class="section-num">06</div>
+            <h2>EF Core Migrations with Indexes</h2>
+            <p class="section-text">Define indexes in entity configuration; migrations create them automatically.</p>
 
-</div>
-
-<!-- Section 02 -->
-<div class="section" id="section-02">
-  <div class="section-num">02 — Creating Indexes: SQL vs EF Fluent API</div>
-  <h2>Building Indexes in Both SQL and C#</h2>
-
-  <p class="section-text">
-    There are two primary ways to create indexes: writing raw SQL CREATE INDEX statements and using Entity Framework's Fluent API during model configuration. Both achieve the same result on the database—applied indexes are identical whether created via SQL or EF migrations—but the approach differs depending on your workflow.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — CREATE INDEX Statement</span>
-      <code>-- Basic index on a single column
-CREATE INDEX IX_Orders_CustomerId
-ON Orders(CustomerId);
-
--- Best practice: name indexes with IX_ prefix
--- IX = Index
--- Table name = Orders
--- Column(s) = CustomerId
-
--- Querying with this index is now fast:
-SELECT * FROM Orders WHERE CustomerId = 5;
-
--- You can also create UNIQUE indexes to enforce
--- uniqueness at the database level
-CREATE UNIQUE INDEX IX_Users_Email
-ON Users(Email);
-
--- This prevents two users from having the same email,
--- enforced by the database itself</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — EF Core Fluent API Configuration</span>
-      <code>// In your DbContext OnModelCreating method
-protected override void OnModelCreating(
-  ModelBuilder modelBuilder)
+            <div class="code-block csharp">
+                <span class="code-label">Migration Code</span>
+                <code>modelBuilder.Entity&lt;Customer&gt;(e =>
 {
-  // Simple non-unique index
-  modelBuilder.Entity<Order>()
-    .HasIndex(o => o.CustomerId)
-    .HasName("IX_Orders_CustomerId");
+    e.HasKey(c => c.Id);
+    e.Property(c => c.Email).IsRequired();
 
-  // UNIQUE index on User email
-  modelBuilder.Entity<User>()
-    .HasIndex(u => u.Email)
-    .HasName("IX_Users_Email")
-    .IsUnique();  // Add IsUnique() for UNIQUE constraint
+    // Create index
+    e.HasIndex(c => c.Email).IsUnique();
+    e.HasIndex(c => c.CreatedAt);
 
-  base.OnModelCreating(modelBuilder);
-}
+    // Composite index for common queries
+    e.HasIndex(c => new { c.IsActive, c.CreatedAt })
+      .HasFilter("[IsActive] = 1")
+      .HasDatabaseName("IX_Customers_ActiveCreated");
+});
 
-// When you run 'dotnet ef migrations add AddIndexes',
-// EF generates a migration with these CREATE INDEX statements:
-// migrationBuilder.CreateIndex(
-//   name: "IX_Orders_CustomerId",
-//   table: "Orders",
-//   column: "CustomerId");
-//
-// The generated migration contains exact SQL that will
-// be executed when you run 'dotnet ef database update'</code>
+// Then: dotnet ef migrations add AddCustomerIndexes
+// This generates:
+// CREATE INDEX IX_Customers_Email ON Customers(Email)
+// CREATE INDEX IX_Customers_CreatedAt ON Customers(CreatedAt)
+// CREATE INDEX IX_Customers_ActiveCreated ON Customers(IsActive, CreatedAt) WHERE IsActive = 1</code>
+            </div>
+        </section>
+
+        <!-- Chapter Nav -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch26-choosing-the-right-tool.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Choosing the Right Tool</span>
+            </a>
+            <a class="nav-item" href="ch28-transactions.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Transactions</span>
+            </a>
+        </div>
     </div>
-  </div>
 
-  <p class="section-text">
-    The Fluent API approach is generally preferred in modern applications because it keeps your index definitions with your model definitions, and EF automatically generates the correct SQL and migration scripts. However, you can also define indexes using Data Annotations:
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — For Reference: The Generated Migration</span>
-      <code>-- When EF generates the migration, it creates this SQL:
-CREATE TABLE Orders (
-  Id INT PRIMARY KEY,
-  CustomerId INT,
-  OrderDate DATETIME,
-  Total DECIMAL(10,2)
-);
-
--- Then adds indexes separately:
-CREATE INDEX IX_Orders_CustomerId
-ON Orders(CustomerId);
-
--- Indexes are created AFTER the table exists.
--- You cannot index a non-existent column.
--- Create the table first, then add indexes.</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Data Annotations Alternative</span>
-      <code>using System.ComponentModel.DataAnnotations.Schema;
-
-public class Order
-{
-  public int Id { get; set; }
-
-  // Using IndexAttribute (available in EF Core 5.0+)
-  [Index(nameof(CustomerId))]
-  public int CustomerId { get; set; }
-
-  public DateTime OrderDate { get; set; }
-  public decimal Total { get; set; }
-}
-
-public class User
-{
-  public int Id { get; set; }
-
-  // Unique index using IsUnique = true
-  [Index(nameof(Email), IsUnique = true)]
-  public string Email { get; set; }
-}
-
-// Both approaches (Fluent and Annotations) work.
-// Fluent API is more flexible for complex scenarios.
-// Annotations are more concise for simple cases.</code>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Key Insight: Indexes and Migrations Go Hand in Hand</strong>
-    <p>When you define indexes in EF's Fluent API or with IndexAttribute, those definitions automatically appear in your migration files. The migration generates the exact SQL CREATE INDEX statements needed. When you deploy to production, running 'dotnet ef database update' applies both the schema and indexes. This is safer and more maintainable than trying to manually add indexes to production databases.</p>
-  </div>
-
-</div>
-
-<!-- Section 03 -->
-<div class="section" id="section-03">
-  <div class="section-num">03 — Composite Indexes and Column Order</div>
-  <h2>Multiple Columns in a Single Index</h2>
-
-  <p class="section-text">
-    Sometimes you have queries that filter on multiple columns. A composite index—an index on multiple columns—can be dramatically more efficient than separate indexes on each column. However, the order of columns in the index matters greatly. This is called the leftmost prefix rule: the database can use an index to efficiently search for values in the leftmost columns, but adding columns on the right becomes progressively less useful.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Composite Index on CustomerId, OrderDate</span>
-      <code>-- Create composite index: CustomerId first, OrderDate second
-CREATE INDEX IX_Orders_CustDate
-ON Orders(CustomerId, OrderDate);
-
--- This index works efficiently for queries like:
-SELECT * FROM Orders
-WHERE CustomerId = 5;  -- Uses leftmost column (fast)
-
-SELECT * FROM Orders
-WHERE CustomerId = 5 AND OrderDate > '2024-01-01';
--- Uses both columns (very fast)
-
--- This index is LESS useful for:
-SELECT * FROM Orders
-WHERE OrderDate > '2024-01-01';
--- Must scan the whole index because OrderDate isn't first
-
--- The leftmost prefix rule: columns must be in order
--- An index on (A, B, C) can be used as (A), (A,B), or (A,B,C)
--- But NOT as (B), (B,C), (C), or (A,C)
-
--- If you need to query on OrderDate alone, create:
-CREATE INDEX IX_Orders_OrderDate
-ON Orders(OrderDate);</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Composite Index in Fluent API</span>
-      <code>protected override void OnModelCreating(
-  ModelBuilder modelBuilder)
-{
-  // Composite index: CustomerId first, OrderDate second
-  modelBuilder.Entity<Order>()
-    .HasIndex(o => new { o.CustomerId, o.OrderDate })
-    .HasName("IX_Orders_CustDate");
-
-  // This enables efficient queries like:
-  var orders = dbContext.Orders
-    .Where(o => o.CustomerId == 5)
-    .ToList();  // Uses IX_Orders_CustDate, fast
-
-  var recentOrders = dbContext.Orders
-    .Where(o => o.CustomerId == 5
-      && o.OrderDate > DateTime.Parse("2024-01-01"))
-    .ToList();  // Uses both columns, very fast
-
-  // If you also query by OrderDate alone, add separate:
-  modelBuilder.Entity<Order>()
-    .HasIndex(o => o.OrderDate)
-    .HasName("IX_Orders_OrderDate");
-
-  base.OnModelCreating(modelBuilder);
-}
-
-// Real-world scenario: you have 5 indexes but typically
-// only 1-2 are used per query. SQL Server optimizer
-// analyzes the WHERE clause and chooses the best index.
-// Your job: make sure the right indexes exist.</code>
-    </div>
-  </div>
-
-  <p class="section-text">
-    The leftmost prefix rule is critical to understand. Consider a real-world example: an e-commerce database with millions of orders. You want fast lookup by customer, and within each customer's orders, you want fast filtering by date.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Understanding Leftmost Prefix</span>
-      <code>-- Composite index on (CustomerId, OrderDate)
-CREATE INDEX IX_Orders_CustDate
-ON Orders(CustomerId, OrderDate);
-
--- Structure visualization:
--- Level 1: CustomerId values (1, 2, 3, 4, 5, ...)
--- Level 2: Within each CustomerId, OrderDate values
---   CustId 1: [2023-01-15, 2023-02-20, 2024-01-10]
---   CustId 2: [2023-03-05, 2024-02-14]
---   CustId 5: [2024-01-01, 2024-03-15, 2024-03-20]
-
--- Fast: CustomerId is the leftmost column
-SELECT COUNT(*) FROM Orders WHERE CustomerId = 5;
--- Index search: Jump to CustId=5 section, count rows
-
--- Fast: Both columns in order
-SELECT OrderId FROM Orders
-WHERE CustomerId = 5 AND OrderDate >= '2024-01-01';
--- Index search: Jump to CustId=5, then find OrderDate>=2024-01-01
-
--- Slow: Skipping the leftmost column
-SELECT COUNT(*) FROM Orders WHERE OrderDate >= '2024-01-01';
--- Cannot use this index effectively
--- Must scan the entire index (still slow)</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Querying with Composite Indexes</span>
-      <code>public class OrderRepository
-{
-  private readonly OrderContext _context;
-
-  public OrderRepository(OrderContext context)
-  {
-    _context = context;
-  }
-
-  // Query 1: Filters on leftmost column only (CustomerId)
-  public List<Order> GetOrdersByCustomer(int customerId)
-  {
-    return _context.Orders
-      .Where(o => o.CustomerId == customerId)
-      .ToList();
-    // Uses IX_Orders_CustDate, very fast
-  }
-
-  // Query 2: Filters on both columns in order
-  public List<Order> GetRecentOrdersByCustomer(
-    int customerId, DateTime since)
-  {
-    return _context.Orders
-      .Where(o => o.CustomerId == customerId
-        && o.OrderDate >= since)
-      .ToList();
-    // Uses IX_Orders_CustDate, very fast
-  }
-
-  // Query 3: Filters on OrderDate only (rightmost column)
-  public List<Order> GetOrdersSince(DateTime since)
-  {
-    return _context.Orders
-      .Where(o => o.OrderDate >= since)
-      .ToList();
-    // Cannot use IX_Orders_CustDate effectively
-    // Need separate index: IX_Orders_OrderDate
-  }
-}
-
-// In OnModelCreating:
-// modelBuilder.Entity<Order>()
-//   .HasIndex(o => new { o.CustomerId, o.OrderDate });
-// modelBuilder.Entity<Order>()
-//   .HasIndex(o => o.OrderDate);</code>
-    </div>
-  </div>
-
-</div>
-
-<!-- Section 04 -->
-<div class="section" id="section-04">
-  <div class="section-num">04 — Covering Indexes and the INCLUDE Clause</div>
-  <h2>Adding Extra Columns for Needle-Free Lookups</h2>
-
-  <p class="section-text">
-    Normally, an index tells the database where to find rows (the row's location or cluster key). The database still must access the actual table to retrieve all the columns you SELECT. A covering index includes extra columns in the index itself, so the database can answer your query entirely from the index without touching the table. This is called a covering index because the index "covers" all the columns needed for the query.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Covering Index with INCLUDE</span>
-      <code>-- Standard index: only contains CustomerId
-CREATE INDEX IX_Orders_CustomerId
-ON Orders(CustomerId);
-
--- Query needs CustomerId, Total, and OrderDate
-SELECT CustomerId, Total, OrderDate
-FROM Orders
-WHERE CustomerId = 5;
--- Database:
--- 1. Uses index to find rows with CustomerId = 5
--- 2. Follows pointer to actual row in table (KEY LOOKUP)
--- 3. Retrieves Total and OrderDate from table
--- Result: index seeks + key lookups
-
--- Better: Covering index that INCLUDES the extra columns
-CREATE INDEX IX_Orders_Cust
-ON Orders(CustomerId)  -- Search column
-INCLUDE (Total, OrderDate);  -- Extra columns included in index
-
--- Same query now:
-SELECT CustomerId, Total, OrderDate
-FROM Orders
-WHERE CustomerId = 5;
--- Database:
--- 1. Uses index to find rows with CustomerId = 5
--- 2. Retrieves Total and OrderDate FROM THE INDEX
--- 3. No need to access the table!
--- Result: index seeks, no key lookups (faster)
-
--- Covering indexes are powerful for read-heavy scenarios
--- where you SELECT a specific set of columns repeatedly</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Covering Indexes via Raw SQL Migration</span>
-      <code>// EF Core doesn't have direct syntax for INCLUDE,
-// so you add it via raw SQL in a migration
-
-// In Package Manager Console or .NET CLI:
-// dotnet ef migrations add AddCoveringIndex
-
-// Then edit the migration file:
-public partial class AddCoveringIndex : Migration
-{
-  protected override void Up(MigrationBuilder migrationBuilder)
-  {
-    // Raw SQL: create covering index with INCLUDE
-    migrationBuilder.Sql(@"
-      CREATE INDEX IX_Orders_Cust
-      ON Orders(CustomerId)
-      INCLUDE (Total, OrderDate)
-    ");
-  }
-
-  protected override void Down(MigrationBuilder migrationBuilder)
-  {
-    migrationBuilder.Sql("DROP INDEX IX_Orders_Cust ON Orders");
-  }
-}
-
-// Now run: dotnet ef database update
-// The covering index is created, and queries benefit:
-
-var orders = dbContext.Orders
-  .Where(o => o.CustomerId == customerId)
-  .Select(o => new { o.CustomerId, o.Total, o.OrderDate })
-  .ToList();
-// This query uses the covering index
-// All data comes from index, no table access needed</code>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Key Insight: Balance Coverage with Maintenance Overhead</strong>
-    <p>Covering indexes are powerful for specific queries, but they increase the size of the index and slow down write operations (every INSERT/UPDATE must maintain all included columns). Use them selectively for frequent, critical queries. Don't add every column to every index—focus on your actual access patterns.</p>
-  </div>
-
-</div>
-
-<!-- Section 05 -->
-<div class="section" id="section-05">
-  <div class="section-num">05 — When Indexes Hurt: The Write Performance Penalty</div>
-  <h2>Understanding the INSERT/UPDATE/DELETE Cost</h2>
-
-  <p class="section-text">
-    Indexes dramatically improve read performance, but they come at a cost: every INSERT, UPDATE, and DELETE operation must update all indexes on that table. If you have 10 indexes on a table and insert a row, the database must insert that row into the table, then update 10 indexes. This cost is invisible when you're doing a few inserts but becomes painfully obvious during bulk operations.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Insert Performance with Multiple Indexes</span>
-      <code>-- Table with 10 indexes
-CREATE TABLE Products (
-  Id INT PRIMARY KEY,
-  Name NVARCHAR(100),
-  Sku NVARCHAR(50),
-  Price DECIMAL(10,2),
-  CategoryId INT,
-  SupplierId INT,
-  CreatedDate DATETIME,
-  ModifiedDate DATETIME,
-  IsActive BIT
-);
-
--- Indexes for common queries:
-CREATE INDEX IX_Products_CategoryId ON Products(CategoryId);
-CREATE INDEX IX_Products_SupplierId ON Products(SupplierId);
-CREATE INDEX IX_Products_Sku ON Products(Sku);
-CREATE INDEX IX_Products_IsActive ON Products(IsActive);
-CREATE INDEX IX_Products_CreatedDate ON Products(CreatedDate);
--- ... plus 5 more indexes
-
--- Insert 100,000 products:
--- Naive approach: 100,000 individual inserts
-INSERT INTO Products (Name, Sku, Price, CategoryId, SupplierId)
-VALUES ('Product 1', 'SKU-0001', 29.99, 1, 1);
--- Cost per insert: 1 table write + 10 index writes = 11 operations
--- 100,000 inserts * 11 operations = 1.1 million page writes
--- Execution time: 2-3 minutes for 100K rows
-
--- Better approach: BULK INSERT (disables some indexes)
--- Or use a transaction and batch:
-BEGIN TRANSACTION;
-INSERT INTO Products SELECT * FROM TempProducts;
-COMMIT;
--- Still slow with all indexes active</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Bulk Insert Strategies</span>
-      <code>public class ProductRepository
-{
-  private readonly ProductContext _context;
-
-  // Naive approach: Add each product individually
-  public void InsertProductsSlowly(List<Product> products)
-  {
-    foreach (var product in products)
-    {
-      _context.Products.Add(product);
-      _context.SaveChanges();  // Persists immediately, hits all indexes
-    }
-    // For 100K products: 100K database round trips
-    // Each SaveChanges flushes to DB
-    // Extremely slow!
-  }
-
-  // Better: Batch add-then-save
-  public void InsertProductsFaster(List<Product> products)
-  {
-    foreach (var product in products)
-    {
-      _context.Products.Add(product);
-    }
-    _context.SaveChanges();  // Single batch insert
-    // Still updates all indexes, but fewer round trips
-    // For 100K: 1 database round trip with large insert
-    // Faster than naive, but still slow with many indexes
-  }
-
-  // Best: Disable indexes, insert, rebuild indexes
-  public async Task InsertProductsFastest(List<Product> products)
-  {
-    var connection = _context.Database.GetDbConnection();
-
-    // Disable all indexes on Products table
-    await connection.ExecuteAsync(
-      "ALTER INDEX ALL ON Products DISABLE");
-
-    try
-    {
-      foreach (var product in products)
-      {
-        _context.Products.Add(product);
-      }
-      await _context.SaveChangesAsync();
-      // Inserts are fast: no indexes to maintain
-    }
-    finally
-    {
-      // Rebuild all indexes
-      await connection.ExecuteAsync(
-        "ALTER INDEX ALL ON Products REBUILD");
-    }
-    // For 100K: Insert takes ~10 seconds
-    // Index rebuild takes ~20 seconds
-    // Total: ~30 seconds vs 2-3 minutes with active indexes
-  }
-}</code>
-    </div>
-  </div>
-
-  <p class="section-text">
-    The tradeoff is clear: indexes speed up SELECT but slow down INSERT/UPDATE/DELETE. In a typical OLTP (Online Transaction Processing) system, this tradeoff is favorable because most operations are reads. In a data warehouse doing nightly bulk loads, you might disable indexes during load and rebuild them afterward.
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Measuring Index Maintenance Cost</span>
-      <code>-- Example: Table with index, track insert performance
-CREATE TABLE TestTable (
-  Id INT PRIMARY KEY,
-  Value NVARCHAR(100),
-  CreatedDate DATETIME
-);
-
-CREATE INDEX IX_TestTable_CreatedDate
-ON TestTable(CreatedDate);
-
--- Insert 10K rows and measure:
-SET STATISTICS IO ON;
-INSERT INTO TestTable (Id, Value, CreatedDate)
-SELECT TOP 10000
-  ROW_NUMBER() OVER (ORDER BY (SELECT 1)),
-  'Value' + CAST(ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS NVARCHAR(10)),
-  GETDATE()
-FROM master.dbo.spt_values;
--- Table 'TestTable'. Scan count 0, logical reads 35
--- Index 'IX_TestTable_CreatedDate'. Scan count 0, logical reads 45
-
--- Total: 80 logical reads for inserts + index updates
-
--- Now disable index and retry:
-ALTER INDEX IX_TestTable_CreatedDate ON TestTable DISABLE;
-INSERT INTO TestTable (Id, Value, CreatedDate)
-SELECT TOP 10000 ...
--- Table 'TestTable'. Scan count 0, logical reads 35
--- No index reads! Significantly faster.
-
--- Rebuild index:
-ALTER INDEX IX_TestTable_CreatedDate ON TestTable REBUILD;</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Practical Bulk Insert Example</span>
-      <code>public class BulkDataLoader
-{
-  private readonly IDbConnection _connection;
-
-  public async Task LoadLargeDataset(
-    List<Product> products,
-    string tableName = "Products")
-  {
-    // Step 1: Disable indexes
-    var disableCmd = $"ALTER INDEX ALL ON {tableName} DISABLE";
-    await _connection.ExecuteAsync(disableCmd);
-
-    try
-    {
-      // Step 2: Use SqlBulkCopy for ultra-fast inserts
-      using (var bulkCopy = new SqlBulkCopy(_connection as SqlConnection))
-      {
-        bulkCopy.DestinationTableName = tableName;
-        bulkCopy.BatchSize = 5000;
-        bulkCopy.NotifyAfter = 10000;
-
-        // Convert List<Product> to DataTable
-        DataTable dt = ConvertToDataTable(products);
-        await bulkCopy.WriteToServerAsync(dt);
-
-        Console.WriteLine($"Inserted {products.Count} rows");
-      }
-    }
-    finally
-    {
-      // Step 3: Rebuild indexes
-      var rebuildCmd = $"ALTER INDEX ALL ON {tableName} REBUILD";
-      await _connection.ExecuteAsync(rebuildCmd);
-    }
-  }
-
-  // With indexes disabled: 100K products in ~5 seconds
-  // With indexes enabled: 100K products in ~90 seconds
-  // That's an 18x improvement by managing indexes strategically!
-}</code>
-    </div>
-  </div>
-
-</div>
-
-<!-- Section 06 -->
-<div class="section" id="section-06">
-  <div class="section-num">06 — Reading Execution Plans and Identifying Bottlenecks</div>
-  <h2>Analyzing Query Performance with Execution Plans</h2>
-
-  <p class="section-text">
-    An execution plan is a visual representation of how the database executes your query. It shows every step: which tables are scanned, which indexes are used, and how much work each step costs. Learning to read execution plans is essential for identifying performance bottlenecks. The three key operations are Table Scan (slow), Index Scan (medium), and Index Seek (fast).
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Viewing Execution Plans in SSMS</span>
-      <code>-- In SQL Server Management Studio, enable actual execution plan:
--- Query → Include Actual Execution Plan (Ctrl+Shift+A)
-
--- Example query to analyze:
-SELECT * FROM Orders WHERE CustomerId = 5;
-
--- Execution Plan will show:
--- 1. SELECT (top of tree)
---    └── Table Scan [Orders]
---        └── Predicate: [CustomerId] = 5
-
--- Analysis:
--- - "Table Scan" means every row was checked
--- - This is inefficient if table has millions of rows
--- - Solution: Add index on CustomerId
-
--- After creating index:
-CREATE INDEX IX_Orders_CustomerId ON Orders(CustomerId);
-
--- Re-run query with execution plan:
-SELECT * FROM Orders WHERE CustomerId = 5;
-
--- New Execution Plan:
--- 1. SELECT
---    └── Index Seek [IX_Orders_CustomerId]
---        └── Predicate: [CustomerId] = 5
---    └── Key Lookup [Orders]
-
--- Analysis:
-// "Index Seek" = efficient (directly finds rows)
-// "Key Lookup" = small cost to fetch full row data
-// Estimated subtree cost: 0.08 (was 2.5+ with scan)
-// That's 30x faster!</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Analyzing EF Core Queries</span>
-      <code>public class QueryAnalyzer
-{
-  private readonly OrderContext _context;
-
-  public QueryAnalyzer(OrderContext context)
-  {
-    _context = context;
-  }
-
-  // Enable query logging to see execution time
-  public void ConfigureLogging()
-  {
-    // In DbContext constructor:
-    var options = new DbContextOptionsBuilder<OrderContext>()
-      .UseSqlServer(connectionString)
-      .LogTo(Console.WriteLine,
-        new[] { RelationalEventId.CommandExecuted })
-      .EnableSensitiveDataLogging()
-      .Build();
-  }
-
-  // Example slow query
-  public List<Order> GetOrdersSlowly()
-  {
-    return _context.Orders
-      .Where(o => o.CustomerId == 5)
-      .ToList();
-    // Console output:
-    // "Executed DbCommand (2500ms)"
-    // Slow! Probably a table scan.
-
-    // Check execution plan in SQL Server:
-    // 1. Enable "Include Actual Execution Plan" in SSMS
-    // 2. Copy the SQL from EF logs
-    // 3. Paste into SSMS and execute
-    // 4. View the execution plan
-  }
-
-  // After adding index, same code is fast:
-  public List<Order> GetOrdersFast()
-  {
-    return _context.Orders
-      .Where(o => o.CustomerId == 5)
-      .ToList();
-    // Console output:
-    // "Executed DbCommand (10ms)"
-    // Index seek is being used!
-  }
-
-  // Complex query analysis
-  public List<dynamic> AnalyzeComplexQuery()
-  {
-    // Multi-join query: check if it uses indexes
-    var results = _context.Orders
-      .Include(o => o.Customer)
-      .Include(o => o.LineItems)
-      .Where(o => o.OrderDate >= DateTime.Today.AddMonths(-1))
-      .ToList();
-
-    // To analyze:
-    // 1. Enable logging and copy the generated SQL
-    // 2. Run in SSMS with Include Actual Execution Plan
-    // 3. Look for Table Scans (bad) vs Index Seeks (good)
-    // 4. Add indexes for frequently scanned columns
-
-    return null;
-  }
-}</code>
-    </div>
-  </div>
-
-  <p class="section-text">
-    Understanding the three core query operations helps you quickly diagnose problems:
-  </p>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL — Three Core Query Operations</span>
-      <code>-- OPERATION 1: Table Scan
--- Reads every row in the table sequentially
--- Cost: O(N) where N = number of rows
--- Example:
-SELECT * FROM Orders WHERE Status = 'Pending';
--- Without index on Status, must scan all 1M rows
-
--- OPERATION 2: Index Scan
--- Reads every row in an index sequentially
--- Cost: Still O(N), but smaller dataset than table
--- Example: Index exists but can't be used efficiently
-SELECT * FROM Orders WHERE OrderDate > '2024-01-01';
--- Index on (CustomerId, OrderDate) cannot be used
--- because CustomerId isn't in WHERE clause
-// Must scan the entire index (slow, but less slow than table scan)
-
--- OPERATION 3: Index Seek
--- Uses index to jump directly to matching rows
--- Cost: O(log N) + O(K) where K = result rows
--- Example:
-SELECT * FROM Orders WHERE CustomerId = 5;
--- With index on CustomerId:
-// Jump to CustomerId=5 section (log N steps)
-// Retrieve matching rows (K steps)
-// Total: 20 + 100 = 120 steps vs 1M steps (table scan)
-
--- Rule of thumb:
-// Seek = good (what you want)
-// Scan = acceptable (if necessary)
-// Table Scan = investigate why there's no useful index</code>
-    </div>
-    <div class="code-block csharp">
-      <span class="code-label">C# — Using Azure Data Studio for Analysis</span>
-      <code>// Azure Data Studio (open source, free) is excellent
-// for analyzing EF Core-generated queries
-
-// Step 1: Configure EF to log SQL
-var options = new DbContextOptionsBuilder<OrderContext>()
-  .UseSqlServer(connectionString)
-  .LogTo(Console.WriteLine,
-    new[] { RelationalEventId.CommandExecuted })
-  .Build();
-
-using var context = new OrderContext(options);
-
-// Step 2: Run your LINQ query
-var orders = context.Orders
-  .Where(o => o.CustomerId == 5)
-  .ToList();
-
-// Step 3: Copy the logged SQL from console output:
-// SELECT "o"."OrderId", "o"."CustomerId", ...
-// FROM "Orders" AS "o"
-// WHERE "o"."CustomerId" = 5
-
-// Step 4: Open Azure Data Studio
-// 1. Paste the SQL into a new query
-// 2. Click "Explain Query Plan" (or Ctrl+Alt+L)
-// 3. Visual tree shows:
-//    - Index Seek on CustomerId (good!)
-//    - Estimated cost: 0.005
-//    - Rows returned: 47
-
-// Step 5: If you see Table Scan instead:
-// 1. Add the index: HasIndex(o => o.CustomerId)
-// 2. Create migration: dotnet ef migrations add AddCustomerIdIndex
-// 3. Run: dotnet ef database update
-// 4. Re-run the query and re-check the plan
-// 5. Now shows Index Seek (problem solved!)
-
-// Query before index: 2500ms
-// Query after index: 10ms (250x faster)</code>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Key Insight: The Execution Plan is Your Best Debugging Tool</strong>
-    <p>When a query is slow, the execution plan tells you exactly why. Is it a table scan? Add an index. Is it a missing statistic? Update statistics. Is it a complex join creating a hash match? Rewrite the query or add indexes. The execution plan is objective data—it shows exactly what the database is doing. Always check it before guessing.</p>
-  </div>
-
-</div>
-
-</main>
-
-<!-- KEY TAKEAWAYS SECTION -->
-<div class="wrap">
-  <div class="key-takeaways">
-    <h3>Key Takeaways</h3>
-    <ul>
-      <li>Indexes use B-Tree structures to enable O(log N) lookups instead of O(N) table scans, often providing 100x+ performance improvements</li>
-      <li>Create indexes using SQL CREATE INDEX or EF Core's Fluent API; both approaches generate identical database structures</li>
-      <li>Composite indexes follow the leftmost prefix rule: columns must be used in index order for the index to be effective</li>
-      <li>Covering indexes with INCLUDE clauses allow the database to answer queries entirely from the index, avoiding table lookups</li>
-      <li>Every index slows down INSERT/UPDATE/DELETE operations, so index strategically: focus on frequently-queried columns</li>
-      <li>Execution plans (Table Scan vs Index Scan vs Index Seek) reveal exactly how the database executes your query and identify bottlenecks</li>
-      <li>Use Azure Data Studio or SQL Server Management Studio to visualize execution plans and verify that your indexes are being used</li>
-    </ul>
-  </div>
-</div>
-
-<!-- CHAPTER NAVIGATION -->
-<div class="wrap">
-  <nav class="chapter-nav">
-    <a href="ch26-choosing-the-right-tool.html" class="nav-item prev">
-      <span class="nav-label">Previous</span>
-      <span class="nav-title">Choosing the Right Tool</span>
-    </a>
-    <a href="ch28-transactions.html" class="nav-item next">
-      <span class="nav-label">Next</span>
-      <span class="nav-title">Transactions & Concurrency</span>
-    </a>
-  </nav>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="wrap">
-    <div class="footer-content">
-      <div class="footer-section">
-        <h4>About This Book</h4>
-        <p>SQL to C# is a comprehensive guide to data access patterns, from SQL fundamentals to advanced EF Core and Dapper techniques. Learn how relational concepts map to object-oriented code.</p>
-      </div>
-      <div class="footer-section">
-        <h4>Core Topics</h4>
-        <ul>
-          <li><a href="#">Data Modeling</a></li>
-          <li><a href="#">Query Patterns</a></li>
-          <li><a href="#">Performance Optimization</a></li>
-          <li><a href="#">Advanced EF Core</a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h4>Resources</h4>
-        <ul>
-          <li><a href="#">GitHub Repository</a></li>
-          <li><a href="#">Live Examples</a></li>
-          <li><a href="#">Community Forum</a></li>
-          <li><a href="#">Contact Authors</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>SQL to C# — Master data access across SQL Server, Entity Framework Core, and Dapper. Published 2024.</p>
-    </div>
-  </div>
-</footer>
-
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

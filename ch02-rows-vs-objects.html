@@ -1,1219 +1,755 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 2: Rows vs Objects — SQL to C#</title>
-<meta name="description" content="Learn how SQL rows represent individual instances, and how CRUD operations in SQL translate to object construction and mutation in C#. Master both sides of data access.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 02: Rows vs Objects — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-  --amber: #7a5200;
-  --amber-l: #fdf8ec;
-  --amber-b: #e8d08a;
-}
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* ── NAV ── */
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-.nav-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .quad-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
+        .ef-type { color: var(--green); font-weight: 500; }
 
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
-
-.nav-links a:hover { color: var(--acc); }
-
-/* ── CHAPTER HEADER ── */
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-
-.chapter-header h1 {
-  font-size: 38px;
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 640px;
-}
-
-/* ── IN THIS CHAPTER BOX ── */
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-
-/* ── CONTENT SECTIONS ── */
-.section {
-  margin-bottom: 70px;
-}
-
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-}
-
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-}
-
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  max-width: 750px;
-}
-
-/* ── CODE COMPARISON ── */
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.code-block {
-  border-radius: 12px;
-  padding: 24px;
-  overflow-x: auto;
-}
-
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-
-.code-block.csharp {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-
-.code-block.csharp .code-label {
-  color: var(--blue);
-}
-
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.code-block.sql code {
-  color: #e8e4db;
-}
-
-.code-block.csharp code {
-  color: var(--ink);
-}
-
-/* ── KEY INSIGHT CALLOUT ── */
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px;
-  padding-left: 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-
-/* ── KEY TAKEAWAYS ── */
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  padding: 30px;
-  margin: 80px 0;
-}
-
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-/* ── CHAPTER NAV ── */
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item.prev {
-  align-items: flex-start;
-}
-
-.nav-item.next {
-  align-items: flex-end;
-}
-
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-
-/* ── FOOTER ── */
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-
-.footer-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
-}
-
-.footer-section h4 {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 12px;
-}
-
-.footer-section p,
-.footer-section a {
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
-  color: var(--ink2);
-  text-decoration: none;
-  line-height: 1.7;
-}
-
-.footer-section a:hover {
-  color: var(--acc);
-}
-
-.footer-section ul {
-  list-style: none;
-}
-
-.footer-section li {
-  padding: 4px 0;
-}
-
-.footer-bottom {
-  border-top: 1px solid var(--rule);
-  padding-top: 30px;
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 13px;
-  color: var(--ink3);
-}
-
-@media (max-width: 768px) {
-  .code-comparison {
-    grid-template-columns: 1fr;
-  }
-
-  .footer-content {
-    grid-template-columns: 1fr;
-  }
-
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-}
-</style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison, .quad-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 02</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<nav>
-  <div class="wrap nav-inner">
-    <a href="index.html" class="nav-brand">
-      SQL to C#
-      <span class="nav-pill">Chapter 02</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="#toc">Chapters</a></li>
-    </ul>
-  </div>
-</nav>
-
-<main>
-  <div class="wrap">
-    <header class="chapter-header">
-      <div class="chapter-num">Part 1: The Two Worlds — SQL Meets OOP</div>
-      <h1>Rows vs Objects<br>CRUD Through Both Lenses</h1>
-      <p class="chapter-desc">A single row in a table is an instance of that entity. When you work with data in C#, you're working with objects—instances of classes. CRUD operations (Create, Read, Update, Delete) exist in both SQL and C#, but they're expressed differently. Learn how INSERT becomes construction, UPDATE becomes mutation, and how Entity Framework and Dapper translate between these two worlds. This chapter is foundational to understanding the impedance mismatch between relational databases and object-oriented programming.</p>
-    </header>
-
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>Row Instances: Understanding SELECT and Result Sets</li>
-        <li>CREATE: SQL INSERT vs C# Object Construction</li>
-        <li>READ: SELECT Queries and LINQ Query Syntax</li>
-        <li>UPDATE: SQL SET and Object Mutation with Change Tracking</li>
-        <li>DELETE: SQL Removal and Object Disposal</li>
-        <li>Batch Operations: Sets vs Collections (ExecuteUpdate/ExecuteDelete)</li>
-        <li>CRUD Patterns Across Frameworks: EF Core, EF6, and Dapper</li>
-        <li>Transactions and ACID Properties in Both Worlds</li>
-      </ul>
-    </div>
-
-    <section class="section">
-      <div class="section-num">01</div>
-      <h2>Row Instances: Understanding SELECT and Result Sets</h2>
-      <p class="section-text">
-        The fundamental parallel between SQL and C# is this: a row in a table is a single instance of an entity type. When you SELECT a customer by ID from the database, you get back one row with columns containing values. That row is the manifestation of one customer instance. In C#, when you query for that same customer using LINQ or Entity Framework, you get back a Customer object—an instance of the Customer class with properties populated from the database columns.
-      </p>
-      <p class="section-text">
-        This mapping happens automatically in Object-Relational Mapping (ORM) frameworks like Entity Framework. The framework retrieves the row data and constructs a C# object with matching properties. You never explicitly map columns to properties—the framework handles this based on your configuration and property names. Understanding this parallelism is crucial because it means SQL thinking and C# thinking describe the same reality from different angles. A row is a unit of data; an object is a unit of behavior and state. They represent the same domain entity.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Fetch a Row from Table</span>
-          <code>-- SELECT returns a result set
--- A result set is a collection of rows
--- Each row is one instance
-SELECT Id, Name, Email, CreatedAt, Status
-FROM Customers
-WHERE Id = 42;
-
--- Result set (one row):
--- | Id  | Name      | Email              | CreatedAt  | Status  |
--- | 42  | John Doe  | john@example.com   | 2024-01-15 | Active  |</code>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 02</div>
+            <h1>Rows vs Objects</h1>
+            <p class="chapter-intro">You get requirements: "Add a customer," "Find a customer," "Update their email," "Remove inactive accounts." A SQL developer writes INSERT, SELECT, UPDATE, DELETE. A C# developer creates, reads, modifies, and removes objects. Same operations, different mental models.</p>
         </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Fetch an Object Instance</span>
-          <code>// LINQ Method Syntax
-var customer = context.Customers
-  .FirstOrDefault(c => c.Id == 42);
 
-// LINQ Query Syntax (equivalent)
-var customer = (from c in context.Customers
-                where c.Id == 42
-                select c)
-  .FirstOrDefault();
+        <!-- 01: Add a customer (CREATE/INSERT) -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Add a New Customer"</h2>
 
-// Result: A Customer object instance
-// customer.Id = 42
-// customer.Name = "John Doe"
-// customer.Email = "john@example.com"
-// customer.CreatedAt = DateTime(2024,1,15)
-// customer.Status = "Active"
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                When someone signs up, store their name, email, and mark them active with today's date. Return the new customer ID.
+            </div>
 
-if (customer != null)
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I need an INSERT statement with VALUES. The database auto-generates the ID with IDENTITY, so I use SCOPE_IDENTITY() to grab it back. One statement, one result.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I new up a Customer object, set its properties, call Add() to stage it, SaveChangesAsync() to persist it. EF automatically populates the Id after the save. I have an object in memory, not just raw values.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — INSERT with SCOPE_IDENTITY</div>
+                    <div class="code-block sql-block">
+                        <pre>INSERT INTO Customers (Name, Email, IsActive, CreatedAt)
+VALUES ('Alice Brown', 'alice@example.com', 1, GETDATE());
+
+SELECT SCOPE_IDENTITY() AS NewId;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — EF Core Create</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customer = new Customer
 {
-  Console.WriteLine($"Customer: {customer.Name}");
-}</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Result Sets as Collections</strong>
-        <p>SQL's SELECT always returns a result set, which is a collection of rows—even if it's a collection of one. In C#, you use methods like FirstOrDefault(), SingleOrDefault(), or ToList() to extract instances from the IQueryable result. FirstOrDefault() returns one row as one object, or null if no rows match. ToList() returns all rows as a collection of objects. The mapping between rows and objects happens transparently.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Multiple Rows (Result Set)</span>
-          <code>-- SELECT can return multiple rows
-SELECT Id, Name, Email
-FROM Customers
-WHERE Status = 'Active'
-ORDER BY Name;
-
--- Result set (multiple rows):
--- | Id  | Name      | Email              |
--- | 1   | Alice     | alice@example.com  |
--- | 5   | Bob       | bob@example.com    |
--- | 42  | John Doe  | john@example.com   |</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Multiple Objects as Collection</span>
-          <code>// LINQ Method Syntax
-var customers = context.Customers
-  .Where(c => c.Status == "Active")
-  .OrderBy(c => c.Name)
-  .ToList();
-
-// LINQ Query Syntax (equivalent)
-var customers = (from c in context.Customers
-                 where c.Status == "Active"
-                 orderby c.Name
-                 select c)
-  .ToList();
-
-// Result: List of Customer objects
-// customers[0].Name = "Alice"
-// customers[1].Name = "Bob"
-// customers[2].Name = "John Doe"
-
-foreach (var customer in customers)
-{
-  Console.WriteLine(customer.Name);
-}</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: LINQ Query vs Method Syntax</strong>
-        <p>LINQ offers two syntaxes: query syntax (SQL-like with from/where/select keywords) and method syntax (fluent, chainable methods). They're equivalent—query syntax is syntactic sugar that compiles to method syntax. Choose based on readability and team preference. Query syntax feels more SQL-like; method syntax is more functional. Both operate on IQueryable, which translates to SQL before executing.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">02</div>
-      <h2>CREATE: SQL INSERT vs C# Object Construction</h2>
-      <p class="section-text">
-        In SQL, you use INSERT to create a new row in a table. You provide values for each column (or accept defaults for columns with default values). The database writes the row to disk and assigns an IDENTITY if the table has an identity column. In C#, you instantiate a new object, set its properties, and tell Entity Framework to save it. EF translates this into an INSERT statement, sends it to the database, and the new row is created.
-      </p>
-      <p class="section-text">
-        The power of Entity Framework is that after SaveChanges() completes, EF automatically populates the ID property on your object from the database-generated identity. This keeps your in-memory object synchronized with what the database created. You can immediately use the ID for further operations without needing a separate query.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: INSERT a New Row</span>
-          <code>-- Insert with explicit columns
-INSERT INTO Customers
-  (Name, Email, Status, CreatedAt)
-VALUES
-  ('Jane Smith', 'jane@example.com', 'Active', GETUTCDATE());
-
--- Get the newly created ID
-SELECT SCOPE_IDENTITY() AS NewId;
--- Returns: 43 (the new identity value)
-
--- Verify:
-SELECT * FROM Customers WHERE Id = 43;</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Create and Save Object</span>
-          <code>// Create a new object instance
-var customer = new Customer
-{
-  Name = "Jane Smith",
-  Email = "jane@example.com",
-  Status = "Active",
-  CreatedAt = DateTime.UtcNow
-  // Note: Id is NOT set; database will generate it
+    Name = "Alice Brown",
+    Email = "alice@example.com",
+    IsActive = true,
+    CreatedAt = DateTime.UtcNow
 };
 
-// Add to context
-context.Customers.Add(customer);
+db.Customers.Add(customer);
+await db.SaveChangesAsync(ct);
 
-// Save to database
-context.SaveChanges();
+// customer.Id is now populated
+var newId = customer.Id;</pre>
+                    </div>
+                </div>
+            </div>
 
-// After SaveChanges(), EF populated the Id
-// automatically from the database identity
-Console.WriteLine($"New customer ID: {customer.Id}"); // 43
+            <div class="code-full">
+                <div class="code-label">Dapper — ExecuteScalarAsync</div>
+                <div class="code-block dapper-block">
+                    <pre>const string sql = @"
+    INSERT INTO Customers (Name, Email, IsActive, CreatedAt)
+    VALUES (@Name, @Email, @IsActive, @CreatedAt);
+    SELECT CAST(SCOPE_IDENTITY() as int);";
 
-// The object is now synchronized with the database
-// You can use customer.Id for further operations</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Automatic ID Population</strong>
-        <p>Entity Framework's SaveChanges() method returns the number of rows affected, but more importantly, it populates identity columns on your objects after the INSERT completes. This is done using SCOPE_IDENTITY() or similar mechanisms. You don't need a separate query to fetch the generated ID—EF handles it automatically. This keeps your object model in sync with the database state.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Bulk INSERT</span>
-          <code>-- Insert multiple rows
-INSERT INTO Customers (Name, Email, Status, CreatedAt)
-VALUES
-  ('Alice', 'alice@example.com', 'Active', GETUTCDATE()),
-  ('Bob', 'bob@example.com', 'Active', GETUTCDATE()),
-  ('Charlie', 'charlie@example.com', 'Inactive', GETUTCDATE());</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Bulk Create (Multiple Objects)</span>
-          <code>// Create multiple objects
-var customers = new List<Customer>
+var newId = await connection.ExecuteScalarAsync&lt;int&gt;(sql, new
 {
-  new Customer { Name = "Alice", Email = "alice@example.com", Status = "Active", CreatedAt = DateTime.UtcNow },
-  new Customer { Name = "Bob", Email = "bob@example.com", Status = "Active", CreatedAt = DateTime.UtcNow },
-  new Customer { Name = "Charlie", Email = "charlie@example.com", Status = "Inactive", CreatedAt = DateTime.UtcNow }
-};
+    Name = "Alice Brown",
+    Email = "alice@example.com",
+    IsActive = true,
+    CreatedAt = DateTime.UtcNow
+}, commandTimeout: null, commandType: CommandType.Text);</pre>
+                </div>
+            </div>
+        </section>
 
-// Add all to context
-context.Customers.AddRange(customers);
+        <!-- 02: Find customer (SELECT/READ) -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Find Customer by ID and List Active Customers"</h2>
 
-// One SaveChanges() for all
-context.SaveChanges();
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                User clicks a profile — show their details by ID. Also, need to display all active customers in the dashboard. Both are read-only operations.
+            </div>
 
-// All objects now have IDs populated
-foreach (var c in customers)
-{
-  Console.WriteLine($"Created: {c.Name} with ID {c.Id}");
-}</code>
-        </div>
-      </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Single customer: SELECT * WHERE Id = @id. Multiple customers: SELECT * WHERE IsActive = 1. Simple filters, simple results.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Single: use FindAsync(id) — EF knows the primary key. Multiple: Where() for filtering, ToListAsync() to fetch. Always use AsNoTracking() for read-only queries — no change tracking overhead.
+                </div>
+            </div>
 
-      <div class="key-insight">
-        <strong>Key Insight: Batch Inserts with SaveChanges</strong>
-        <p>You can add multiple objects before calling SaveChanges(). EF batches them into efficient SQL, often using multi-value INSERT syntax: INSERT INTO ... VALUES (...), (...), (...). One SaveChanges() call handles all of them, and all objects get their IDs populated. This is much faster than calling SaveChanges() for each object individually.</p>
-      </div>
-
-      <p class="section-text">
-        For comparison, here's how Dapper (a micro-ORM) approaches INSERT—more explicit, more control:
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Manual INSERT with Parameters</span>
-          <code>INSERT INTO Customers
-  (Name, Email, Status, CreatedAt)
-VALUES
-  (@Name, @Email, @Status, @CreatedAt);
-
-SELECT SCOPE_IDENTITY() AS Id;</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Dapper INSERT Approach</span>
-          <code>var customer = new Customer
-{
-  Name = "Jane Smith",
-  Email = "jane@example.com",
-  Status = "Active",
-  CreatedAt = DateTime.UtcNow
-};
-
-var sql = @"
-  INSERT INTO Customers (Name, Email, Status, CreatedAt)
-  VALUES (@Name, @Email, @Status, @CreatedAt);
-  SELECT SCOPE_IDENTITY() AS Id;
-";
-
-// Execute and get the new ID
-var newId = connection
-  .QuerySingle<int>(sql, customer);
-
-// Manually set the ID on the object
-customer.Id = newId;</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: EF vs Dapper Philosophy</strong>
-        <p>Entity Framework abstracts away SQL generation and ID retrieval. You never write SQL; you construct objects and call SaveChanges(). Dapper requires you to write SQL explicitly, but you have full control. For simple CRUD, EF is faster to develop. For complex operations or performance-critical code, Dapper's explicitness can be valuable. Both strategies work; they represent different tradeoffs.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">03</div>
-      <h2>READ: SELECT Queries and LINQ Query Syntax</h2>
-      <p class="section-text">
-        SELECT in SQL retrieves rows from tables. The WHERE clause filters rows, ORDER BY sorts them, and you can aggregate with COUNT, SUM, AVG, etc. In C#, LINQ queries do the same thing, but with C# syntax. The LINQ provider (Entity Framework's provider) translates your C# code into SQL and executes it at the database level. You can write LINQ using method syntax or query syntax—both translate to the same SQL.
-      </p>
-      <p class="section-text">
-        One crucial distinction: LINQ queries are lazy. They don't execute immediately. You call ToList(), FirstOrDefault(), Single(), Count(), or another materialization method to force execution. Until you materialize, the LINQ query is just an expression tree waiting to be translated to SQL. This allows you to build queries incrementally—adding Where() clauses conditionally—before executing.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: SELECT with WHERE and ORDER BY</span>
-          <code>-- Select customers with specific criteria
-SELECT Id, Name, Email, Status, CreatedAt
+            <div class="code-full">
+                <div class="code-label">SQL — Find by ID and List Active</div>
+                <div class="code-block sql-block">
+                    <pre>-- Find by ID
+SELECT Id, Name, Email, IsActive, CreatedAt
 FROM Customers
-WHERE Status = 'Active'
-  AND CreatedAt > '2024-01-01'
-ORDER BY CreatedAt DESC
-LIMIT 10;
+WHERE Id = @CustomerId;
 
--- Translates to: fetch 10 rows matching criteria</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: LINQ Method Syntax (Equivalent)</span>
-          <code>// This doesn't execute until you call ToList()!
-var query = context.Customers
-  .Where(c => c.Status == "Active")
-  .Where(c => c.CreatedAt > new DateTime(2024, 1, 1))
-  .OrderByDescending(c => c.CreatedAt)
-  .Take(10);
-  // query is still IQueryable - no DB hit yet!
-
-// This materializes the query - NOW it executes
-var results = query.ToList();
-// EF translates to SQL and fetches 10 rows
-
-foreach (var customer in results)
-{
-  Console.WriteLine($"{customer.Name}: {customer.CreatedAt}");
-}</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Lazy Evaluation and Deferred Execution</strong>
-        <p>LINQ queries don't execute when you call Where(), OrderBy(), or Take(). They're lazy—they wait until you call a materialization method like ToList(), FirstOrDefault(), Count(), or iterate in a foreach. This allows conditional query building: you can add Where() clauses based on user input without worrying about performance. The final query, however constructed, only executes once—at the database level—not row-by-row in C#.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: COUNT Aggregation</span>
-          <code>-- Count rows matching criteria
-SELECT COUNT(*) AS TotalCount
+-- List all active customers
+SELECT Id, Name, Email, IsActive, CreatedAt
 FROM Customers
-WHERE Status = 'Active';</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: LINQ Query Syntax with COUNT</span>
-          <code>// Query Syntax (more SQL-like)
-var activeCount = (from c in context.Customers
-                   where c.Status == "Active"
-                   select c)
-  .Count();
+WHERE IsActive = 1
+ORDER BY CreatedAt DESC;</pre>
+                </div>
+            </div>
 
-// Method Syntax (equivalent)
-var activeCount = context.Customers
-  .Where(c => c.Status == "Active")
-  .Count();
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">LINQ — Method Syntax</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Find by ID
+var customer = await db.Customers
+    .AsNoTracking()
+    .FirstOrDefaultAsync(
+        c =&gt; c.Id == customerId, ct);
 
-// This executes: SELECT COUNT(*) WHERE Status='Active'
-Console.WriteLine($"Active customers: {activeCount}");</code>
-        </div>
-      </div>
+// List all active customers
+var activeCustomers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.IsActive)
+    .OrderByDescending(c =&gt; c.CreatedAt)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ — Query Syntax</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Find by ID
+var customer = await db.Customers
+    .AsNoTracking()
+    .FirstOrDefaultAsync(
+        c =&gt; c.Id == customerId, ct);
 
-      <div class="key-insight">
-        <strong>Key Insight: Projections and Select()</strong>
-        <p>SQL's SELECT clause specifies which columns to retrieve. LINQ's Select() method does the same—it projects each row into a specific shape. You can project entire objects, or specific properties, or anonymous types. Projecting only needed columns is a performance optimization: you reduce data transfer and memory usage. This is client-side filtering vs server-side filtering.</p>
-      </div>
+// List all active customers
+var activeCustomers = await (
+    from c in db.Customers.AsNoTracking()
+    where c.IsActive
+    orderby c.CreatedAt descending
+    select c
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Dapper — Direct SQL</div>
+                    <div class="code-block dapper-block">
+                        <pre>// Find by ID
+const string sql1 = @"
+    SELECT Id, Name, Email, IsActive, CreatedAt
+    FROM Customers
+    WHERE Id = @CustomerId";
 
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Select Specific Columns</span>
-          <code>-- Projection: only fetch needed columns
-SELECT Id, Name, Email
-FROM Customers
-WHERE Status = 'Active';</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Projection with Select()</span>
-          <code>// Project to an anonymous type
-var customers = context.Customers
-  .Where(c => c.Status == "Active")
-  .Select(c => new
-  {
-    c.Id,
-    c.Name,
-    c.Email
-    // Only these three properties are fetched!
-  })
-  .ToList();
+var customer = await connection
+    .QueryFirstOrDefaultAsync&lt;CustomerDto&gt;(
+        sql1, new { CustomerId = customerId });
 
-// Query Syntax (equivalent)
-var customers = (from c in context.Customers
-                 where c.Status == "Active"
-                 select new { c.Id, c.Name, c.Email })
-  .ToList();
+// List all active
+var activeCustomers = await connection
+    .QueryAsync&lt;CustomerDto&gt;(
+        "SELECT ... FROM Customers WHERE IsActive = 1
+         ORDER BY CreatedAt DESC");</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-foreach (var c in customers)
+        <!-- 03: Update customer (UPDATE/MUTATE) -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Customer Changed Their Email"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer submits a profile update form. Change their email and record when it was modified. Also support bulk updates: admin marks dozens of customers as inactive.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    UPDATE SET the columns I want to change in the WHERE clause. For one customer, use WHERE Id = @id. For bulk, use WHERE with a condition. Simple mutations, fast.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Single: Fetch the entity, modify its properties, SaveChangesAsync(). EF tracks what changed. Bulk: use ExecuteUpdateAsync() to avoid fetching everything into memory — it's a direct database mutation.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">SQL — Update Single Customer</div>
+                <div class="code-block sql-block">
+                    <pre>UPDATE Customers
+SET Email = @NewEmail,
+    UpdatedAt = GETDATE()
+WHERE Id = @CustomerId;</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Fetch-Modify-Save Pattern (EF Core)</div>
+                <div class="code-block csharp-block">
+                    <pre>var customer = await db.Customers.FindAsync(
+    new object[] { customerId }, cancellationToken: ct);
+if (customer == null)
+    throw new InvalidOperationException("Customer not found");
+
+customer.Email = "newemail@example.com";
+customer.UpdatedAt = DateTime.UtcNow;
+
+await db.SaveChangesAsync(ct);
+// EF only sent UPDATE for changed columns</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Service Layer with DTO (Production Pattern)</div>
+                <div class="code-block ef-block">
+                    <pre>public record UpdateCustomerRequest(int Id, string Email);
+
+public class CustomerService
 {
-  Console.WriteLine($"{c.Name}: {c.Email}");
-}</code>
-        </div>
-      </div>
+    private readonly AppDbContext _db;
 
-      <div class="key-insight">
-        <strong>Key Insight: Client-Side vs Server-Side Operations</strong>
-        <p>Operations before a materialization method (ToList()) execute at the database level. Operations after ToList() execute in C# memory. Never do Where() or complex operations after ToList()—always push filtering and aggregation to the database. Database operations are typically orders of magnitude faster. After ToList(), you're working with objects in memory; the database is out of the picture.</p>
-      </div>
-    </section>
+    public async Task UpdateAsync(
+        UpdateCustomerRequest request, CancellationToken ct)
+    {
+        var customer = await _db.Customers.FindAsync(
+            new object[] { request.Id }, cancellationToken: ct);
+        if (customer == null)
+            throw new InvalidOperationException("Customer not found");
 
-    <section class="section">
-      <div class="section-num">04</div>
-      <h2>UPDATE: SQL SET and Object Mutation with Change Tracking</h2>
-      <p class="section-text">
-        SQL's UPDATE statement changes values in columns for rows matching a WHERE clause. It's a set-based operation—you can update thousands of rows in one statement. In C#, the traditional approach is to fetch an object, modify its properties, and call SaveChanges(). Entity Framework tracks the changes you make and generates an UPDATE statement for only the columns that changed. This is powerful but different from SQL's set-based mindset.
-      </p>
-      <p class="section-text">
-        Entity Framework's change tracking system is one of its most important features. When you fetch an object, EF remembers its original state. When you modify a property (e.g., customer.Name = "New Name"), EF detects this change. When you call SaveChanges(), EF compares the current state to the original state and generates UPDATE statements for only the changed columns. This means EF generates efficient SQL—it doesn't rewrite all columns, just the ones you actually changed. This is more sophisticated than raw UPDATE SQL from a developer experience perspective.
-      </p>
+        customer.Email = request.Email;
+        customer.UpdatedAt = DateTime.UtcNow;
 
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: UPDATE Statement</span>
-          <code>-- Update specific columns for matching rows
-UPDATE Customers
-SET Name = 'Jane Doe',
-    Email = 'jane@example.com',
-    UpdatedAt = GETUTCDATE()
-WHERE Id = 42;
+        await _db.SaveChangesAsync(ct);
+    }
+}</pre>
+                </div>
+            </div>
 
--- Verify the update
-SELECT * FROM Customers WHERE Id = 42;</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Fetch, Mutate, Save (Traditional)</span>
-          <code>// Fetch the object
-var customer = context.Customers
-  .FirstOrDefault(c => c.Id == 42);
+            <div class="code-full">
+                <div class="code-label">SQL — Bulk Update (Conditional)</div>
+                <div class="code-block sql-block">
+                    <pre>UPDATE Customers
+SET IsActive = 0
+WHERE LastLoginAt &lt; DATEADD(YEAR, -2, GETDATE());</pre>
+                </div>
+            </div>
 
-if (customer != null)
+            <div class="code-full">
+                <div class="code-label">C# — EF7+ ExecuteUpdateAsync (No Load)</div>
+                <div class="code-block csharp-block">
+                    <pre>// Mark inactive: customers who haven't logged in for 2 years
+var twoYearsAgo = DateTime.UtcNow.AddYears(-2);
+
+var affected = await db.Customers
+    .Where(c =&gt; c.LastLoginAt &lt; twoYearsAgo)
+    .ExecuteUpdateAsync(s =&gt; s
+        .SetProperty(c =&gt; c.IsActive, false)
+        .SetProperty(c =&gt; c.UpdatedAt, DateTime.UtcNow),
+        cancellationToken: ct);
+
+// Returns count of affected rows, database handles the mutation</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — ExecuteAsync</div>
+                <div class="code-block dapper-block">
+                    <pre>// Single update
+const string sql = @"
+    UPDATE Customers
+    SET Email = @Email, UpdatedAt = GETDATE()
+    WHERE Id = @CustomerId";
+
+var affected = await connection.ExecuteAsync(sql, new
 {
-  // Mutate the object's properties
-  customer.Name = "Jane Doe";
-  customer.Email = "jane@example.com";
-  customer.UpdatedAt = DateTime.UtcNow;
+    CustomerId = customerId,
+    Email = "newemail@example.com"
+});
 
-  // SaveChanges detects changes via change tracking
-  // Generates: UPDATE Customers SET Name=@p0, Email=@p1, UpdatedAt=@p2 WHERE Id=@p3
-  context.SaveChanges();
-}
+// Bulk update
+const string bulkSql = @"
+    UPDATE Customers
+    SET IsActive = 0
+    WHERE LastLoginAt &lt; DATEADD(YEAR, -2, GETDATE())";
 
-// Query Syntax equivalent (for fetching):
-var customer = (from c in context.Customers
-                where c.Id == 42
-                select c)
-  .FirstOrDefault();
-// Rest is the same: mutate and SaveChanges()</code>
-        </div>
-      </div>
+var bulkAffected = await connection.ExecuteAsync(bulkSql);</pre>
+                </div>
+            </div>
+        </section>
 
-      <div class="key-insight">
-        <strong>Key Insight: Change Tracking Efficiency</strong>
-        <p>Entity Framework's change tracking is sophisticated: it only generates UPDATE statements for columns that actually changed. If you fetch a customer and change their Name but not their Email, the generated SQL only updates Name. This is efficient because your UPDATE statement is minimal. It also prevents accidental overwrites of concurrent changes (to some degree—it depends on concurrency strategy, which is covered in later chapters).</p>
-      </div>
+        <!-- 04: Remove inactive (DELETE/REMOVE) -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Remove Inactive Accounts"</h2>
 
-      <p class="section-text">
-        However, for large-scale operations (updating thousands of rows), the traditional fetch-mutate-save approach is inefficient. You'd need to fetch all rows into memory, loop through them, mutate each one, and call SaveChanges(). That's thousands of database round trips. Entity Framework Core 5+ introduced ExecuteUpdate() for set-based updates that execute at the database level.
-      </p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Delete customers who haven't logged in for 2 years. Also, let admins delete individual accounts on demand. We want audit trails, so soft-delete is an option.
+            </div>
 
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Batch UPDATE at Database</span>
-          <code>-- Update many rows in one statement
--- This is efficient: one round trip, all rows updated
-UPDATE Customers
-SET Status = 'Inactive'
-WHERE LastLoginDate < DATEADD(YEAR, -1, GETUTCDATE())
-  AND Status = 'Active';</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Batch UPDATE with ExecuteUpdate (EF 5+)</span>
-          <code>// Set-based update: executes at database level
-var cutoffDate = DateTime.UtcNow.AddYears(-1);
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    DELETE WHERE for individual or bulk. Or, for audit: SET IsDeleted = 1 instead of actual deletion. Direct, permanent, or soft.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Remove() + SaveChangesAsync() for single entities. ExecuteDeleteAsync() for bulk (no fetch). Soft-delete: update a flag instead of removing. Track who deleted and when.
+                </div>
+            </div>
 
-var rowsUpdated = context.Customers
-  .Where(c => c.LastLoginDate < cutoffDate && c.Status == "Active")
-  .ExecuteUpdate(s => s
-    .SetProperty(c => c.Status, "Inactive")
-  );
+            <div class="code-full">
+                <div class="code-label">SQL — Hard Delete (Single and Bulk)</div>
+                <div class="code-block sql-block">
+                    <pre>-- Delete single customer
+DELETE FROM Customers WHERE Id = @CustomerId;
 
-Console.WriteLine($"Updated {rowsUpdated} customers");
-
-// This generates one UPDATE statement and executes it at the DB
-// Much faster than: fetch all, loop, mutate, SaveChanges()</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: ExecuteUpdate for Batch Operations</strong>
-        <p>When you need to update many rows, use ExecuteUpdate(), not the traditional fetch-mutate-save pattern. ExecuteUpdate() executes at the database level in a single statement. The traditional pattern fetches all matching rows into memory—inefficient for large datasets. ExecuteUpdate() is O(1) database round trips; the traditional approach is O(n) where n is the number of rows to update.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: What fetch-mutate-save generates</span>
-          <code>-- Step 1: Fetch all matching rows
-SELECT Id, Name, Status, LastLoginDate
-FROM Customers
-WHERE LastLoginDate < DATEADD(YEAR, -1, GETUTCDATE());
-
--- Step 2: Then for EACH customer:
-UPDATE Customers SET Status='Inactive' WHERE Id=@id;
--- This repeats 10,000 times!
-
--- Total: 1 SELECT + 10,000 UPDATEs = 10,001 round trips!</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: INEFFICIENT - Avoid This Pattern</span>
-          <code>// SLOW: Do NOT do this for bulk updates!
-var cutoffDate = DateTime.UtcNow.AddYears(-1);
-
-var customersToUpdate = context.Customers
-  .Where(c => c.LastLoginDate < cutoffDate && c.Status == "Active")
-  .ToList(); // ← Fetches all matching rows into memory!
-
-foreach (var customer in customersToUpdate)
-{
-  customer.Status = "Inactive";
-  context.SaveChanges(); // ← One SaveChanges per customer!
-}
-
-// This generates 1 SELECT + N UPDATEs
-// Each SaveChanges() is a round trip to the database
-// For 10,000 customers: 10,001 round trips!</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Think in Sets, Not Loops</strong>
-        <p>SQL is a set-oriented language. When you update many rows, think like SQL: generate one UPDATE statement that changes all matching rows at once. Don't think like C#: loop through individual objects. This is the impedance mismatch in action. When you need batch operations, use ExecuteUpdate(). When you need to update a few specific objects, use the traditional fetch-mutate-save pattern.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">05</div>
-      <h2>DELETE: SQL Removal and Object Disposal</h2>
-      <p class="section-text">
-        In SQL, DELETE removes rows from a table. You specify which rows with a WHERE clause—even if it's WHERE Id = 42, which deletes one row. The row is gone; any foreign keys referencing it may cascade delete related rows depending on the ON DELETE rule configured on the foreign key.
-      </p>
-      <p class="section-text">
-        In C#, you fetch an object, call Remove() on the DbSet, and call SaveChanges(). Entity Framework marks the object for deletion. When you call SaveChanges(), EF generates a DELETE statement using the object's primary key as the WHERE clause. The row is removed from the database. The object still exists in memory, but it's no longer in the database and its EntityState is changed to Deleted.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: DELETE a Row</span>
-          <code>-- Delete a specific row by ID
+-- Delete inactive (2+ years no login)
 DELETE FROM Customers
-WHERE Id = 42;
+WHERE LastLoginAt &lt; DATEADD(YEAR, -2, GETDATE());</pre>
+                </div>
+            </div>
 
--- Verify deletion
-SELECT COUNT(*) AS RemainingCount
-FROM Customers
-WHERE Id = 42;
--- Should return: 0</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Remove and Save Object</span>
-          <code>// Fetch the object
-var customer = context.Customers
-  .FirstOrDefault(c => c.Id == 42);
-
+            <div class="code-full">
+                <div class="code-label">C# — Remove Single Entity</div>
+                <div class="code-block csharp-block">
+                    <pre>var customer = await db.Customers.FindAsync(
+    new object[] { customerId }, cancellationToken: ct);
 if (customer != null)
 {
-  // Remove from the context
-  context.Customers.Remove(customer);
+    db.Customers.Remove(customer);
+    await db.SaveChangesAsync(ct);
+}</pre>
+                </div>
+            </div>
 
-  // SaveChanges generates DELETE and executes it
-  context.SaveChanges();
+            <div class="code-full">
+                <div class="code-label">C# — EF7+ ExecuteDeleteAsync (Bulk)</div>
+                <div class="code-block csharp-block">
+                    <pre>// Delete customers inactive for 2+ years
+var twoYearsAgo = DateTime.UtcNow.AddYears(-2);
 
-  // The object still exists in memory but is
-  // deleted from the database
-  Console.WriteLine(customer.Name); // Still accessible in memory
-  // But if you query the DB, it won't be there
+var deletedCount = await db.Customers
+    .Where(c =&gt; c.LastLoginAt &lt; twoYearsAgo)
+    .ExecuteDeleteAsync(cancellationToken: ct);
+
+// Returns count of deleted rows, database executes the DELETE</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">SQL — Soft Delete (Audit Trail)</div>
+                <div class="code-block sql-block">
+                    <pre>-- Add soft-delete columns to table
+ALTER TABLE Customers ADD DeletedAt DATETIME2 NULL;
+ALTER TABLE Customers ADD DeletedBy NVARCHAR(255) NULL;
+
+-- Soft-delete single customer
+UPDATE Customers
+SET DeletedAt = GETDATE(), DeletedBy = @AdminId
+WHERE Id = @CustomerId;
+
+-- When querying, exclude soft-deleted
+SELECT * FROM Customers WHERE DeletedAt IS NULL;</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Soft Delete Pattern</div>
+                <div class="code-block ef-block">
+                    <pre>public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+
+    // Soft-delete audit columns
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+
+    public bool IsDeleted =&gt; DeletedAt.HasValue;
 }
 
-// Equivalent in Query Syntax:
-var customer = (from c in context.Customers
-                where c.Id == 42
-                select c)
-  .FirstOrDefault();</code>
+// In queries, always filter
+var activeCustomers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; !c.IsDeleted)
+    .ToListAsync(ct);
+
+// Soft-delete a customer
+customer.DeletedAt = DateTime.UtcNow;
+customer.DeletedBy = adminId;
+await db.SaveChangesAsync(ct);</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — ExecuteAsync for Delete</div>
+                <div class="code-block dapper-block">
+                    <pre>// Hard delete single
+const string sql1 = "DELETE FROM Customers WHERE Id = @CustomerId";
+var affected = await connection.ExecuteAsync(
+    sql1, new { CustomerId = customerId });
+
+// Hard delete bulk
+const string sql2 = @"
+    DELETE FROM Customers
+    WHERE LastLoginAt &lt; DATEADD(YEAR, -2, GETDATE())";
+var bulkAffected = await connection.ExecuteAsync(sql2);
+
+// Soft delete
+const string softSql = @"
+    UPDATE Customers
+    SET DeletedAt = GETDATE(), DeletedBy = @AdminId
+    WHERE Id = @CustomerId";
+var softAffected = await connection.ExecuteAsync(softSql, new
+{
+    CustomerId = customerId,
+    AdminId = adminId
+});</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Concurrent edits -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Handle Concurrent Edits"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Two admins edit the same customer simultaneously. If both try to save, we should detect the conflict and ask one of them to re-fetch and try again — we don't want to silently lose changes.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I need a ROWVERSION column (timestamp). Include it in the WHERE clause. If it doesn't match, no rows updated — I know there was a conflict. Client detects zero affected rows.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    EF has [Timestamp] attribute — maps to ROWVERSION. On save, if the version changed, EF throws DbUpdateConcurrencyException. I catch it, handle the conflict (merge, re-fetch, or reject).
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">SQL — ROWVERSION Concurrency</div>
+                <div class="code-block sql-block">
+                    <pre>-- Add ROWVERSION to table
+ALTER TABLE Customers ADD RowVersion ROWVERSION;
+
+-- Update includes the version check
+UPDATE Customers
+SET Email = @NewEmail, UpdatedAt = GETDATE()
+WHERE Id = @CustomerId
+  AND RowVersion = @OriginalRowVersion;
+
+-- If no rows affected, there was a conflict
+IF @@ROWCOUNT = 0
+    THROW 50001, 'Concurrency conflict: Customer was modified', 1;</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Entity with [Timestamp]</div>
+                <div class="code-block csharp-block">
+                    <pre>public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    // EF maps [Timestamp] to ROWVERSION in SQL Server
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty&lt;byte&gt;();
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Concurrency Exception Handling</div>
+                <div class="code-block ef-block">
+                    <pre>try
+{
+    var customer = await db.Customers.FindAsync(
+        new object[] { customerId }, cancellationToken: ct);
+    if (customer == null)
+        throw new InvalidOperationException("Customer not found");
+
+    customer.Email = "newemail@example.com";
+    customer.UpdatedAt = DateTime.UtcNow;
+
+    await db.SaveChangesAsync(ct);
+}
+catch (DbUpdateConcurrencyException ex)
+{
+    // Concurrency conflict detected
+    var entry = ex.Entries.Single();
+    var dbValues = await entry.GetDatabaseValuesAsync(ct);
+
+    if (dbValues == null)
+        throw new InvalidOperationException("Customer was deleted");
+
+    // Merge strategy: keep database values, notify user
+    entry.OriginalValues.SetValues(dbValues);
+    throw new InvalidOperationException(
+        "Customer was modified by someone else. Please refresh and try again.");
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — Manual Version Check</div>
+                <div class="code-block dapper-block">
+                    <pre>const string sql = @"
+    UPDATE Customers
+    SET Email = @Email, UpdatedAt = GETDATE()
+    WHERE Id = @CustomerId
+      AND RowVersion = @OriginalVersion;
+
+    SELECT CAST(@@ROWCOUNT AS INT);";
+
+var affected = await connection.ExecuteScalarAsync&lt;int&gt;(sql, new
+{
+    CustomerId = customerId,
+    Email = "newemail@example.com",
+    OriginalVersion = originalRowVersion
+});
+
+if (affected == 0)
+    throw new InvalidOperationException(
+        "Concurrency conflict: Customer was modified");</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: EF vs Dapper comparison -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Which Tool for Which Job? — EF Core vs Dapper CRUD</h2>
+
+            <div class="requirement">
+                <strong>Quick Decision Guide</strong><br>
+                Both handle CRUD. EF abstracts the SQL; Dapper is direct SQL. Choose based on your needs.
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Operation</th>
+                        <th class="csharp-type">EF Core Strength</th>
+                        <th class="ef-type">Dapper Strength</th>
+                        <th>Use EF When</th>
+                        <th>Use Dapper When</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>CREATE</code></td>
+                        <td>new Customer() { } &rarr; Add() &rarr; SaveChanges()</td>
+                        <td>INSERT &rarr; ExecuteScalarAsync()</td>
+                        <td>Simple inserts, navigation auto-handled</td>
+                        <td>Bulk inserts, custom ID generation</td>
+                    </tr>
+                    <tr>
+                        <td><code>READ</code></td>
+                        <td>FindAsync(id) / Where().ToList()</td>
+                        <td>QueryFirstOrDefaultAsync() / QueryAsync()</td>
+                        <td>Complex filters, eager-load relationships</td>
+                        <td>Simple queries, projection to DTO</td>
+                    </tr>
+                    <tr>
+                        <td><code>UPDATE</code></td>
+                        <td>Fetch &rarr; Mutate &rarr; SaveChanges()</td>
+                        <td>UPDATE &rarr; ExecuteAsync()</td>
+                        <td>Single entity, change tracking</td>
+                        <td>Bulk updates, ExecuteUpdateAsync() alternative</td>
+                    </tr>
+                    <tr>
+                        <td><code>DELETE</code></td>
+                        <td>Fetch &rarr; Remove() &rarr; SaveChanges()</td>
+                        <td>DELETE &rarr; ExecuteAsync()</td>
+                        <td>Single entity, cascades auto-handled</td>
+                        <td>Bulk deletes, soft-delete direct SQL</td>
+                    </tr>
+                    <tr>
+                        <td><code>Transactions</code></td>
+                        <td>Built-in, SaveChanges() is one unit</td>
+                        <td>Explicit Begin/Commit</td>
+                        <td>Multi-entity changes, automatic rollback</td>
+                        <td>Complex logic across multiple statements</td>
+                    </tr>
+                    <tr>
+                        <td><code>Concurrency</code></td>
+                        <td>[Timestamp], DbUpdateConcurrencyException</td>
+                        <td>Manual RowVersion in WHERE</td>
+                        <td>Automatic versioning, built-in conflict handling</td>
+                        <td>Custom concurrency logic</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>A SQL Developer's Take</strong>
+                    CRUD is just 4 basic operations. Both EF and Dapper do them fine. EF hides complexity; Dapper shows you the SQL. Neither is wrong — it's about what your app needs.
+                </div>
+                <div class="think-csharp">
+                    <strong>A C# Developer's Take</strong>
+                    EF is objects and LINQ — composable, safe, refactor-friendly. Dapper is strings and parameters — faster to write for trivial queries, but you own the SQL maintenance. Use both: EF for your core domain, Dapper for reporting.
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch01-tables-vs-classes.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Tables vs Classes</span>
+            </a>
+            <a class="nav-item" href="ch03-foreign-keys-vs-references.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Foreign Keys vs References</span>
+            </a>
         </div>
-      </div>
+    </main>
 
-      <div class="key-insight">
-        <strong>Key Insight: Remove() Uses Primary Key</strong>
-        <p>Entity Framework uses the object's primary key (Id) to generate the DELETE statement. You don't write a WHERE clause—EF generates it from the object's key. This is safer than raw SQL because you can only delete objects you have in memory. You can't accidentally delete the wrong row because the object's identity is what drives the deletion. This is one of EF's safety features.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Batch DELETE</span>
-          <code>-- Delete multiple rows in one statement
-DELETE FROM Customers
-WHERE Status = 'Inactive'
-  AND CreatedAt < DATEADD(YEAR, -2, GETUTCDATE());</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Batch DELETE with ExecuteDelete</span>
-          <code>// EF Core 6+ ExecuteDelete for batch deletion
-var cutoffDate = DateTime.UtcNow.AddYears(-2);
-
-var rowsDeleted = context.Customers
-  .Where(c => c.Status == "Inactive"
-    && c.CreatedAt < cutoffDate)
-  .ExecuteDelete();
-
-Console.WriteLine($"Deleted {rowsDeleted} customers");
-
-// This executes one DELETE statement at the database level
-// Much faster than fetching all rows and removing individually</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: ExecuteDelete for Batch Deletions</strong>
-        <p>Just like ExecuteUpdate(), ExecuteDelete() handles batch deletions efficiently. Use it when deleting many rows. The traditional fetch-remove-save approach for batch deletes is inefficient. ExecuteDelete() executes at the database level in one statement. One round trip to delete thousands of rows is vastly faster than fetching them all into memory and removing them one-by-one.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Dapper DELETE</span>
-          <code>DELETE FROM Customers
-WHERE Id = @Id;</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Dapper DELETE Approach</span>
-          <code>var customerId = 42;
-
-var sql = "DELETE FROM Customers WHERE Id = @Id;";
-
-var rowsAffected = connection.Execute(sql, new { Id = customerId });
-
-Console.WriteLine($"Deleted {rowsAffected} rows");</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Soft Deletes vs Hard Deletes</strong>
-        <p>Hard delete removes data from the database permanently. Soft delete (not shown here but important in practice) marks rows as deleted without removing them—you add an IsDeleted flag or DeletedAt timestamp. Soft deletes are useful for auditing, recovery, and maintaining referential integrity. They require filtering out soft-deleted rows in all queries, so design this carefully. Hard deletes (what we've covered) are simpler but permanent.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-num">06</div>
-      <h2>Batch Operations: Sets vs Collections (ExecuteUpdate/ExecuteDelete)</h2>
-      <p class="section-text">
-        This is where SQL and C# thinking diverge most clearly. SQL is set-oriented: you write one statement that modifies or deletes thousands of rows at once. The database engine optimizes this at a low level. C# is object-oriented: you think about individual objects, their properties, their state. When applied naively to batch operations, C# thinking leads to loops and multiple round trips, which is inefficient.
-      </p>
-      <p class="section-text">
-        Entity Framework 5+ bridged this gap with ExecuteUpdate() and ExecuteDelete() (6+). These methods execute at the database level, generating set-based SQL that processes all matching rows in one statement. When you need batch operations, think like SQL. Use LINQ to specify criteria, but use ExecuteUpdate() or ExecuteDelete() to process all matching rows at once, not in a loop.
-      </p>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: Set-Based Operations (Efficient)</span>
-          <code>-- One statement: updates all matching rows
--- Database processes the entire set at once
--- One round trip, extremely fast
-UPDATE Orders
-SET Status = 'Shipped'
-WHERE OrderDate < DATEADD(DAY, -7, GETUTCDATE())
-  AND Status = 'Processing';
-
--- Delete all expired sessions
-DELETE FROM Sessions
-WHERE ExpiresAt < GETUTCDATE();</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Set-Based with ExecuteUpdate (Efficient)</span>
-          <code>// EF 5+: ExecuteUpdate executes at database level
-var weekAgo = DateTime.UtcNow.AddDays(-7);
-
-var rowsUpdated = context.Orders
-  .Where(o => o.OrderDate < weekAgo && o.Status == "Processing")
-  .ExecuteUpdate(s => s.SetProperty(o => o.Status, "Shipped"));
-
-// EF 6+: ExecuteDelete executes at database level
-var rowsDeleted = context.Sessions
-  .Where(s => s.ExpiresAt < DateTime.UtcNow)
-  .ExecuteDelete();
-
-// Both execute one statement at the database level
-// One round trip, extremely fast
-Console.WriteLine($"Updated {rowsUpdated}, Deleted {rowsDeleted}");</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Set-Based Operations Require SQL Thinking</strong>
-        <p>Set-based operations are paradigmatically different from object-oriented programming. But they're crucial for performance at scale. When processing 100,000 rows, the difference between one set-based operation and 100,000 individual operations is the difference between milliseconds and minutes. Always use set-based operations when the semantics allow it. Batch by criteria using Where(), then use ExecuteUpdate() or ExecuteDelete(), not individual object mutations.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: What Client-Side Loop Generates</span>
-          <code>-- Step 1: Fetch all matching rows
-SELECT Id, Status, OrderDate
-FROM Orders
-WHERE OrderDate < DATEADD(DAY, -7, GETUTCDATE());
-
--- Step 2: Then for EACH order:
-UPDATE Orders SET Status='Shipped' WHERE Id=@id;
--- This repeats 50,000 times!
-
--- Total: 1 SELECT + 50,000 UPDATEs = 50,001 round trips
--- Each round trip adds latency
--- Total time: potentially minutes!-- One round trip, extremely fast
-UPDATE Orders
-SET Status = 'Shipped'
-WHERE OrderDate < DATEADD(DAY, -7, GETUTCDATE())
-  AND Status = 'Processing';
-
--- Delete all expired sessions
-DELETE FROM Sessions
-WHERE ExpiresAt < GETUTCDATE();</code>
-        </div>
-        <div class="code-block csharp">
-          <span class="code-label">C#: Set-Based with ExecuteUpdate (Efficient)</span>
-          <code>// EF 5+: ExecuteUpdate executes at database level
-var weekAgo = DateTime.UtcNow.AddDays(-7);
-
-var rowsUpdated = context.Orders
-  .Where(o => o.OrderDate < weekAgo && o.Status == "Processing")
-  .ExecuteUpdate(s => s.SetProperty(o => o.Status, "Shipped"));
-
-// EF 6+: ExecuteDelete executes at database level
-var rowsDeleted = context.Sessions
-  .Where(s => s.ExpiresAt < DateTime.UtcNow)
-  .ExecuteDelete();
-
-// Both execute one statement at the database level
-// One round trip, extremely fast
-Console.WriteLine($"Updated {rowsUpdated}, Deleted {rowsDeleted}");</code>
-        </div>
-      </div>
-
-      <div class="key-insight">
-        <strong>Key Insight: Set-Based Operations Require SQL Thinking</strong>
-        <p>Set-based operations are paradigmatically different from object-oriented programming. But they're crucial for performance at scale. When processing 100,000 rows, the difference between one set-based operation and 100,000 individual operations is the difference between milliseconds and minutes. Always use set-based operations when the semantics allow it. Batch by criteria using Where(), then use ExecuteUpdate() or ExecuteDelete(), not individual object mutations.</p>
-      </div>
-
-      <div class="code-comparison">
-        <div class="code-block sql">
-          <span class="code-label">SQL: What Client-Side Loop Generates</span>
-          <code>-- Step 1: Fetch all matching rows
-SELECT Id, Status, OrderDate
-FROM Orders
-WHERE OrderDate < DATEADD(DAY, -7, GETUTCDATE());
-
--- Step 2: Then for EACH order:
-UPDATE Orders SET Status='Shipped' WHERE Id=@id;
--- This repeats 50,000 times!
-
--- Total: 1 SELECT + 50,000 UPDATEs = 50,001 round trips
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
+</body>
+</html>

@@ -1,1342 +1,704 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chapter 17: EF Performance — N+1 and Beyond | SQL to C#</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 17: EF Performance — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-    :root {
-      --bg: #f8f7f3;
-      --bg2: #f0ede6;
-      --bg3: #e8e4db;
-      --white: #fff;
-      --ink: #1c1a17;
-      --ink2: #3d3a34;
-      --ink3: #6b6760;
-      --ink4: #a8a49e;
-      --rule: #dedad3;
-      --acc: #c96b1e;
-      --acc-l: #fdf3eb;
-      --acc-b: #f5c99a;
-      --green: #1d6b45;
-      --green-l: #edf8f2;
-      --green-b: #9fd9bc;
-      --blue: #1a4f8a;
-      --blue-l: #edf2fb;
-      --blue-b: #afc8ef;
-      --amber: #7a5200;
-      --amber-l: #fdf8ec;
-      --amber-b: #e8d08a;
-    }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-    html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-    body {
-      font-family: 'Source Serif 4', serif;
-      background-color: var(--bg);
-      color: var(--ink);
-      line-height: 1.7;
-    }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-    /* Navigation */
-    nav {
-      position: sticky;
-      top: 0;
-      height: 54px;
-      background-color: var(--white);
-      border-bottom: 1px solid var(--rule);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .nav-brand {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--acc);
-    }
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-    .nav-chapter {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background-color: var(--acc-l);
-      color: var(--acc);
-      padding: 0.4rem 1rem;
-      border-radius: 20px;
-      text-decoration: none;
-    }
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-    /* Main container */
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+        tr:last-child td { border-bottom: none; }
 
-    /* Header */
-    header {
-      margin-bottom: 3rem;
-    }
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      color: var(--ink);
-    }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-    .chapter-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      color: var(--acc);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-    }
-
-    .chapter-subtitle {
-      font-family: 'Source Serif 4', serif;
-      font-size: 1.1rem;
-      color: var(--ink3);
-      font-weight: 300;
-      margin-bottom: 2rem;
-    }
-
-    /* In This Chapter */
-    .in-this-chapter {
-      background-color: var(--blue-l);
-      border-left: 4px solid var(--blue);
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-      border-radius: 4px;
-    }
-
-    .in-this-chapter h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--blue);
-      margin-bottom: 1rem;
-    }
-
-    .in-this-chapter ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .in-this-chapter li {
-      margin-bottom: 0.6rem;
-      font-size: 0.95rem;
-      color: var(--ink2);
-      padding-left: 1.5rem;
-      position: relative;
-    }
-
-    .in-this-chapter li:before {
-      content: "▸";
-      position: absolute;
-      left: 0;
-      color: var(--blue);
-    }
-
-    /* Section styling */
-    .section {
-      margin-bottom: 3rem;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .section-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: var(--acc);
-      line-height: 1;
-      min-width: 3rem;
-    }
-
-    .section-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    /* Prose */
-    .prose {
-      margin-bottom: 1.5rem;
-      color: var(--ink2);
-      line-height: 1.8;
-    }
-
-    .prose p {
-      margin-bottom: 1rem;
-    }
-
-    .prose strong {
-      color: var(--ink);
-      font-weight: 600;
-    }
-
-    .prose em {
-      color: var(--ink3);
-      font-style: italic;
-    }
-
-    /* Code comparison */
-    .comparison {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .comparison-block {
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .comparison-label {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.75rem 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .sql-block {
-      background-color: var(--ink);
-    }
-
-    .sql-block .comparison-label {
-      background-color: var(--ink2);
-      color: var(--white);
-    }
-
-    .csharp-block {
-      background-color: var(--blue-l);
-    }
-
-    .csharp-block .comparison-label {
-      background-color: var(--blue);
-      color: var(--white);
-    }
-
-    .code-content {
-      background-color: var(--ink);
-      color: #e8e8e8;
-      padding: 1.25rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      overflow-x: auto;
-      min-height: 120px;
-      display: flex;
-      align-items: flex-start;
-    }
-
-    .csharp-block .code-content {
-      background-color: var(--white);
-      color: var(--ink);
-      border: 1px solid var(--blue-b);
-    }
-
-    /* Syntax highlighting */
-    .kw { color: #569cd6; }
-    .str { color: #ce9178; }
-    .comment { color: #6a9955; }
-    .type { color: #4ec9b0; }
-    .attr { color: #9cdcfe; }
-    .num { color: #b5cea8; }
-
-    .csharp-block .kw { color: var(--blue); }
-    .csharp-block .str { color: #a85e2a; }
-    .csharp-block .comment { color: #555; }
-    .csharp-block .type { color: #0066cc; }
-
-    /* Insight box */
-    .insight {
-      background-color: var(--acc-l);
-      border-left: 4px solid var(--acc);
-      padding: 1.5rem;
-      margin: 2rem 0;
-      border-radius: 4px;
-    }
-
-    .insight-title {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--acc);
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-    }
-
-    .insight-text {
-      color: var(--ink2);
-      font-size: 0.95rem;
-      line-height: 1.7;
-    }
-
-    .insight-text strong {
-      color: var(--ink);
-    }
-
-    /* Key Takeaways */
-    .key-takeaways {
-      background-color: var(--green-l);
-      border-left: 4px solid var(--green);
-      padding: 2rem;
-      margin: 3rem 0;
-      border-radius: 4px;
-    }
-
-    .key-takeaways h3 {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
-    }
-
-    .key-takeaways ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .key-takeaways li {
-      margin-bottom: 0.8rem;
-      padding-left: 1.5rem;
-      position: relative;
-      color: var(--ink2);
-      line-height: 1.7;
-    }
-
-    .key-takeaways li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--green);
-      font-weight: 600;
-    }
-
-    /* Navigation buttons */
-    .nav-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    .nav-button {
-      font-family: 'Outfit', sans-serif;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.2s;
-      border: 1px solid var(--rule);
-      color: var(--ink);
-    }
-
-    .nav-button:hover {
-      background-color: var(--bg2);
-      border-color: var(--ink3);
-    }
-
-    .nav-button.prev { text-align: left; }
-    .nav-button.next { text-align: right; }
-
-    /* Footer */
-    footer {
-      background-color: var(--bg2);
-      padding: 2rem;
-      margin-top: 4rem;
-      text-align: center;
-      color: var(--ink3);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    footer a {
-      color: var(--acc);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      main { padding: 1.5rem 1rem; }
-      h1 { font-size: 1.8rem; }
-      .comparison { grid-template-columns: 1fr; }
-      nav { padding: 0 1rem; }
-      .section-title { font-size: 1.2rem; }
-    }
-  </style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-brand">SQL to C#</div>
-    <a href="#" class="nav-chapter">Chapter 17</a>
-  </nav>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 17</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-  <main>
-    <header>
-      <div class="chapter-number">Part 3 · Chapter 17</div>
-      <h1>EF Performance — N+1 and Beyond</h1>
-      <p class="chapter-subtitle">Master performance profiling, query logging, the N+1 problem, compiled queries, bulk operations, and split queries. Learn to identify bottlenecks and fix them with real benchmarks and examples.</p>
-    </header>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 17</div>
+            <h1>EF Performance</h1>
+            <p class="chapter-intro">Requirement: &ldquo;The page loads in 5 seconds &mdash; make it faster.&rdquo; EF Core can be fast or slow depending on how you use it. Here are the common performance pitfalls and how to fix them.</p>
+        </div>
 
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>Logging the SQL that EF generates with optionsBuilder.LogTo()</li>
-        <li>The N+1 problem revisited: 1 query vs 1001 queries, with actual query counts</li>
-        <li>AsNoTracking, AsNoTrackingWithIdentityResolution, and performance trade-offs</li>
-        <li>Compiled queries for hot paths and repeated query patterns</li>
-        <li>EF Core 7+ ExecuteUpdate and ExecuteDelete for bulk operations without loading entities</li>
-        <li>Split queries vs single queries: cartesian explosion and when each is better</li>
-      </ul>
-    </div>
+        <!-- 01: N+1 Problem -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Customer List Makes 100 Database Calls&rdquo;</h2>
 
-    <!-- Section 01 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">01</div>
-        <h2 class="section-title">Logging the SQL EF Generates</h2>
-      </div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Page shows 100 customers with order counts. Takes 5 seconds. Each customer triggers a separate query.
+            </div>
 
-      <div class="prose">
-        <p>You can't optimize what you can't see. EF can log every SQL statement it generates, allowing you to inspect queries and spot performance problems.</p>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    One query with JOIN and COUNT gets everything in a single round-trip. The database is made for this.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use Include() to load related data in one query, or Select() projection to get exactly what I need. One query instead of N+1.
+                </div>
+            </div>
 
-        <p>Enable logging in <span style="font-family: JetBrains Mono;">OnConfiguring()</span> to see exactly what SQL is being executed.</p>
-      </div>
+            <div class="code-full">
+                <div class="code-label">Bad Code &mdash; N+1 Problem (100+ queries)</div>
+                <div class="code-block csharp-block">
+                    <pre>var customers = await db.Customers.ToListAsync(ct);
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Enable SQL Logging</label>
-          <div class="code-content">
-<span class="comment">// In DbContext</span>
-<span class="kw">protected override void</span>
-    <span class="type">OnConfiguring</span>(
-        <span class="type">DbContextOptionsBuilder</span>
-        optionsBuilder)
+foreach (var c in customers)
 {
-    optionsBuilder
-        .<span class="type">UseSqlServer</span>(connString)
-        .<span class="type">LogTo</span>(
-            <span class="type">Console</span>.WriteLine,
-            <span class="type">LogLevel</span>.Information);
+    // This runs 100 times! One query per customer
+    c.OrderCount = await db.Orders
+        .CountAsync(o =&gt; o.CustomerId == c.Id, ct);
 }
 
-<span class="comment">// Alternative: Log to a file</span>
-<span class="kw">var</span> logFile = <span class="kw">new</span>
-    <span class="type">StreamWriter</span>(
-        <span class="str">"sql.log"</span>,
-        <span class="kw">append</span>: <span class="kw">true</span>);
+// Result: 1 query to load customers + 100 queries for counts
+// Total: 101 queries, 5 seconds</pre>
+                </div>
+            </div>
 
-optionsBuilder
-    .<span class="type">LogTo</span>(logFile.WriteLine,
-         <span class="type">LogLevel</span>.Information);
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Fixed with Include()</div>
+                    <div class="code-block ef-block">
+                        <pre>var customers = await db.Customers
+    .Include(c =&gt; c.Orders)
+    .AsNoTracking()
+    .ToListAsync(ct);
 
-<span class="comment">// Now every query is logged:</span>
-<span class="comment">// info: Microsoft.EntityFrameworkCore</span>
-<span class="comment">//       .Database.Command[20100]</span>
-<span class="comment">// SELECT [c].[Id], [c].[Name]</span>
-<span class="comment">// FROM [Customers] AS [c]</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL Output (What You'll See)</label>
-          <div class="code-content">
-<span class="comment">-- Query 1 (from logging)</span>
-<span class="kw">SELECT</span> [c].[Id],
-       [c].[Name],
-       [c].[Email]
-<span class="kw">FROM</span> [Customers] <span class="kw">AS</span> [c]
-
-<span class="comment">-- Query 2 (if N+1 problem)</span>
-<span class="kw">SELECT</span> [o].[Id],
-       [o].[CustomerId],
-       [o].[Amount]
-<span class="kw">FROM</span> [Orders] <span class="kw">AS</span> [o]
-<span class="kw">WHERE</span> [o].[CustomerId] = 1
-
-<span class="comment">-- Query 3, 4, 5... (repeat)</span>
-<span class="comment">-- This pattern shows N+1 problem</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Using Tags to Label Queries:</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">TagWith for Query Labels</label>
-          <div class="code-content">
-<span class="comment">// Tag queries for easy searching</span>
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">TagWith</span>(
-        <span class="str">"GetActiveCustomers"</span>)
-    .<span class="type">Where</span>(c =&gt;
-        c.IsActive)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Log output shows:</span>
-<span class="comment">-- GetActiveCustomers</span>
-<span class="kw">SELECT</span> [c].[Id], [c].[Name]
-<span class="kw">FROM</span> [Customers] <span class="kw">AS</span> [c]
-<span class="kw">WHERE</span> [c].[IsActive] = 1
-
-<span class="comment">// Makes finding specific queries</span>
-<span class="comment">// in large log files easy</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Log Analysis Pattern</label>
-          <div class="code-content">
-<span class="comment">-- Sample log file with tags</span>
-
-<span class="comment">-- GetActiveCustomers</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers
-<span class="kw">WHERE</span> IsActive = 1;
-
-<span class="comment">-- LoadCustomerOrders</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId = 1;
-
-<span class="comment">-- LoadCustomerOrders</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId = 2;
-
-<span class="comment">-- Repeated query = N+1 problem!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Always Log in Development</div>
-        <div class="insight-text">
-          Enable SQL logging in development. It's the first tool for diagnosing performance issues. When you see the same query repeated 100 times in a row, you've found your N+1 problem. Tags make it easy to correlate application logic with database queries.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 02 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">02</div>
-        <h2 class="section-title">The N+1 Problem Revisited with Benchmarks</h2>
-      </div>
-
-      <div class="prose">
-        <p>The N+1 problem is the most common EF performance issue. You load N entities, then in a loop, you access a navigation property that triggers a query for each one. Total: 1 + N queries.</p>
-
-        <p>Here's the problem, fixes, and real query counts.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">N+1 Problem: 101 Queries</label>
-          <div class="code-content">
-<span class="comment">// Load 100 customers</span>
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">ToListAsync</span>();
-<span class="comment">// Query 1: SELECT * FROM Customers</span>
-
-<span class="comment">// Loop: triggers N more queries</span>
-<span class="kw">foreach</span> (<span class="kw">var</span> cust
-        <span class="kw">in</span> customers)
+// Loads customers + all related orders
+// Then count in memory
+var result = customers.Select(c =&gt; new
 {
-    <span class="comment">// This accesses the navigation</span>
-    <span class="comment">// property (lazy loading)</span>
-    <span class="kw">var</span> orderCount =
-        cust.Orders.<span class="type">Count</span>();
-    <span class="comment">// Queries 2-101: 100 separate</span>
-    <span class="comment">// SELECT * FROM Orders</span>
-    <span class="comment">// WHERE CustomerId = @id</span>
-}
+    c.Id,
+    c.Name,
+    OrderCount = c.Orders.Count
+});
 
-<span class="comment">// Total: 1 + 100 = 101 queries</span>
-<span class="comment">// Performance: ~2 seconds (network)</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: 101 Queries in Log</label>
-          <div class="code-content">
-<span class="comment">-- Query 1</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers;
-
-<span class="comment">-- Queries 2-101</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId = 1;
-
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId = 2;
-
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId = 3;
-
-<span class="comment">-- ... (97 more times)</span>
-
-<span class="comment">-- Problem: network roundtrips,</span>
-<span class="comment">-- database overhead</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Fix 1: Eager Loading with Include() — 1 Query</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Fix: Use Include()</label>
-          <div class="code-content">
-<span class="comment">// Load customers with orders</span>
-<span class="comment">// in a single query</span>
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-    .<span class="type">ToListAsync</span>();
-<span class="comment">// Query 1: SELECT c.*, o.* FROM</span>
-<span class="comment">//   Customers c</span>
-<span class="comment">//   LEFT JOIN Orders o</span>
-<span class="comment">//   ON c.Id = o.CustomerId</span>
-
-<span class="comment">// Loop: no additional queries!</span>
-<span class="kw">foreach</span> (<span class="kw">var</span> cust
-        <span class="kw">in</span> customers)
-{
-    <span class="kw">var</span> orderCount =
-        cust.Orders.<span class="type">Count</span>();
-    <span class="comment">// Orders are already loaded</span>
-    <span class="comment">// No query needed</span>
-}
-
-<span class="comment">// Total: 1 query</span>
-<span class="comment">// Performance: ~50ms</span>
-<span class="comment">// 40x faster!</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Single JOIN Query</label>
-          <div class="code-content">
-<span class="kw">SELECT</span> c.Id, c.Name,
-       c.Email,
-       o.Id, o.CustomerId,
-       o.Amount
-<span class="kw">FROM</span> Customers c
-<span class="kw">LEFT JOIN</span> Orders o
-  <span class="kw">ON</span> c.Id = o.CustomerId;
-
-<span class="comment">-- All data fetched in one query</span>
-<span class="comment">-- Single network roundtrip</span>
-<span class="comment">-- Database processes once</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Fix 2: Projection with Select() — 1 Query, Only Needed Data</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Fix: Use Projection</label>
-          <div class="code-content">
-<span class="comment">// Load only what you need</span>
-<span class="kw">var</span> result = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">Select</span>(c =&gt; <span class="kw">new</span> {
+// Result: 1 query + join
+// Pros: Simple, eager loading
+// Cons: Loads all order data (wasteful)</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Fixed with Select() Projection</div>
+                    <div class="code-block ef-block">
+                        <pre>var customers = await db.Customers
+    .AsNoTracking()
+    .Select(c =&gt; new
+    {
         c.Id,
         c.Name,
-        OrderCount = c.Orders
-            .<span class="type">Count</span>()
+        OrderCount = c.Orders.Count()
     })
-    .<span class="type">ToListAsync</span>();
-<span class="comment">// Query 1: Projection executes</span>
-<span class="comment">// in database, not memory</span>
+    .ToListAsync(ct);
 
-<span class="comment">// Loop: no entities, just DTOs</span>
-<span class="kw">foreach</span> (<span class="kw">var</span> item
-        <span class="kw">in</span> result)
+// EF generates subquery:
+// SELECT c.Id, c.Name,
+//    (SELECT COUNT(*) FROM Orders
+//     WHERE CustomerId = c.Id)
+// FROM Customers
+
+// Result: 1 query, perfect shape
+// Pros: Minimal data, single query
+// Cons: Subquery pattern</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: Bulk Operations -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Insert 10,000 Records Faster&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                CSV import needs to create 10,000 products. Individual SaveChanges is too slow.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    BULK INSERT or INSERT with multiple VALUE rows. One statement, one round-trip, minimal logging.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    AddRange() batches adds in memory, then SaveChanges() once. Or EF.BulkExtensions for BULK INSERT speed.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Slow Code &mdash; One SaveChanges Per Record</div>
+                <div class="code-block csharp-block">
+                    <pre>var products = LoadProductsFromCsv("data.csv");
+
+foreach (var p in products)
 {
-    <span class="comment">// OrderCount already calculated</span>
-    <span class="type">Console</span>.<span class="type">WriteLine</span>(
-        item.OrderCount);
+    db.Products.Add(p);
+    await db.SaveChangesAsync(ct); // Saves 1 record
 }
 
-<span class="comment">// Total: 1 query</span>
-<span class="comment">// Data transferred: minimal</span>
-<span class="comment">// Performance: ~30ms (best)</span>
-          </div>
-        </div>
+// Result: 10,000 database round-trips
+// Each INSERT logged, flushed, committed
+// Time: 30+ seconds</pre>
+                </div>
+            </div>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Aggregation in Database</label>
-          <div class="code-content">
-<span class="kw">SELECT</span> c.Id, c.Name,
-       <span class="type">COUNT</span>(o.Id)
-           <span class="kw">AS</span> OrderCount
-<span class="kw">FROM</span> Customers c
-<span class="kw">LEFT JOIN</span> Orders o
-  <span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">GROUP BY</span> c.Id, c.Name;
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Fast &mdash; AddRange + SaveChanges</div>
+                    <div class="code-block ef-block">
+                        <pre>var products = LoadProductsFromCsv("data.csv");
 
-<span class="comment">-- Aggregation happens in SQL</span>
-<span class="comment">-- Only summary data returned</span>
-<span class="comment">-- Most efficient solution</span>
-          </div>
-        </div>
-      </div>
+// Add all at once (in memory)
+db.Products.AddRange(products);
 
-      <div class="insight">
-        <div class="insight-title">Projection is Often the Best Fix</div>
-        <div class="insight-text">
-          When building reports or API responses, projection (using <span style="font-family: JetBrains Mono;">.Select()</span>) is often better than eager loading. It returns only the data you need, the database does the aggregation, and you avoid loading unnecessary entities. Use eager loading when you need full entity objects for modification.
-        </div>
-      </insight>
-    </section>
+// SaveChanges batches them
+// Default: ~1000 per batch
+await db.SaveChangesAsync(ct);
 
-    <!-- Section 03 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">03</div>
-        <h2 class="section-title">AsNoTracking and AsNoTrackingWithIdentityResolution</h2>
-      </div>
+// EF generates:
+// INSERT INTO Products (...)
+//   VALUES (...), (...), ...
 
-      <div class="prose">
-        <p>Change tracking has overhead. For read-only queries, disabling tracking saves memory and CPU. EF Core offers two options: <span style="font-family: JetBrains Mono;">AsNoTracking()</span> for simple reads, and <span style="font-family: JetBrains Mono;">AsNoTrackingWithIdentityResolution()</span> for complex graphs with duplicate entities.</p>
-      </div>
+// Result: 10 batches, 10 round-trips
+// Time: 2 seconds</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Fastest &mdash; EF.BulkExtensions</div>
+                    <div class="code-block dapper-block">
+                        <pre>var products = LoadProductsFromCsv("data.csv");
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">AsNoTracking Performance</label>
-          <div class="code-content">
-<span class="comment">// WITH tracking (default)</span>
-<span class="kw">var</span> sw = <span class="type">Stopwatch</span>
-    .<span class="type">StartNew</span>();
+// NuGet: EFCore.BulkExtensions
+await db.BulkInsertAsync(products, ct);
 
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">ToListAsync</span>();
+// Uses native BULK INSERT
+// Or: INSERT with TABLOCK for speed
 
-sw.<span class="type">Stop</span>();
-<span class="comment">// Time: 145ms for 10,000 rows</span>
+// Result: 1 statement, 1 round-trip
+// SQL Server streams directly
+// Time: 0.5 seconds
 
-<span class="comment">// WITHOUT tracking</span>
-sw = <span class="type">Stopwatch</span>
-    .<span class="type">StartNew</span>();
+// Tradeoff: Less validation,
+// no triggers, no change tracking</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">AsNoTracking</span>()
-    .<span class="type">ToListAsync</span>();
+        <!-- 03: Tracking Overhead -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Read-Only Queries Are Slow&rdquo;</h2>
 
-sw.<span class="type">Stop</span>();
-<span class="comment">// Time: 120ms for 10,000 rows</span>
-<span class="comment">// ~17% faster!</span>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Dashboard loads 5,000 records for display. Memory spikes.
+            </div>
 
-<span class="comment">// Memory usage: 30% lower</span>
-          </div>
-        </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SELECT is lightweight by nature. The database doesn&rsquo;t track anything &mdash; it just returns rows.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    By default, EF tracks every loaded entity to detect changes. For reads, skip tracking with AsNoTracking(). 30&ndash;50% faster, less memory.
+                </div>
+            </div>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Benchmark Results</label>
-          <div class="code-content">
-<span class="comment">-- Same SQL query in both</span>
-<span class="comment">-- cases, but EF behavior</span>
-<span class="comment">-- differs:</span>
+            <div class="code-full">
+                <div class="code-label">With Tracking (Slow) &mdash; Default Behavior</div>
+                <div class="code-block csharp-block">
+                    <pre>var products = await db.Products
+    .Where(p =&gt; p.IsActive)
+    .ToListAsync(ct);
 
-<span class="comment">-- With Tracking:</span>
-<span class="comment">-- - Maintain snapshot</span>
-<span class="comment">-- - Allocate memory</span>
-<span class="comment">-- - 145ms</span>
+// EF creates ChangeTracker snapshot
+// for each entity: original, current, state
+// Uses memory &prop; record count
+// For display only: wasteful overhead
+// 5,000 records with 20 properties
+// = 100K snapshots = bloat</pre>
+                </div>
+            </div>
 
-<span class="comment">-- Without Tracking:</span>
-<span class="comment">-- - No snapshot</span>
-<span class="comment">-- - Lower memory</span>
-<span class="comment">-- - 120ms</span>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">AsNoTracking() &mdash; Fast Read</div>
+                    <div class="code-block ef-block">
+                        <pre>var products = await db.Products
+    .Where(p =&gt; p.IsActive)
+    .AsNoTracking()
+    .ToListAsync(ct);
 
-<span class="comment">-- Same SQL, different overhead</span>
-          </div>
-        </div>
-      </div>
+// EF skips ChangeTracker snapshot
+// Just materializes objects
+// No memory overhead
+// 30&ndash;50% faster, 50% less memory
 
-      <div class="prose">
-        <p><strong>AsNoTrackingWithIdentityResolution:</strong> Use when querying complex graphs with Include() but the same entity appears multiple times in the result.</p>
-      </div>
+// Tradeoff: Cannot call SaveChanges
+// on these objects. Read-only data.</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">AsNoTrackingWithIdentityResolution</div>
+                    <div class="code-block ef-block">
+                        <pre>var results = await db.Customers
+    .AsNoTrackingWithIdentityResolution()
+    .Include(c =&gt; c.Orders)
+    .ToListAsync(ct);
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Complex Graphs with Duplicates</label>
-          <div class="code-content">
-<span class="comment">// Query: customers with orders</span>
-<span class="comment">// with products</span>
+// No change tracking, but prevents
+// duplicate entity instances
+// Same Customer appears once in
+// memory even if in multiple Orders
 
-<span class="comment">// With tracking (normal):</span>
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-        .<span class="type">ThenInclude</span>(
-            o =&gt; o.Products)
-    .<span class="type">ToListAsync</span>();
-<span class="comment">// Problem: cartesian explosion</span>
-<span class="comment">// Same customer duplicated</span>
-<span class="comment">// for each order</span>
+// Useful: Reads with relationships,
+// no modifications needed</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-<span class="comment">// With AsNoTrackingWithIdentity:</span>
-customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">AsNoTrackingWithIdentityResolution</span>()
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-        .<span class="type">ThenInclude</span>(
-            o =&gt; o.Products)
-    .<span class="type">ToListAsync</span>();
-<span class="comment">// EF deduplicates: one</span>
-<span class="comment">// customer instance,</span>
-<span class="comment">// multiple order references</span>
-          </div>
-        </div>
+        <!-- 04: Query Analysis -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Find Out Why This Query Is Slow&rdquo;</h2>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Cartesian Explosion Problem</label>
-          <div class="code-content">
-<span class="comment">-- SQL returns all combinations</span>
-<span class="comment">-- If customer 1 has 5 orders,</span>
-<span class="comment">-- and each order has 3 products,</span>
-<span class="comment">-- 1 customer appears 15 times</span>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                One API endpoint takes 3 seconds. Need to find the bottleneck.
+            </div>
 
-<span class="kw">SELECT</span> c.*, o.*, p.*
-<span class="kw">FROM</span> Customers c
-<span class="kw">LEFT JOIN</span> Orders o
-    <span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">LEFT JOIN</span> OrderProducts op
-    <span class="kw">ON</span> o.Id = op.OrderId
-<span class="kw">LEFT JOIN</span> Products p
-    <span class="kw">ON</span> op.ProductId = p.Id;
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    EXPLAIN PLAN or SET STATISTICS IO ON. Look at execution plan, row counts, index usage.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    ToQueryString() shows generated SQL. Log queries. Use execution plan in SQL Server Management Studio. Then optimize.
+                </div>
+            </div>
 
-<span class="comment">-- 1 customer * 5 orders</span>
-<span class="comment">-- * 3 products = 15 rows</span>
-<span class="comment">-- Customer data duplicated</span>
-          </div>
-        </div>
-      </div>
+            <div class="code-full">
+                <div class="code-label">Step 1: ToQueryString() &mdash; See Generated SQL</div>
+                <div class="code-block csharp-block">
+                    <pre>var query = db.Orders
+    .Where(o =&gt; o.Total &gt; 100)
+    .Include(o =&gt; o.Customer)
+    .Select(o =&gt; new { o.Id, o.Total,
+                         o.Customer.Name });
 
-      <div class="insight">
-        <div class="insight-title">Choose the Right Tracking Mode</div>
-        <div class="insight-text">
-          For simple read-only queries, use <span style="font-family: JetBrains Mono;">AsNoTracking()</span>. For complex graphs with potential duplicates, use <span style="font-family: JetBrains Mono;">AsNoTrackingWithIdentityResolution()</span>. For modification scenarios, use the default (with tracking).
-        </div>
-      </insight>
-    </section>
+var sql = query.ToQueryString();
+Console.WriteLine(sql);
 
-    <!-- Section 04 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">04</div>
-        <h2 class="section-title">Compiled Queries for Hot Paths</h2>
-      </div>
+// Output:
+// SELECT [o].[Id], [o].[Total], [c].[Name]
+// FROM [Orders] AS [o]
+// INNER JOIN [Customers] AS [c]
+//   ON [o].[CustomerId] = [c].[Id]
+// WHERE [o].[Total] &gt; 100</pre>
+                </div>
+            </div>
 
-      <div class="prose">
-        <p>LINQ queries are compiled to SQL at runtime. If you execute the same query thousands of times, you pay that compilation cost every time.</p>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Step 2: Enable Query Logging</div>
+                    <div class="code-block ef-block">
+                        <pre>var optionsBuilder = new DbContextOptionsBuilder
+    &lt;AppDbContext&gt;();
+optionsBuilder.UseSqlServer(connStr)
+    .LogTo(Console.WriteLine,
+           LogLevel.Information)
+    .EnableDetailedErrors();
 
-        <p>Compiled queries pre-compile the LINQ expression. The first execution is cached; subsequent executions reuse the compiled form. Great for hot paths like web request handlers executed thousands of times.</p>
-      </div>
+// Logs every query EF sends
+// Shows parameters, execution time
+// Warning: Logs sensitive data
+// Use only in development</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Step 3: Check Execution Plan</div>
+                    <div class="code-block sql-block">
+                        <pre>-- In SQL Server Management Studio:
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Normal Query (Recompiled Each Time)</label>
-          <div class="code-content">
-<span class="comment">// This query recompiles every</span>
-<span class="comment">// time it executes</span>
+SELECT [o].[Id], [o].[Total], [c].[Name]
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c]
+  ON [o].[CustomerId] = [c].[Id]
+WHERE [o].[Total] &gt; 100;
 
-<span class="kw">public class</span> <span class="type">CustomerService</span> {
-    <span class="kw">public async Task&lt;Customer&gt;</span>
-        <span class="type">GetById</span>(<span class="kw">int</span> id) {
-        <span class="kw">var</span> customer = <span class="kw">await</span>
-            context.Customers
-            .<span class="type">FirstOrDefaultAsync</span>(
-                c =&gt; c.Id == id);
-        <span class="comment">// Query compiled every call</span>
-        <span class="kw">return</span> customer;
-    }
-}
+-- Output shows:
+-- Logical reads, scans vs seeks
+-- CPU time, elapsed time
+-- Join type (hash, loop, merge)</pre>
+                    </div>
+                </div>
+            </div>
 
-<span class="comment">// Benchmark: 10,000 calls</span>
-<span class="comment">// Time: 1200ms</span>
-<span class="comment">// Includes 10,000 compilations</span>
-          </div>
-        </div>
+            <div class="code-full">
+                <div class="code-label">Common Bottlenecks &amp; Fixes</div>
+                <table>
+                    <thead><tr><th>Problem</th><th>Symptom</th><th>Fix</th></tr></thead>
+                    <tbody>
+                        <tr><td>N+1 queries</td><td>Repeated same query</td><td>Include() or Select()</td></tr>
+                        <tr><td>Full table scan</td><td>Logical reads &equals; all rows</td><td>Add index on WHERE column</td></tr>
+                        <tr><td>Inefficient join</td><td>Nested loop with large rows</td><td>Ensure FK indexed</td></tr>
+                        <tr><td>Wrong join type</td><td>Hash join (slow) vs seek</td><td>Check stats, rebuild index</td></tr>
+                        <tr><td>Implicit conversion</td><td>CONVERT in WHERE clause</td><td>Match column type to param</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Query Compilation Overhead</label>
-          <div class="code-content">
-<span class="comment">-- SQL is the same each time:</span>
+        <!-- 05: Compiled Queries -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Same Query Runs 1000 Times Per Second&rdquo;</h2>
 
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers
-<span class="kw">WHERE</span> Id = @id;
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Hot path query called on every request. Minimize overhead.
+            </div>
 
-<span class="comment">-- But EF has to:</span>
-<span class="comment">-- 1. Parse LINQ expression</span>
-<span class="comment">-- 2. Generate SQL</span>
-<span class="comment">-- 3. Prepare parameter</span>
-<span class="comment">-- 4. Execute</span>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Stored procedure or parameterized query plan caching. Prepare once, execute many times.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    EF.CompileAsyncQuery() pre-compiles the LINQ expression tree. Skips compilation on every call. Only for hot paths.
+                </div>
+            </div>
 
-<span class="comment">-- Steps 1-3 happen every time!</span>
-<span class="comment">-- Compilation adds ~100us</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Compiled Query Version:</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Using Compiled Queries</label>
-          <div class="code-content">
-<span class="comment">// Pre-compiled query</span>
-<span class="kw">private static readonly</span>
-    <span class="type">Func</span>&lt;<span class="type">AppDbContext</span>, <span class="kw">int</span>,
-    <span class="type">Task</span>&lt;<span class="type">Customer</span>&gt;&gt;
-    _getCustomerById =
-        <span class="type">EF</span>.<span class="type">CompileAsyncQuery</span>(
-            (AppDbContext ctx, <span class="kw">int</span> id) =&gt;
-                ctx.Customers
-                .<span class="type">FirstOrDefault</span>(
-                    c =&gt; c.Id == id));
-
-<span class="kw">public async Task&lt;Customer&gt;</span>
-    <span class="type">GetById</span>(<span class="kw">int</span> id) {
-    <span class="comment">// Reuses pre-compiled form</span>
-    <span class="kw">return await</span> _getCustomerById
-        .Invoke(context, id);
-}
-
-<span class="comment">// Benchmark: 10,000 calls</span>
-<span class="comment">// Time: 850ms</span>
-<span class="comment">// No compilation overhead</span>
-<span class="comment">// ~30% faster!</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Execution Plan Caching</label>
-          <div class="code-content">
-<span class="comment">-- Database also caches</span>
-<span class="comment">-- execution plans</span>
-
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers
-<span class="kw">WHERE</span> Id = @id;
-
-<span class="comment">-- First execution:</span>
-<span class="comment">-- Database parses and plans</span>
-
-<span class="comment">-- Subsequent executions:</span>
-<span class="comment">-- Database reuses plan</span>
-
-<span class="comment">-- With compiled queries:</span>
-<span class="comment">-- EF reuses compiled form</span>
-<span class="comment">-- Database reuses plan</span>
-<span class="comment">-- Double efficiency!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Use Compiled Queries Selectively</div>
-        <div class="insight-text">
-          Only compile queries in hot paths: request handlers, background jobs, queries executed thousands of times. For one-off queries or rarely-used code paths, the overhead of compiling isn't worth the code complexity. Profile first; optimize based on evidence.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 05 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">05</div>
-        <h2 class="section-title">Bulk Operations: ExecuteUpdate and ExecuteDelete</h2>
-      </div>
-
-      <div class="prose">
-        <p>EF Core 7+ introduced <span style="font-family: JetBrains Mono;">ExecuteUpdate()</span> and <span style="font-family: JetBrains Mono;">ExecuteDelete()</span>. These execute a single <span style="font-family: JetBrains Mono;">UPDATE</span> or <span style="font-family: JetBrains Mono;">DELETE</span> statement without loading entities into memory.</p>
-
-        <p>This is massively more efficient than the old pattern: load all entities, modify in memory, save.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">OLD (Bad): Load, Modify, Save</label>
-          <div class="code-content">
-<span class="comment">// OLD way: Load ALL products</span>
-<span class="kw">var</span> products = <span class="kw">await</span>
-    context.Products
-    .<span class="type">Where</span>(p =&gt;
-        p.Category == <span class="str">"Electronics"</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Modify in memory</span>
-<span class="kw">foreach</span> (<span class="kw">var</span> p <span class="kw">in</span> products)
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Normal Query (Slow at Scale)</div>
+                    <div class="code-block csharp-block">
+                        <pre>public async Task&lt;Customer?&gt; GetCustomer(
+    int id, CancellationToken ct)
 {
-    p.Price *= 1.1m;
+    // Called 1000 times/sec
+    return await db.Customers
+        .AsNoTracking()
+        .FirstOrDefaultAsync(
+            c =&gt; c.Id == id, ct);
 }
 
-<span class="comment">// Save all</span>
-<span class="kw">await</span>
-    context.SaveChangesAsync();
+// EF compiles LINQ to SQL every call
+// Tree traversal: 0.5ms per call
+// 1000 calls &times; 0.5ms = 500ms wasted
+// Result: Only 50% CPU for work</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Compiled Query (Fast)</div>
+                    <div class="code-block ef-block">
+                        <pre>private static readonly Func&lt;
+    AppDbContext, int, CancellationToken,
+    Task&lt;Customer?&gt;&gt; _getCustomer =
+  EF.CompileAsyncQuery(
+    (AppDbContext db, int id,
+     CancellationToken ct) =&gt;
+      db.Customers
+        .AsNoTracking()
+        .FirstOrDefault(c =&gt; c.Id == id)
+);
 
-<span class="comment">// Queries executed:</span>
-<span class="comment">// 1. SELECT * FROM Products</span>
-<span class="comment">//    WHERE Category = 'Electronics'</span>
-<span class="comment">// 2-N. Individual UPDATE for</span>
-<span class="comment">//    each product</span>
+public async Task&lt;Customer?&gt; GetCustomer(
+    int id, CancellationToken ct)
+{
+    return await _getCustomer
+        .Invoke(db, id, ct);
+}
 
-<span class="comment">// Result: N+1 queries, slow!</span>
-<span class="comment">// 1000 products = 1001 queries</span>
-          </div>
+// Result: 0 compilation overhead
+// 10&ndash;20x faster for hot paths</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">When to Use Compiled Queries</div>
+                <table>
+                    <thead><tr><th>Use Case</th><th>Benefit</th><th>Caution</th></tr></thead>
+                    <tbody>
+                        <tr><td>High-frequency (&gt;100/sec)</td><td>Saves compilation overhead</td><td>Micro-optimization</td></tr>
+                        <tr><td>Hot path endpoints</td><td>Every millisecond matters</td><td>Profile first</td></tr>
+                        <tr><td>Same query, different params</td><td>Compiled once, many executions</td><td>Parameters only, not structure</td></tr>
+                        <tr><td>Dashboard reports</td><td>Rarely needed</td><td>Calls infrequent</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 06: Pagination -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Page Through 1 Million Products&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Product catalog has 1M items. Users browse pages of 20. Performance degrades on deep pages (page 50,000).
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    OFFSET/FETCH for simplicity, but skipping 999,980 rows is expensive. Keyset pagination (seek) is faster for large datasets.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Skip()/Take() generates OFFSET/FETCH. For big datasets, use keyset pagination: WHERE Id &gt; lastId. Always fast, regardless of page depth.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Offset Pagination (Simple but Slow at Deep Pages)</div>
+                <div class="code-block csharp-block">
+                    <pre>var pageNumber = 1;
+var pageSize = 20;
+
+var products = await db.Products
+    .AsNoTracking()
+    .OrderBy(p =&gt; p.Id)
+    .Skip((pageNumber - 1) * pageSize)
+    .Take(pageSize)
+    .ToListAsync(ct);
+
+// Page 1: Skip 0, Take 20 = fast
+// Page 100: Skip 1980, Take 20 = slower
+// Page 50,000: Skip 999,980 = very slow
+
+// Generated SQL:
+// SELECT ... FROM Products
+//   ORDER BY Id
+//   OFFSET 999980 ROWS FETCH NEXT 20 ROWS ONLY</pre>
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">Keyset Pagination (Always Fast)</div>
+                    <div class="code-block ef-block">
+                        <pre>int pageSize = 20;
+int? lastSeenId = null;
+
+var products = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; lastSeenId == null ||
+               p.Id &gt; lastSeenId)
+    .OrderBy(p =&gt; p.Id)
+    .Take(pageSize + 1)
+    .ToListAsync(ct);
+
+// Check if more rows exist
+var hasMore = products.Count &gt; pageSize;
+if (hasMore)
+    products = products.Take(pageSize).ToList();
+
+// Last item for next page
+lastSeenId = products.Last().Id;
+
+// Always: Seek on indexed Id
+// Every page: same speed</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Cursor-Based API Pattern</div>
+                    <div class="code-block ef-block">
+                        <pre>public class PageResult&lt;T&gt;
+{
+    public List&lt;T&gt; Items { get; set; }
+    public string? NextCursor { get; set; }
+}
+
+public async Task&lt;PageResult&lt;Product&gt;&gt;
+  GetProductsPage(
+    string? cursor = null,
+    int pageSize = 20,
+    CancellationToken ct = default)
+{
+    var lastId = cursor == null ? 0
+      : int.Parse(cursor);
+    var items = await db.Products
+        .Where(p =&gt; p.Id &gt; lastId)
+        .OrderBy(p =&gt; p.Id)
+        .Take(pageSize + 1)
+        .AsNoTracking()
+        .ToListAsync(ct);
+
+    var hasMore = items.Count &gt; pageSize;
+    if (hasMore) items = items.Take(pageSize)
+        .ToList();
+
+    return new PageResult&lt;Product&gt;
+    {
+        Items = items,
+        NextCursor = hasMore
+            ? items.Last().Id.ToString()
+            : null
+    };
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 07: Performance Checklist -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">07</span><div class="sec-rule"></div></div>
+            <h2>Performance Checklist</h2>
+
+            <div class="code-full">
+                <table>
+                    <thead><tr><th>Problem</th><th>Solution</th><th>Impact</th></tr></thead>
+                    <tbody>
+                        <tr><td>N+1 queries</td><td>Include() or Select() projection</td><td>90% faster</td></tr>
+                        <tr><td>Tracking overhead</td><td>AsNoTracking() for reads</td><td>30&ndash;50% faster</td></tr>
+                        <tr><td>Bulk inserts slow</td><td>AddRange() + SaveChanges() or BulkInsertAsync()</td><td>10&ndash;60x faster</td></tr>
+                        <tr><td>Slow read-only queries</td><td>Add indexes on WHERE/JOIN columns</td><td>10&ndash;100x faster</td></tr>
+                        <tr><td>Large dataset pagination slow</td><td>Keyset pagination instead of OFFSET</td><td>100x faster at deep pages</td></tr>
+                        <tr><td>Hot path query overhead</td><td>EF.CompileAsyncQuery()</td><td>10&ndash;20x faster</td></tr>
+                        <tr><td>Unknown slow query</td><td>ToQueryString() + SET STATISTICS</td><td>Diagnose bottleneck</td></tr>
+                        <tr><td>Implicit conversions</td><td>Match parameter type to column type</td><td>Enable index seeks</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Best Practices Summary</div>
+                <ul style="margin-left: 20px; font-size: 14px; color: var(--ink2); line-height: 1.8;">
+                    <li><strong>Always measure.</strong> Use SET STATISTICS, execution plans, and profilers. Intuition is wrong.</li>
+                    <li><strong>AsNoTracking() by default.</strong> Add change tracking only when you need SaveChanges().</li>
+                    <li><strong>Use projections (Select()).</strong> Load only the columns you need. Let EF optimize.</li>
+                    <li><strong>Batch operations.</strong> AddRange() + one SaveChanges() is 10x faster than loops.</li>
+                    <li><strong>Index aggressively.</strong> WHERE columns, JOIN columns, ORDER BY columns. Cardinality matters.</li>
+                    <li><strong>Avoid OFFSET for pagination.</strong> Use keyset pagination for large datasets. Always O(1).</li>
+                    <li><strong>Compile hot queries.</strong> Only if profiling shows compilation is the bottleneck.</li>
+                    <li><strong>Log in development only.</strong> LogTo() with ILogger exposes sensitive data. Turn off in production.</li>
+                    <li><strong>Use async/await.</strong> Never block threads. Always pass CancellationToken to async methods.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch16-raw-sql-in-ef.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Raw SQL in EF</span>
+            </a>
+            <a class="nav-item" href="ch18-dapper-connection.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Dapper Connection</span>
+            </a>
         </div>
+    </main>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">OLD: Multiple Statements</label>
-          <div class="code-content">
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> Category = <span class="str">'Electronics'</span>;
-
-<span class="comment">-- 1000 individual updates:</span>
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price = 110.00
-<span class="kw">WHERE</span> Id = 1;
-
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price = 121.00
-<span class="kw">WHERE</span> Id = 2;
-
-<span class="comment">-- ... (998 more times)</span>
-
-<span class="comment">-- Horrible performance!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>NEW (Good): ExecuteUpdate in Single Statement</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">NEW: ExecuteUpdate (EF 7+)</label>
-          <div class="code-content">
-<span class="comment">// NEW way: Single UPDATE</span>
-<span class="comment">// statement</span>
-
-<span class="kw">var</span> rowsAffected = <span class="kw">await</span>
-    context.Products
-    .<span class="type">Where</span>(p =&gt;
-        p.Category == <span class="str">"Electronics"</span>)
-    .<span class="type">ExecuteUpdateAsync</span>(
-        s =&gt; s
-        .<span class="type">SetProperty</span>(
-            p =&gt; p.Price,
-            p =&gt; p.Price * 1.1m));
-
-<span class="type">Console</span>.<span class="type">WriteLine</span>(
-    <span class="str">$"{rowsAffected} products "</span> +
-    <span class="str">"updated"</span>);
-
-<span class="comment">// Query executed:</span>
-<span class="comment">// 1. Single UPDATE statement</span>
-
-<span class="comment">// Result: 1 query, super fast!</span>
-<span class="comment">// 1000 products = 1 query</span>
-<span class="comment">// 1000x faster than loading!</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">NEW: Single UPDATE Statement</label>
-          <div class="code-content">
-<span class="comment">-- Generated by EF:</span>
-
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price = Price * 1.1
-<span class="kw">WHERE</span> Category = <span class="str">'Electronics'</span>;
-
-<span class="comment">-- Database handles in one</span>
-<span class="comment">-- operation</span>
-<span class="comment">-- No entities loaded</span>
-<span class="comment">-- No round-trips</span>
-<span class="comment">-- Extremely fast</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>ExecuteDelete for bulk deletes:</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">ExecuteDelete: Remove Old Records</label>
-          <div class="code-content">
-<span class="comment">// Delete orders older than</span>
-<span class="comment">// 2 years</span>
-<span class="kw">var</span> rowsDeleted = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">Where</span>(o =&gt;
-        o.OrderDate &lt;
-        <span class="type">DateTime</span>.UtcNow
-            .<span class="type">AddYears</span>(-2))
-    .<span class="type">ExecuteDeleteAsync</span>();
-
-<span class="type">Console</span>.<span class="type">WriteLine</span>(
-    <span class="str">$"{rowsDeleted} old orders "</span> +
-    <span class="str">"deleted"</span>);
-
-<span class="comment">// Query executed:</span>
-<span class="comment">// DELETE FROM Orders</span>
-<span class="comment">// WHERE OrderDate &lt; @date</span>
-
-<span class="comment">// Single statement, no loading</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: DELETE Generated</label>
-          <div class="code-content">
-<span class="kw">DELETE FROM</span> Orders
-<span class="kw">WHERE</span> OrderDate &lt;
-    DATEADD(YEAR, -2,
-            GETUTCDATE());
-
-<span class="comment">-- Executed in database</span>
-<span class="comment">-- No entities involved</span>
-<span class="comment">-- Perfect for cleanup tasks</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">ExecuteUpdate/ExecuteDelete are Essential for Bulk Operations</div>
-        <div class="insight-text">
-          Never load entities just to bulk update or delete them. Use <span style="font-family: JetBrains Mono;">ExecuteUpdate()</span> and <span style="font-family: JetBrains Mono;">ExecuteDelete()</span> to execute a single database statement. For 1000 products, the difference is 1 query vs 1001 queries. Use these for bulk operations, cleanup tasks, and performance-critical code.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 06 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">06</div>
-        <h2 class="section-title">Split Queries vs Single Queries</h2>
-      </div>
-
-      <div class="prose">
-        <p>When you eager load with multiple Include() calls, EF can generate either a single query with multiple JOINs (cartesian explosion risk) or multiple separate queries (more roundtrips).</p>
-
-        <p>Use <span style="font-family: JetBrains Mono;">.AsSplitQuery()</span> or <span style="font-family: JetBrains Mono;">.AsSingleQuery()</span> to control which strategy EF uses.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Problem: Cartesian Explosion</label>
-          <div class="code-content">
-<span class="comment">// Default: Single query with</span>
-<span class="comment">// multiple JOINs</span>
-
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-    .<span class="type">Include</span>(c =&gt;
-        c.Addresses)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Generated SQL:</span>
-<span class="comment">// SELECT c.*, o.*, a.*</span>
-<span class="comment">// FROM Customers c</span>
-<span class="comment">// LEFT JOIN Orders o</span>
-<span class="comment">// LEFT JOIN Addresses a</span>
-
-<span class="comment">// Problem: If customer has</span>
-<span class="comment">// 5 orders and 3 addresses,</span>
-<span class="comment">// they appear 15 times!</span>
-<span class="comment">// Result set is 15x larger</span>
-<span class="comment">// Network transfer bloated</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Cartesian Product Issue</label>
-          <div class="code-content">
-<span class="comment">-- Rows = Customers × Orders</span>
-<span class="comment">--        × Addresses</span>
-
-<span class="kw">SELECT</span> c.*, o.*, a.*
-<span class="kw">FROM</span> Customers c
-<span class="kw">LEFT JOIN</span> Orders o
-  <span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">LEFT JOIN</span> Addresses a
-  <span class="kw">ON</span> c.Id = a.CustomerId;
-
-<span class="comment">-- Customer 1: 5 orders,</span>
-<span class="comment">--             3 addresses</span>
-<span class="comment">-- Result rows: 5 × 3 = 15</span>
-<span class="comment">-- Customer data duplicated 15x</span>
-<span class="comment">-- Wasteful!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Solution: AsSplitQuery() — Multiple Roundtrips, Smaller Result Sets</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">AsSplitQuery: Better for Complex Graphs</label>
-          <div class="code-content">
-<span class="comment">// Multiple queries, each</span>
-<span class="comment">// smaller and focused</span>
-
-<span class="kw">var</span> customers = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">AsSplitQuery</span>()
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-    .<span class="type">Include</span>(c =&gt;
-        c.Addresses)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Generated SQL:</span>
-<span class="comment">// Query 1: SELECT * FROM</span>
-<span class="comment">//   Customers</span>
-<span class="comment">// Query 2: SELECT * FROM</span>
-<span class="comment">//   Orders WHERE CustomerId IN</span>
-<span class="comment">// Query 3: SELECT * FROM</span>
-<span class="comment">//   Addresses WHERE CustomerId IN</span>
-
-<span class="comment">// Result: 3 smaller queries,</span>
-<span class="comment">// no cartesian explosion</span>
-<span class="comment">// Total data transferred: less</span>
-<span class="comment">// Preferred for complex graphs</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Split Query Approach</label>
-          <div class="code-content">
-<span class="comment">-- Query 1: Customers</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers;
-
-<span class="comment">-- Query 2: Orders for those</span>
-<span class="comment">-- customers</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Orders
-<span class="kw">WHERE</span> CustomerId <span class="kw">IN</span>
-    (1, 2, 3, ...);
-
-<span class="comment">-- Query 3: Addresses for those</span>
-<span class="comment">-- customers</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Addresses
-<span class="kw">WHERE</span> CustomerId <span class="kw">IN</span>
-    (1, 2, 3, ...);
-
-<span class="comment">-- More queries, but no</span>
-<span class="comment">-- cartesian explosion</span>
-<span class="comment">-- Smaller result sets</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Decision Table:</strong> When to use each strategy:</p>
-        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; color: var(--ink2); font-size: 0.9rem;">
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Scenario</td>
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Use This</td>
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Why</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem;">Single Include (e.g. Customers + Orders)</td>
-            <td style="padding: 0.75rem;">AsSingleQuery</td>
-            <td style="padding: 0.75rem;">One JOIN is efficient; minimal cartesian explosion</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem;">Multiple Includes (complex graph)</td>
-            <td style="padding: 0.75rem;">AsSplitQuery</td>
-            <td style="padding: 0.75rem;">Avoids cartesian explosion; multiple smaller queries</td>
-          </tr>
-          <tr>
-            <td style="padding: 0.75rem;">Uncertain; need safety</td>
-            <td style="padding: 0.75rem;">AsSplitQuery (default in 8.0)</td>
-            <td style="padding: 0.75rem;">More roundtrips but safer; no data duplication risk</td>
-          </tr>
-        </table>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">AsSplitQuery is the Safe Default for Complex Graphs</div>
-        <div class="insight-text">
-          For simple eager loading with one or two includes, <span style="font-family: JetBrains Mono;">AsSingleQuery()</span> is fine. For complex graphs with multiple includes, <span style="font-family: JetBrains Mono;">AsSplitQuery()</span> is safer. It generates more queries but avoids cartesian explosion. In EF Core 8.0+, <span style="font-family: JetBrains Mono;">AsSplitQuery()</span> became the default for safety.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Key Takeaways -->
-    <div class="key-takeaways">
-      <h3>Key Takeaways</h3>
-      <ul>
-        <li><strong>Enable SQL logging in development with optionsBuilder.LogTo().</strong> You can't optimize what you can't see. Log to console or file to inspect generated SQL.</li>
-        <li><strong>Tag queries with .TagWith() for easy identification in logs.</strong> Makes it simple to correlate application code with generated SQL.</li>
-        <li><strong>The N+1 problem: load N entities, then load related data for each = N+1 queries.</strong> Fix with .Include() (1 JOIN query), .Select() projection, or .AsSplitQuery().</li>
-        <li><strong>Projection (.Select()) is often the best N+1 fix.</strong> Return only the data you need, let the database do aggregations. Most efficient for reporting.</li>
-        <li><strong>AsNoTracking() disables change tracking for read-only queries,</strong> improving performance 10-20%. Use for API responses, exports, reporting. AsNoTrackingWithIdentityResolution() for complex graphs with duplicates.</li>
-        <li><strong>Compiled queries cache the LINQ compilation step.</strong> Use for hot paths executed thousands of times (web handlers, scheduled jobs). Avoid for one-off queries.</li>
-        <li><strong>ExecuteUpdate() and ExecuteDelete() execute single SQL statements without loading entities.</strong> For 1000 products, this is 1 query vs 1001 queries. Essential for bulk operations.</li>
-        <li><strong>AsSplitQuery() avoids cartesian explosion with multiple includes.</strong> Generates more queries but smaller result sets. Safe for complex graphs. AsSplitQuery is the EF 8.0+ default.</li>
-      </ul>
-    </div>
-
-    <!-- Navigation -->
-    <div class="nav-buttons">
-      <a href="ch16-raw-sql-in-ef.html" class="nav-button prev">← Raw SQL in EF</a>
-      <a href="#" class="nav-button next" style="color: #a8a49e; cursor: not-allowed;">Next Chapter →</a>
-    </div>
-  </main>
-
-  <footer>
-    <p>&copy; 2024 SQL to C# Book. <a href="index.html">Back to Index</a></p>
-  </footer>
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

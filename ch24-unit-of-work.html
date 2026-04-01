@@ -189,20 +189,6 @@
       font-weight: 600;
     }
 
-    .prose em {
-      color: var(--ink3);
-      font-style: italic;
-    }
-
-    .prose ul, .prose ol {
-      margin-left: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .prose li {
-      margin-bottom: 0.5rem;
-    }
-
     .comparison {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -251,37 +237,12 @@
       line-height: 1.6;
       overflow-x: auto;
       min-height: 120px;
-      display: flex;
-      align-items: flex-start;
     }
 
     .csharp-block .code-content {
       background-color: var(--white);
       color: var(--ink);
       border: 1px solid var(--blue-b);
-    }
-
-    .kw { color: #569cd6; }
-    .str { color: #ce9178; }
-    .comment { color: #6a9955; }
-    .type { color: #4ec9b0; }
-    .attr { color: #9cdcfe; }
-    .num { color: #b5cea8; }
-
-    .csharp-block .kw { color: var(--blue); }
-    .csharp-block .str { color: #a85e2a; }
-    .csharp-block .comment { color: #555; }
-    .csharp-block .type { color: #0066cc; }
-
-    .code-block {
-      margin-bottom: 2rem;
-      border-radius: 4px;
-      overflow: hidden;
-      background-color: var(--ink);
-    }
-
-    .code-block .code-content {
-      min-height: 150px;
     }
 
     .insight {
@@ -306,1460 +267,458 @@
       line-height: 1.7;
     }
 
-    .insight-text strong {
-      color: var(--ink);
+    .code-block {
+      margin-bottom: 2rem;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: var(--ink);
+    }
+
+    .code-block .code-content {
+      min-height: 150px;
     }
 
     .key-takeaways {
       background-color: var(--green-l);
       border-left: 4px solid var(--green);
-      padding: 2rem;
-      margin: 3rem 0;
+      padding: 1.5rem;
+      margin-bottom: 3rem;
       border-radius: 4px;
     }
 
     .key-takeaways h3 {
       font-family: 'Outfit', sans-serif;
-      font-weight: 700;
+      font-size: 1rem;
+      font-weight: 600;
       color: var(--green);
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
+      margin-bottom: 1rem;
     }
 
     .key-takeaways ul {
       list-style: none;
-      padding: 0;
+      padding-left: 0;
     }
 
     .key-takeaways li {
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.6rem;
       padding-left: 1.5rem;
       position: relative;
+      font-size: 0.95rem;
+      line-height: 1.6;
       color: var(--ink2);
-      line-height: 1.7;
     }
 
-    .key-takeaways li:before {
-      content: "✓";
+    .key-takeaways li::before {
+      content: "\2713";
       position: absolute;
       left: 0;
       color: var(--green);
-      font-weight: 600;
+      font-weight: bold;
     }
 
-    .theory-box {
-      background-color: var(--amber-l);
-      border-left: 4px solid var(--amber);
-      padding: 1.5rem;
-      margin: 2rem 0;
-      border-radius: 4px;
+    .chapter-nav {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 3rem;
     }
 
-    .theory-box-title {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--amber);
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-    }
-
-    .theory-box-text {
-      color: var(--ink2);
-      font-size: 0.95rem;
-      line-height: 1.7;
-    }
-
-    .nav-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    .nav-button {
-      font-family: 'Outfit', sans-serif;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.2s;
+    .nav-item {
+      background-color: var(--white);
       border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 20px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      border-color: var(--acc);
+    }
+
+    .nav-item.prev {
+      text-align: right;
+    }
+
+    .nav-item-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--ink4);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .nav-item-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
       color: var(--ink);
     }
 
-    .nav-button:hover {
-      background-color: var(--bg2);
-      border-color: var(--ink3);
+    .nav-item:hover .nav-item-title {
+      color: var(--acc);
     }
-
-    .nav-button.prev { text-align: left; }
-    .nav-button.next { text-align: right; }
 
     footer {
       background-color: var(--bg2);
+      border-top: 1px solid var(--rule);
       padding: 2rem;
-      margin-top: 4rem;
       text-align: center;
       color: var(--ink3);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    footer a {
-      color: var(--acc);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
+      font-size: 0.85rem;
+      margin-top: 3rem;
     }
 
     @media (max-width: 768px) {
-      main { padding: 1.5rem 1rem; }
-      h1 { font-size: 1.8rem; }
-      .comparison { grid-template-columns: 1fr; }
-      nav { padding: 0 1rem; }
-      .section-title { font-size: 1.2rem; }
+      h1 { font-size: 2rem; }
+      .code-comparison { grid-template-columns: 1fr; }
+      .chapter-nav { grid-template-columns: 1fr; }
+      .nav-item.prev { text-align: left; }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-brand">SQL to C#</div>
-    <a href="#" class="nav-chapter">Chapter 24</a>
-  </nav>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span>SQL to C#</span>
+            <span class="nav-chapter">CH 24</span>
+        </a>
+        <a href="index.html" class="nav-chapter" style="background:none;color:var(--ink3);padding:0;">&larr; All Chapters</a>
+    </nav>
 
-  <main>
-    <header>
-      <div class="chapter-number">Part 5 · Chapter 24</div>
-      <h1>Unit of Work — Managing Transaction Boundaries</h1>
-      <p class="chapter-subtitle">Master transaction boundaries, atomicity, and consistency. Learn the Unit of Work pattern from its SQL roots through DbContext implementation, custom interfaces, repository integration, Dapper transactions, and distributed systems patterns. Understand ACID properties, savepoints, and when to use explicit transaction management.</p>
-    </header>
+    <main>
+        <header>
+            <div class="chapter-number">Chapter 24</div>
+            <h1>Unit of Work</h1>
+            <p class="chapter-subtitle">Manages transaction boundaries and coordinates multiple repositories.</p>
+        </header>
 
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>Unit of Work theory and Martin Fowler's definition</li>
-        <li>SQL BEGIN TRANSACTION...COMMIT as the original Unit of Work</li>
-        <li>DbContext as a built-in Unit of Work implementation</li>
-        <li>ACID properties from SQL perspective to C# implementation</li>
-        <li>Custom IUnitOfWork interface design and implementation</li>
-        <li>Integrating Unit of Work with the Repository pattern</li>
-        <li>Transaction management: TransactionScope, DbContextTransaction, and IDbTransaction</li>
-        <li>Savepoints in SQL versus DbContext checkpoints</li>
-        <li>Dapper transaction management and explicit transaction passing</li>
-        <li>Async patterns with Unit of Work and cancellation tokens</li>
-        <li>Error handling, rollback patterns, and compensating transactions</li>
-        <li>Distributed transactions, DTC, and the Saga pattern for microservices</li>
-        <li>Anti-patterns: nested units of work, long-running transactions, and distributed transaction misconceptions</li>
-      </ul>
-    </div>
+        <!-- SECTION 01: What is Unit of Work? -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">01</span>
+                <h2 class="section-title">What is Unit of Work?</h2>
+            </div>
 
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">01</div>
-        <h2 class="section-title">Unit of Work: From SQL to C#</h2>
-      </div>
+            <div class="prose">
+                <p>Unit of Work coordinates multiple repositories and ensures all changes are saved in a single transaction. If any fails, everything rolls back.</p>
+            </div>
 
-      <div class="prose">
-        <p><strong>Unit of Work</strong> is an architectural pattern that groups multiple database operations into a single atomic unit—either all operations succeed, or all fail and are rolled back. The concept originated in Martin Fowler's work on enterprise application architecture, but its roots go much deeper: to SQL transactions themselves.</p>
+            <div class="comparison">
+                <div class="comparison-block csharp-block">
+                    <div class="comparison-label">Without UoW: Fragmented Saves</div>
+                    <div class="code-content"><pre>var customer = new Customer { Name = "Alice" };
+await customerRepo.AddAsync(customer);
 
-        <p>Think of a Unit of Work as a boundary around a set of operations that must succeed together. In e-commerce, when a customer places an order, you might:</p>
+var order = new Order { CustomerId = customer.Id };
+await orderRepo.AddAsync(order);
 
-        <ul>
-          <li>Insert a new Order record</li>
-          <li>Insert multiple OrderItem records</li>
-          <li>Update the Inventory table</li>
-          <li>Insert a Payment record</li>
-        </ul>
+var item = new OrderItem { OrderId = order.Id };
+await itemRepo.AddAsync(item);
 
-        <p>If any of these steps fails, the entire operation must roll back. You cannot have an order without items, or a deducted inventory without a corresponding order. That's the Unit of Work.</p>
-      </div>
+// Multiple SaveChangesAsync calls = multiple transactions
+// If item fails, customer and order already saved</pre></div>
+                </div>
+                <div class="comparison-block csharp-block">
+                    <div class="comparison-label">With UoW: Atomic Transaction</div>
+                    <div class="code-content"><pre>var customer = new Customer { Name = "Alice" };
+uow.Customers.Add(customer);
 
-      <div class="theory-box">
-        <div class="theory-box-title">Fowler's Definition</div>
-        <div class="theory-box-text">Martin Fowler defines Unit of Work as: "Maintains a list of objects affected by a business transaction and coordinates the writing of changes out to the database and the resolution of concurrency problems."</div>
-      </div>
+var order = new Order { CustomerId = customer.Id };
+uow.Orders.Add(order);
 
-      <div class="prose">
-        <p>In practice, this means:</p>
-        <ul>
-          <li><strong>Track:</strong> The UoW knows about all objects that have been created, modified, or deleted</li>
-          <li><strong>Defer writes:</strong> Changes are held in memory until explicitly committed</li>
-          <li><strong>Commit atomically:</strong> All changes are written to the database in a single transaction</li>
-          <li><strong>Rollback on failure:</strong> If anything goes wrong, the entire transaction rolls back</li>
-        </ul>
-      </div>
+var item = new OrderItem { OrderId = order.Id };
+uow.OrderItems.Add(item);
 
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: BEGIN TRANSACTION</div>
-          <div class="code-content"><span class="kw">BEGIN TRANSACTION</span>;
+// Single SaveAsync() = single transaction
+await uow.SaveAsync();
+// All or nothing</pre></div>
+                </div>
+            </div>
 
-<span class="kw">INSERT INTO</span> Orders (CustomerId, OrderDate, Total)
-<span class="kw">VALUES</span> (42, GETDATE(), 99.99);
+            <div class="insight">
+                <strong class="insight-title">Key Idea:</strong>
+                <p class="insight-text">Unit of Work = single transaction containing changes from multiple repositories. All succeed or all fail.</p>
+            </div>
+        </section>
 
-<span class="kw">DECLARE</span> @OrderId <span class="kw">INT</span> = SCOPE_IDENTITY();
+        <!-- SECTION 02: Implementing Unit of Work -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">02</span>
+                <h2 class="section-title">Implementation Pattern</h2>
+            </div>
 
-<span class="kw">INSERT INTO</span> OrderItems (OrderId, ProductId, Qty)
-<span class="kw">VALUES</span> (@OrderId, 1, 2);
+            <div class="prose">
+                <p>Create an interface that exposes repositories and manages a single transaction.</p>
+            </div>
 
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> StockLevel = StockLevel - 2
-<span class="kw">WHERE</span> ProductId = 1;
-
-<span class="comment">-- If all statements succeed:</span>
-<span class="kw">COMMIT TRANSACTION</span>;
-
-<span class="comment">-- If any statement fails:</span>
-<span class="comment">-- (automatically rolled back)</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: DbContext as UoW</div>
-          <div class="code-content"><span class="kw">using</span> <span class="kw">var</span> context = <span class="kw">new</span> <span class="type">OrderDbContext</span>();
-
-<span class="comment">// Begin implicit transaction</span>
-<span class="kw">var</span> order = <span class="kw">new</span> <span class="type">Order</span>
+            <div class="code-block">
+                <div class="comparison-label">Interface</div>
+                <div class="code-content"><pre>public interface IUnitOfWork : IDisposable
 {
-    CustomerId = 42,
-    OrderDate = <span class="type">DateTime</span>.UtcNow,
-    Total = 99.99m
-};
+    ICustomerRepository Customers { get; }
+    IOrderRepository Orders { get; }
+    IProductRepository Products { get; }
 
-context.Orders.Add(order);
-
-order.Items.Add(<span class="kw">new</span> <span class="type">OrderItem</span>
-{
-    ProductId = 1,
-    Quantity = 2
-});
-
-<span class="kw">var</span> product = <span class="kw">await</span> context.Products
-    .FindAsync(1);
-product.StockLevel -= 2;
-
-<span class="comment">// Atomic commit</span>
-<span class="kw">await</span> context.SaveChangesAsync();
-
-<span class="comment">// If SaveChanges fails:</span>
-<span class="comment">// (transaction rolls back automatically)</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Key Insight</div>
-        <div class="insight-text">DbContext IS a Unit of Work. When you call SaveChangesAsync(), it wraps all your changes in a database transaction. You don't need to create a separate abstraction unless you're coordinating multiple repositories or data access layers.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">02</div>
-        <h2 class="section-title">ACID Properties: SQL to C#</h2>
-      </div>
-
-      <div class="prose">
-        <p>ACID is the database guarantee that transactions are reliable. Understanding ACID from the SQL perspective helps you understand why Unit of Work matters in C#.</p>
-      </div>
-
-      <div class="theory-box">
-        <div class="theory-box-title">ACID Explained</div>
-        <div class="theory-box-text">
-          <strong>Atomicity:</strong> All-or-nothing. Either all operations in the transaction commit, or all rollback. No partial updates.<br><br>
-          <strong>Consistency:</strong> The database moves from one valid state to another. Constraints, triggers, and application logic maintain data integrity.<br><br>
-          <strong>Isolation:</strong> Concurrent transactions don't interfere with each other. SQL defines isolation levels (READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE).<br><br>
-          <strong>Durability:</strong> Once committed, data is permanent, even in case of system failure.
-        </div>
-      </div>
-
-      <div class="prose">
-        <p>In C#, DbContext respects these guarantees:</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Isolation Levels</div>
-          <div class="code-content"><span class="comment">-- Dirty read allowed</span>
-<span class="kw">SET TRANSACTION ISOLATION LEVEL</span>
-    READ UNCOMMITTED;
-
-<span class="kw">BEGIN TRANSACTION</span>;
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Accounts;
-<span class="kw">COMMIT</span>;
-
-<span class="comment">-- Default: prevents dirty reads</span>
-<span class="kw">SET TRANSACTION ISOLATION LEVEL</span>
-    READ COMMITTED;
-
-<span class="comment">-- Strict consistency</span>
-<span class="kw">SET TRANSACTION ISOLATION LEVEL</span>
-    SERIALIZABLE;
-<span class="comment">-- Slowest but safest</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Controlling Isolation</div>
-          <div class="code-content"><span class="comment">// Explicit isolation level</span>
-<span class="kw">using</span> <span class="kw">var</span> tx = <span class="kw">await</span> context
-    .Database
-    .BeginTransactionAsync(
-        <span class="type">IsolationLevel</span>
-        .Serializable);
-
-<span class="kw">try</span>
-{
-    context.Accounts.Add(acct);
-    <span class="kw">await</span> context
-        .SaveChangesAsync();
-    <span class="kw">await</span> tx.CommitAsync();
-}
-<span class="kw">catch</span>
-{
-    <span class="kw">await</span> tx.RollbackAsync();
-    <span class="kw">throw</span>;
-}
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Isolation Level Trade-off</div>
-        <div class="insight-text">Higher isolation (SERIALIZABLE) provides stronger guarantees but reduces concurrency. READ COMMITTED is the SQL Server default and balances safety with performance.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">03</div>
-        <h2 class="section-title">DbContext as Built-In Unit of Work</h2>
-      </div>
-
-      <div class="prose">
-        <p>Entity Framework Core's DbContext IS a Unit of Work. It tracks entity changes and coordinates a single SaveChanges() call that commits everything atomically. You don't need to create a separate abstraction for simple scenarios.</p>
-
-        <p>When you add, modify, or delete entities, DbContext holds these changes in memory. Only when you call SaveChanges() or SaveChangesAsync() does it execute a SQL transaction.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: DbContext Tracking</div>
-          <div class="code-content"><span class="kw">using</span> <span class="kw">var</span> ctx = <span class="kw">new</span>
-    <span class="type">OrderDbContext</span>();
-
-<span class="comment">// Track: Create</span>
-<span class="kw">var</span> order = <span class="kw">new</span> <span class="type">Order</span> { Id = 1 };
-ctx.Orders.Add(order);
-
-<span class="comment">// Track: Modify</span>
-order.Total = 50m;
-
-<span class="comment">// Track: Delete</span>
-<span class="kw">var</span> old = <span class="kw">await</span> ctx
-    .Orders.FindAsync(999);
-<span class="kw">if</span> (old != <span class="kw">null</span>)
-    ctx.Orders.Remove(old);
-
-<span class="comment">// Atomic commit</span>
-<span class="kw">await</span> ctx
-    .SaveChangesAsync();
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: What EF Executes</div>
-          <div class="code-content"><span class="kw">BEGIN TRANSACTION</span>;
-
-<span class="kw">INSERT INTO</span> Orders (Id, Total)
-<span class="kw">VALUES</span> (1, 50.00);
-
-<span class="kw">DELETE FROM</span> Orders
-<span class="kw">WHERE</span> Id = 999;
-
-<span class="kw">COMMIT TRANSACTION</span>;
-
-<span class="comment">-- Single atomic batch</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Inspecting DbContext Changes</div>
-        <div class="code-content"><span class="comment">// See all tracked entries</span>
-<span class="kw">var</span> entries = context.ChangeTracker
-    .Entries();
-
-<span class="kw">foreach</span> (<span class="kw">var</span> entry <span class="kw">in</span> entries)
-{
-    <span class="type">Console</span>.WriteLine(
-        $<span class="str">"Entity: {entry.Entity.GetType()}"</span>);
-    <span class="type">Console</span>.WriteLine(
-        $<span class="str">"State: {entry.State}"</span>);
+    Task&lt;int&gt; SaveAsync();
+    Task BeginTransactionAsync();
+    Task CommitAsync();
+    Task RollbackAsync();
 }
 
-<span class="comment">// Get only changes</span>
-<span class="kw">var</span> changes = context.ChangeTracker
-    .Entries()
-    .Where(e => e.State != <span class="type">EntityState</span>
-        .Unchanged)
-    .ToList();
-          </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">When DbContext Alone Is Enough</div>
-        <div class="insight-text">For most applications, DbContext's built-in Unit of Work behavior is sufficient. You only need a custom IUnitOfWork abstraction when coordinating multiple DbContexts, mixing EF with Dapper, or enforcing explicit boundaries in a strict architectural style.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">04</div>
-        <h2 class="section-title">Custom IUnitOfWork Interface Design</h2>
-      </div>
-
-      <div class="prose">
-        <p>When you need explicit UoW boundaries—especially in larger systems—you can create a custom IUnitOfWork interface that wraps DbContexts and repositories. This clarifies intent and makes dependency injection easier.</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Custom IUnitOfWork Interface</div>
-        <div class="code-content"><span class="kw">public interface</span> <span class="type">IUnitOfWork</span>
+public class UnitOfWork : IUnitOfWork
 {
-    <span class="type">IOrderRepository</span> Orders { <span class="kw">get</span>; }
-    <span class="type">ICustomerRepository</span> Customers { <span class="kw">get</span>; }
-    <span class="type">IProductRepository</span> Products { <span class="kw">get</span>; }
+    private readonly DbContext _db;
+    private IDbContextTransaction _transaction;
 
-    <span class="kw">async</span> <span class="type">Task</span> <span class="attr">SaveChangesAsync</span>(
-        <span class="type">CancellationToken</span> ct = <span class="kw">default</span>);
+    public ICustomerRepository Customers { get; private set; }
+    public IOrderRepository Orders { get; private set; }
+    public IProductRepository Products { get; private set; }
 
-    <span class="kw">async</span> <span class="type">Task</span>&lt;<span class="type">IUnitOfWorkTransaction</span>&gt;
-        <span class="attr">BeginTransactionAsync</span>(
-            <span class="type">IsolationLevel</span> level = <span class="type">IsolationLevel</span>
-                .ReadCommitted);
-
-    <span class="kw">void</span> <span class="attr">Rollback</span>();
-}
-
-<span class="kw">public interface</span> <span class="type">IUnitOfWorkTransaction</span>
-{
-    <span class="kw">async</span> <span class="type">Task</span> <span class="attr">CommitAsync</span>();
-    <span class="kw">async</span> <span class="type">Task</span> <span class="attr">RollbackAsync</span>();
-}
-          </div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Custom IUnitOfWork Implementation</div>
-        <div class="code-content"><span class="kw">public class</span> <span class="type">EfCoreUnitOfWork</span> : <span class="type">IUnitOfWork</span>
-{
-    <span class="kw">private readonly</span> <span class="type">OrderDbContext</span> _context;
-    <span class="kw">private readonly</span> <span class="type">Lazy</span>&lt;<span class="type">IOrderRepository</span>&gt; _orders;
-
-    <span class="kw">public</span> <span class="attr">EfCoreUnitOfWork</span>(<span class="type">OrderDbContext</span> ctx)
+    public UnitOfWork(DbContext db)
     {
-        _context = ctx;
-        _orders = <span class="kw">new</span> <span class="type">Lazy</span>&lt;<span class="type">IOrderRepository</span>&gt;(
-            () => <span class="kw">new</span> <span class="type">OrderRepository</span>(_context));
+        _db = db;
+        Customers = new CustomerRepository(db);
+        Orders = new OrderRepository(db);
+        Products = new ProductRepository(db);
     }
 
-    <span class="kw">public</span> <span class="type">IOrderRepository</span> <span class="attr">Orders</span> => _orders.Value;
+    public async Task&lt;int&gt; SaveAsync(CancellationToken cancellationToken = default)
+        => await _db.SaveChangesAsync(cancellationToken);
 
-    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">SaveChangesAsync</span>(
-        <span class="type">CancellationToken</span> ct = <span class="kw">default</span>)
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => _transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
     {
-        <span class="kw">await</span> _context.SaveChangesAsync(ct);
+        await _db.SaveChangesAsync(cancellationToken);
+        await _transaction.CommitAsync(cancellationToken);
     }
 
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IUnitOfWorkTransaction</span>&gt;
-        <span class="attr">BeginTransactionAsync</span>(
-            <span class="type">IsolationLevel</span> level = <span class="type">IsolationLevel</span>.ReadCommitted)
-    {
-        <span class="kw">var</span> tx = <span class="kw">await</span> _context.Database
-            .BeginTransactionAsync(level);
-        <span class="kw">return new</span> <span class="type">UoWTransaction</span>(tx, _context);
-    }
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
+        => await _transaction.RollbackAsync(cancellationToken);
 
-    <span class="kw">public void</span> <span class="attr">Rollback</span>()
+    public void Dispose()
     {
-        _context.ChangeTracker.Clear();
+        _transaction?.Dispose();
+        _db.Dispose();
     }
-}
+}</pre></div>
+            </div>
+        </section>
 
-<span class="kw">public class</span> <span class="type">UoWTransaction</span> : <span class="type">IUnitOfWorkTransaction</span>
+        <!-- SECTION 03: Usage Pattern -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">03</span>
+                <h2 class="section-title">Using Unit of Work</h2>
+            </div>
+
+            <div class="prose">
+                <p>Inject UoW into services to coordinate complex operations across multiple repositories.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Service Using Unit of Work</div>
+                <div class="code-content"><pre>public class OrderService
 {
-    <span class="kw">private readonly</span> <span class="type">IDbContextTransaction</span> _tx;
-    <span class="kw">private readonly</span> <span class="type">DbContext</span> _context;
+    private readonly IUnitOfWork _uow;
 
-    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">CommitAsync</span>()
+    public OrderService(IUnitOfWork uow) => _uow = uow;
+
+    public async Task CreateOrderAsync(
+        int customerId, List&lt;OrderItemDto&gt; items, CancellationToken cancellationToken = default)
     {
-        <span class="kw">try</span>
+        await _uow.BeginTransactionAsync(cancellationToken);
+
+        try
         {
-            <span class="kw">await</span> _context.SaveChangesAsync();
-            <span class="kw">await</span> _tx.CommitAsync();
-        }
-        <span class="kw">catch</span>
-        {
-            <span class="kw">await</span> RollbackAsync();
-            <span class="kw">throw</span>;
-        }
-    }
+            // Verify customer exists
+            var customer = await _uow.Customers.GetByIdAsync(customerId, cancellationToken);
+            if (customer is null)
+                throw new InvalidOperationException("Customer not found");
 
-    <span class="kw">public async</span> <span class="type">Task</span> <span class="attr">RollbackAsync</span>()
-    {
-        <span class="kw">await</span> _tx.RollbackAsync();
-    }
-}
-          </div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Using Custom IUnitOfWork</div>
-        <div class="code-content"><span class="kw">public class</span> <span class="type">OrderService</span>
-{
-    <span class="kw">private readonly</span> <span class="type">IUnitOfWork</span> _uow;
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Order</span>&gt;
-        <span class="attr">CreateOrderAsync</span>(
-            <span class="type">CreateOrderRequest</span> request)
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span> <span class="type">Order</span>
-        {
-            CustomerId = request.CustomerId,
-            Total = request.Total
-        };
-
-        _uow.Orders.Add(order);
-        <span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> request.Items)
-        {
-            order.Items.Add(<span class="kw">new</span> <span class="type">OrderItem</span>
+            // Create order
+            var order = new Order
             {
-                ProductId = item.ProductId
-            });
-        }
+                CustomerId = customerId,
+                CreatedAt = DateTime.Now,
+                Total = 0
+            };
+            await _uow.Orders.AddAsync(order, cancellationToken);
+            await _uow.SaveAsync(cancellationToken);
 
-        <span class="kw">await</span> _uow.SaveChangesAsync();
-        <span class="kw">return</span> order;
-    }
-}
-          </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Lazy Loading Repositories</div>
-        <div class="insight-text">Notice the Lazy&lt;T&gt; pattern used in the custom UoW implementation. This defers repository creation until first use, reducing unnecessary instantiation. This is useful when your system has many repositories but only uses a few per transaction.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">05</div>
-        <h2 class="section-title">LINQ Query and Method Syntax</h2>
-      </div>
-
-      <div class="prose">
-        <p>Within a Unit of Work, you use LINQ to query entities. LINQ supports both method syntax and query syntax. Understanding both helps you write flexible, efficient code.</p>
-
-        <p>Query syntax is more SQL-like and clearer for complex scenarios. Method syntax is more functional and flexible for advanced operators.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: LINQ Query Syntax</div>
-          <div class="code-content"><span class="comment">// Query syntax (more SQL-like)</span>
-<span class="kw">var</span> highValue = <span class="kw">from</span> order
-    <span class="kw">in</span> uow.Orders.GetAll()
-<span class="kw">where</span> order.Total > 1000
-<span class="kw">orderby</span> order.Total <span class="kw">descending</span>
-<span class="kw">select new</span>
-{
-    order.Id,
-    order.Total
-};
-
-<span class="kw">var</span> results = <span class="kw">await</span> highValue
-    .ToListAsync();
-
-<span class="comment">// With joins</span>
-<span class="kw">var</span> joined = <span class="kw">from</span> order
-    <span class="kw">in</span> uow.Orders.GetAll()
-<span class="kw">join</span> customer
-    <span class="kw">in</span> uow.Customers.GetAll()
-<span class="kw">on</span> order.CustomerId
-    <span class="kw">equals</span> customer.Id
-<span class="kw">where</span> customer.Country == <span class="str">"USA"</span>
-<span class="kw">select</span> <span class="kw">new</span>
-{
-    order.Id,
-    customer.Name
-};
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: LINQ Method Syntax</div>
-          <div class="code-content"><span class="comment">// Method syntax (more functional)</span>
-<span class="kw">var</span> highValue = uow.Orders
-    .GetAll()
-    .Where(o => o.Total > 1000)
-    .OrderByDescending(o => o.Total)
-    .Select(o => <span class="kw">new</span>
-    {
-        o.Id,
-        o.Total
-    });
-
-<span class="kw">var</span> results = <span class="kw">await</span> highValue
-    .ToListAsync();
-
-<span class="comment">// Joins (more flexible)</span>
-<span class="kw">var</span> joined = uow.Orders
-    .GetAll()
-    .Join(
-        uow.Customers.GetAll(),
-        o => o.CustomerId,
-        c => c.Id,
-        (o, c) => <span class="kw">new</span> { o, c })
-    .Where(x => x.c.Country == <span class="str">"USA"</span>)
-    .Select(x => <span class="kw">new</span>
-    {
-        x.o.Id,
-        x.c.Name
-    });
-
-<span class="comment">// GroupBy</span>
-<span class="kw">var</span> grouped = uow.Orders
-    .GetAll()
-    .GroupBy(o => o.CustomerId)
-    .Select(g => <span class="kw">new</span>
-    {
-        CustomerId = g.Key,
-        Count = g.Count(),
-        Total = g.Sum(o => o.Total)
-    });
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">When to Use Each</div>
-        <div class="insight-text">Use query syntax for complex scenarios with multiple joins and where clauses. Use method syntax for advanced operators and when chaining many filters. Both compile to identical IL, so performance is the same.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">06</div>
-        <h2 class="section-title">Savepoints in SQL vs DbContext</h2>
-      </div>
-
-      <div class="prose">
-        <p>A <strong>savepoint</strong> is a marker within a transaction that lets you rollback to that point without rolling back the entire transaction. This is useful for partial rollback.</p>
-
-        <p>SQL supports savepoints directly. DbContext has support through EF Core 6+.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: SAVEPOINT</div>
-          <div class="code-content"><span class="kw">BEGIN TRANSACTION</span>;
-
-<span class="kw">INSERT INTO</span> Orders (CustomerId)
-<span class="kw">VALUES</span> (1);
-
-<span class="comment">-- Mark savepoint</span>
-<span class="kw">SAVE TRANSACTION</span> sp1;
-
-<span class="kw">INSERT INTO</span> OrderItems (OrderId)
-<span class="kw">VALUES</span> (1);
-
-<span class="comment">-- Rollback only to sp1</span>
-<span class="kw">ROLLBACK TRANSACTION</span> sp1;
-
-<span class="comment">-- OrderItems undone, Order remains</span>
-<span class="kw">COMMIT TRANSACTION</span>;
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: EF Core 6+ Savepoint</label>
-          <div class="code-content"><span class="kw">using</span> (<span class="kw">var</span> tx = <span class="kw">await</span> context
-    .Database
-    .BeginTransactionAsync())
-{
-    <span class="kw">try</span>
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span> <span class="type">Order</span>();
-        context.Orders.Add(order);
-        <span class="kw">await</span> context
-            .SaveChangesAsync();
-
-        <span class="comment">// Savepoint</span>
-        <span class="kw">await</span> tx
-            .CreateSavepointAsync(
-                <span class="str">"sp1"</span>);
-
-        <span class="kw">var</span> item = <span class="kw">new</span>
-            <span class="type">OrderItem</span>();
-        context.OrderItems.Add(item);
-        <span class="kw">await</span> context
-            .SaveChangesAsync();
-
-        <span class="kw">await</span> tx.CommitAsync();
-    }
-    <span class="kw">catch</span>
-    {
-        <span class="kw">await</span> tx
-            .RollbackToSavepointAsync(
-                <span class="str">"sp1"</span>);
-        <span class="kw">await</span> tx.CommitAsync();
-    }
-}
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Savepoint Limitations</div>
-        <div class="insight-text">Savepoints add complexity but are powerful for partial rollback. Most applications don't need them. Use savepoints when you have multiple independent operations within one UoW and want to recover from failure in one without losing all work.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">07</div>
-        <h2 class="section-title">Unit of Work with Dapper</h2>
-      </div>
-
-      <div class="prose">
-        <p>Unlike Entity Framework, Dapper doesn't provide a built-in Unit of Work. You manage transactions explicitly through ADO.NET's IDbTransaction. This gives you more control but requires more code.</p>
-
-        <p>In Dapper, you create an IDbConnection, begin a transaction, pass it to Execute/Query methods, and manage commit/rollback yourself.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Basic Dapper Transaction</div>
-          <div class="code-content"><span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Order</span>&gt;
-    <span class="attr">CreateOrderAsync</span>(
-        <span class="type">Order</span> order,
-        <span class="type">List</span>&lt;<span class="type">OrderItem</span>&gt; items)
-{
-    <span class="kw">using</span> (<span class="kw">var</span> conn =
-        <span class="kw">new</span> <span class="type">SqlConnection</span>(
-            _connStr))
-    {
-        <span class="kw">await</span> conn.OpenAsync();
-
-        <span class="kw">using</span> (<span class="kw">var</span> tx = conn
-            .BeginTransaction())
-        {
-            <span class="kw">try</span>
+            // Add items
+            decimal total = 0;
+            foreach (var itemDto in items)
             {
-                <span class="comment">// Insert order</span>
-                <span class="kw">var</span> orderId = <span class="kw">await</span>
-                    conn.ExecuteAsync(
-                        <span class="str">@"INSERT INTO Orders
-                        (CustomerId, Total)
-                        VALUES (@CustomerId,
-                                @Total);
-                        SELECT SCOPE_IDENTITY();"</span>,
-                        order,
-                        tx);
+                var product = await _uow.Products.GetByIdAsync(itemDto.ProductId, cancellationToken);
+                if (product is null)
+                    throw new InvalidOperationException($"Product {itemDto.ProductId} not found");
 
-                order.Id = (<span class="kw">int</span>)orderId;
-
-                <span class="comment">// Insert items</span>
-                <span class="kw">foreach</span> (<span class="kw">var</span> item
-                    <span class="kw">in</span> items)
+                var item = new OrderItem
                 {
-                    item.OrderId = order.Id;
-                    <span class="kw">await</span> conn
-                        .ExecuteAsync(
-                            <span class="str">@"INSERT INTO
-                            OrderItems
-                            (OrderId, ProductId,
-                             Qty)
-                            VALUES (@OrderId,
-                                    @ProductId,
-                                    @Qty);"</span>,
-                            item,
-                            tx);
-                }
-
-                <span class="comment">// Commit</span>
-                tx.Commit();
-                <span class="kw">return</span> order;
-            }
-            <span class="kw">catch</span>
-            {
-                tx.Rollback();
-                <span class="kw">throw</span>;
-            }
-        }
-    }
-}
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: What Dapper Executes</label>
-          <div class="code-content"><span class="kw">BEGIN TRANSACTION</span>;
-
-<span class="kw">INSERT INTO</span> Orders
-    (CustomerId, Total)
-<span class="kw">VALUES</span> (42, 99.99);
-
-<span class="kw">DECLARE</span> @OrderId <span class="kw">INT</span> =
-    SCOPE_IDENTITY();
-
-<span class="kw">INSERT INTO</span> OrderItems
-    (OrderId, ProductId, Qty)
-<span class="kw">VALUES</span> (@OrderId, 1, 2);
-
-<span class="kw">INSERT INTO</span> OrderItems
-    (OrderId, ProductId, Qty)
-<span class="kw">VALUES</span> (@OrderId, 3, 1);
-
-<span class="kw">COMMIT TRANSACTION</span>;
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Dapper vs DbContext</div>
-        <div class="insight-text">With Dapper, you have explicit control over every SQL statement and transaction. DbContext abstracts these details. For performance-critical code with precise SQL control, Dapper is superior. For rapid development, DbContext's UoW is simpler. Many applications use both: DbContext for general CRUD, Dapper for complex queries.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">08</div>
-        <h2 class="section-title">TransactionScope for Cross-Connection Transactions</h2>
-      </div>
-
-      <div class="prose">
-        <p>When you need to coordinate transactions across multiple database connections—or mix DbContext with Dapper—use <strong>TransactionScope</strong>. It's an ambient transaction API that automatically enlists database operations.</p>
-
-        <p>TransactionScope is part of System.Transactions and coordinates MSDTC (Distributed Transaction Coordinator) for transactions spanning multiple servers.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: TransactionScope Basics</label>
-          <div class="code-content"><span class="kw">using</span> (<span class="kw">var</span> scope = <span class="kw">new</span>
-    <span class="type">TransactionScope</span>(
-        <span class="type">TransactionScopeAsyncFlowOption</span>
-        .Enabled))
-{
-    <span class="kw">try</span>
-    {
-        <span class="comment">// EF Core operation</span>
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span> { Total = 100 };
-        efContext.Orders.Add(order);
-        <span class="kw">await</span> efContext
-            .SaveChangesAsync();
-
-        <span class="comment">// Dapper operation
-        // in SAME transaction</span>
-        <span class="kw">await</span> dapperConn
-            .ExecuteAsync(
-                <span class="str">@"UPDATE Inventory
-                SET StockLevel -= 1
-                WHERE ProductId = 1"</span>);
-
-        <span class="comment">// Both commit together</span>
-        scope.Complete();
-    }
-    <span class="kw">catch</span>
-    {
-        <span class="comment">// Both rollback together</span>
-        <span class="kw">throw</span>;
-    }
-}
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: TransactionScope Options</label>
-          <div class="code-content"><span class="comment">// Fine-grained control</span>
-<span class="kw">var</span> options = <span class="kw">new</span>
-    <span class="type">TransactionOptions</span>
-{
-    <span class="comment">// Isolation level</span>
-    IsolationLevel = <span class="type">IsolationLevel</span>
-        .Serializable,
-    <span class="comment">// Timeout (5 seconds)</span>
-    Timeout = <span class="type">TimeSpan</span>
-        .FromSeconds(5)
-};
-
-<span class="kw">using</span> (<span class="kw">var</span> scope = <span class="kw">new</span>
-    <span class="type">TransactionScope</span>(
-        <span class="type">TransactionScopeOption</span>
-        .RequiresNew,
-        options,
-        <span class="type">TransactionScopeAsyncFlowOption</span>
-        .Enabled))
-{
-    <span class="comment">// Your operations</span>
-    scope.Complete();
-}
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Important:</strong> TransactionScope with distributed transactions has overhead. Use it only when necessary:</p>
-
-        <ul>
-          <li><strong>Same database:</strong> DbContext's implicit transaction is sufficient</li>
-          <li><strong>Multiple connections to same server:</strong> TransactionScope can optimize to a local transaction</li>
-          <li><strong>Multiple servers:</strong> TransactionScope uses MSDTC (significant overhead)</li>
-          <li><strong>Microservices:</strong> Use the Saga pattern instead</li>
-        </ul>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Ambient Transaction Context</div>
-        <div class="insight-text">TransactionScope creates an ambient transaction context. Any connection opened within the using block automatically joins the transaction—you don't explicitly pass the transaction. This is convenient but can hide transaction semantics in deep call stacks.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">09</div>
-        <h2 class="section-title">Error Handling and Rollback Patterns</h2>
-      </div>
-
-      <div class="prose">
-        <p>Proper error handling in a Unit of Work ensures that failed operations are safely rolled back and that retry logic can be implemented. There are several patterns for handling errors.</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Comprehensive Error Handling</label>
-        <div class="code-content"><span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Result</span>&lt;<span class="type">Order</span>&gt;&gt;
-    <span class="attr">CreateOrderSafelyAsync</span>(
-        <span class="type">CreateOrderRequest</span> request)
-{
-    <span class="kw">using</span> (<span class="kw">var</span> ctx = <span class="kw">new</span>
-        <span class="type">OrderDbContext</span>())
-    {
-        <span class="kw">var</span> retries = 0;
-        <span class="kw">const int</span> maxRetries = 3;
-
-        <span class="kw">while</span> (retries < maxRetries)
-        {
-            <span class="kw">try</span>
-            {
-                <span class="kw">var</span> order = <span class="kw">new</span>
-                    <span class="type">Order</span>
-                {
-                    CustomerId =
-                        request.CustomerId,
-                    Total = request.Total
+                    OrderId = order.Id,
+                    ProductId = product.Id,
+                    Quantity = itemDto.Quantity,
+                    Price = product.Price
                 };
-                ctx.Orders.Add(order);
-
-                <span class="kw">foreach</span> (<span class="kw">var</span> item
-                    <span class="kw">in</span> request.Items)
-                {
-                    order.Items.Add(<span class="kw">new</span>
-                        <span class="type">OrderItem</span>
-                    {
-                        ProductId =
-                            item.ProductId,
-                        Quantity = item.Qty
-                    });
-                }
-
-                <span class="kw">await</span> ctx
-                    .SaveChangesAsync();
-
-                <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Order</span>&gt;
-                    .Success(order);
+                await _uow.OrderItems.AddAsync(item, cancellationToken);
+                total += product.Price * itemDto.Quantity;
             }
-            <span class="kw">catch</span> (
-                <span class="type">DbUpdateConcurrencyException</span>)
+
+            // Update order total
+            order.Total = total;
+            await _uow.Orders.UpdateAsync(order, cancellationToken);
+
+            await _uow.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await _uow.RollbackAsync();
+            throw;
+        }
+    }
+}</pre></div>
+            </div>
+
+            <div class="insight">
+                <strong class="insight-title">Benefit:</strong>
+                <p class="insight-text">If any step fails, the entire operation rolls back. No partial data corruption.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 04: DbContext as UoW -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">04</span>
+                <h2 class="section-title">DbContext Is Already a Unit of Work</h2>
+            </div>
+
+            <div class="prose">
+                <p>EF Core's DbContext implements Unit of Work natively. SaveChangesAsync() commits all pending changes in a transaction.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">DbContext Acts as UoW</div>
+                <div class="code-content"><pre>public class SimpleOrderService
+{
+    private readonly DbContext _db;
+
+    public async Task CreateOrderAsync(
+        int customerId, List&lt;OrderItemDto&gt; items, CancellationToken cancellationToken = default)
+    {
+        var customer = await _db.Customers.FindAsync(new object[] { customerId }, cancellationToken);
+        if (customer is null)
+            throw new InvalidOperationException("Customer not found");
+
+        var order = new Order { CustomerId = customerId, CreatedAt = DateTime.Now };
+        _db.Orders.Add(order);
+
+        foreach (var itemDto in items)
+        {
+            var product = await _db.Products.FindAsync(new object[] { itemDto.ProductId }, cancellationToken);
+            _db.OrderItems.Add(new OrderItem
             {
-                <span class="comment">// Retry on concurrency</span>
-                ctx.ChangeTracker.Clear();
-                retries++;
-            }
-            <span class="kw">catch</span> (
-                <span class="type">DbUpdateException</span> ex)
-            {
-                <span class="comment">// Constraint violation</span>
-                ctx.ChangeTracker.Clear();
-                <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Order</span>&gt;
-                    .Failure(
-                        <span class="str">"Invalid data"</span>);
-            }
-        }
-
-        <span class="kw">return</span> <span class="type">Result</span>&lt;<span class="type">Order</span>&gt;
-            .Failure(<span class="str">"Max retries exceeded"</span>);
-    }
-}
-          </div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Compensating Transactions</label>
-        <div class="code-content"><span class="kw">public class</span> <span class="type">OrderWorkflow</span>
-{
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt;
-        <span class="attr">ProcessOrderAsync</span>(<span class="type">Order</span> order)
-    {
-        <span class="kw">var</span> orderId = -1;
-        <span class="kw">var</span> paymentId = -1;
-
-        <span class="kw">try</span>
-        {
-            <span class="comment">// Step 1</span>
-            orderId = <span class="kw">await</span>
-                _orderService
-                    .CreateAsync(order);
-
-            <span class="comment">// Step 2</span>
-            paymentId = <span class="kw">await</span>
-                _paymentService
-                    .ChargeAsync(
-                        order.CustomerId,
-                        order.Total);
-
-            <span class="comment">// Step 3</span>
-            <span class="kw">await</span> _emailService
-                .SendAsync(
-                    order.CustomerId);
-
-            <span class="kw">return</span> <span class="kw">true</span>;
-        }
-        <span class="kw">catch</span>
-        {
-            <span class="comment">// Undo in reverse order</span>
-
-            <span class="kw">if</span> (paymentId > 0)
-                <span class="kw">await</span> _paymentService
-                    .RefundAsync(paymentId);
-
-            <span class="kw">if</span> (orderId > 0)
-                <span class="kw">await</span> _orderService
-                    .CancelAsync(orderId);
-
-            <span class="kw">return</span> <span class="kw">false</span>;
-        }
-    }
-}
-          </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Idempotency in Compensation</div>
-        <div class="insight-text">When implementing compensating transactions, ensure each compensation step is idempotent (safe to call multiple times). Use status flags to avoid double-refunds or duplicate cancellations.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">10</div>
-        <h2 class="section-title">Unit of Work Anti-Patterns</h2>
-      </div>
-
-      <div class="prose">
-        <p>Understanding what NOT to do is as important as knowing best practices. Here are common Unit of Work anti-patterns and why they fail.</p>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Anti-Pattern 1 — Nested Units of Work</label>
-        <div class="code-content"><span class="comment">// WRONG: Nested UoW</span>
-<span class="kw">public async</span> <span class="type">Task</span> <span class="attr">CreateAsync</span>()
-{
-    <span class="kw">using</span> (<span class="kw">var</span> uow1 = <span class="kw">new</span>
-        <span class="type">EfCoreUnitOfWork</span>(ctx1))
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>();
-        uow1.Orders.Add(order);
-
-        <span class="comment">// Nested: another UoW
-        // Both commit independently!</span>
-        <span class="kw">using</span> (<span class="kw">var</span> uow2 = <span class="kw">new</span>
-            <span class="type">EfCoreUnitOfWork</span>(ctx2))
-        {
-            <span class="kw">var</span> item = <span class="kw">new</span>
-                <span class="type">OrderItem</span>();
-            uow2.Items.Add(item);
-            <span class="kw">await</span> uow2
-                .SaveChangesAsync();
-            <span class="comment">// Inner commits!</span>
-        }
-
-        <span class="kw">await</span> uow1
-            .SaveChangesAsync();
-        <span class="comment">// If this fails, inner
-        // already committed!</span>
-    }
-}
-
-<span class="comment">// RIGHT: Single UoW</span>
-<span class="kw">public async</span> <span class="type">Task</span> <span class="attr">CreateAsync</span>()
-{
-    <span class="kw">using</span> (<span class="kw">var</span> uow = <span class="kw">new</span>
-        <span class="type">EfCoreUnitOfWork</span>(ctx))
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>();
-        uow.Orders.Add(order);
-
-        <span class="kw">var</span> item = <span class="kw">new</span>
-            <span class="type">OrderItem</span>();
-        uow.Items.Add(item);
-
-        <span class="kw">await</span> uow
-            .SaveChangesAsync();
-        <span class="comment">// Single atomic commit</span>
-    }
-}
-          </div>
-      </div>
-
-      <div class="code-block">
-        <div class="comparison-label">C#: Anti-Pattern 2 — Long-Running Transactions</label>
-        <div class="code-content"><span class="comment">// WRONG: UoW spans entire request</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IActionResult</span>&gt;
-    <span class="attr">CreateAsync</span>()
-{
-    <span class="comment">// Transaction begins here</span>
-    <span class="kw">var</span> order = <span class="kw">new</span>
-        <span class="type">Order</span>();
-    _uow.Orders.Add(order);
-
-    <span class="comment">// User-visible delay: Send email</span>
-    <span class="kw">await</span> _emailService
-        .SendAsync(order.Id);
-
-    <span class="comment">// Transaction still open!</span>
-    <span class="comment">// Locks held!</span>
-
-    <span class="kw">await</span> _uow
-        .SaveChangesAsync();
-
-    <span class="kw">return</span> Ok(order);
-}
-
-<span class="comment">// RIGHT: Short transaction</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IActionResult</span>&gt;
-    <span class="attr">CreateAsync</span>()
-{
-    <span class="kw">int</span> orderId;
-    <span class="kw">using</span> (<span class="kw">var</span> uow = <span class="kw">new</span>
-        <span class="type">EfCoreUnitOfWork</span>(ctx))
-    {
-        <span class="comment">// Minimal transaction</span>
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>();
-        uow.Orders.Add(order);
-        <span class="kw">await</span> uow
-            .SaveChangesAsync();
-
-        orderId = order.Id;
-    }
-
-    <span class="comment">// Outside UoW: Send email</span>
-    <span class="kw">await</span> _emailService
-        .SendAsync(orderId);
-
-    <span class="kw">return</span> Ok(<span class="kw">new</span> { orderId });
-}
-          </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Request Scope vs Transaction Scope</div>
-        <div class="insight-text">In web applications, it's common to inject DbContext/IUnitOfWork per HTTP request. But transactions should be explicit and short-lived. The HTTP request is a business boundary, not a transaction boundary. A transaction should be the duration of a single atomic operation.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">11</div>
-        <h2 class="section-title">Async Patterns and Cancellation</h2>
-      </div>
-
-      <div class="prose">
-        <p>Modern Unit of Work implementations must support async/await and cancellation tokens. Cancellation tokens allow graceful shutdown and timeouts.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Async UoW with Cancellation</label>
-          <div class="code-content"><span class="kw">public async</span> <span class="type">Task</span>
-    <span class="attr">CreateOrderAsync</span>(
-        <span class="type">CreateOrderRequest</span> request,
-        <span class="type">CancellationToken</span> ct)
-{
-    <span class="kw">using</span> (<span class="kw">var</span> uow = <span class="kw">new</span>
-        <span class="type">EfCoreUnitOfWork</span>(ctx))
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>
-        {
-            CustomerId =
-                request.CustomerId,
-            Total = request.Total
-        };
-        uow.Orders.Add(order);
-
-        <span class="comment">// Pass token through</span>
-        <span class="kw">await</span> uow
-            .SaveChangesAsync(ct);
-
-        <span class="kw">return</span> order;
-    }
-}
-
-<span class="comment">// In controller:</span>
-<span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">IActionResult</span>&gt;
-    <span class="attr">CreateAsync</span>()
-{
-    <span class="kw">var</span> ct = <span class="type">HttpContext</span>
-        .RequestAborted;
-
-    <span class="kw">try</span>
-    {
-        <span class="kw">var</span> order = <span class="kw">await</span>
-            _service
-                .CreateOrderAsync(
-                    request, ct);
-        <span class="kw">return</span> Ok(order);
-    }
-    <span class="kw">catch</span> (
-        <span class="type">OperationCanceledException</span>)
-    {
-        <span class="comment">// Client disconnected</span>
-        <span class="kw">return</span> <span class="type">StatusCode</span>(499);
-    }
-}
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Timeout Pattern</label>
-          <div class="code-content"><span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Order</span>&gt;
-    <span class="attr">CreateWithTimeoutAsync</span>(
-        <span class="type">CreateOrderRequest</span> request)
-{
-    <span class="comment">// 5-second timeout</span>
-    <span class="kw">using</span> (<span class="kw">var</span> cts =
-        <span class="kw">new</span>
-        <span class="type">CancellationTokenSource</span>(
-            <span class="type">TimeSpan</span>
-                .FromSeconds(5)))
-    {
-        <span class="kw">try</span>
-        {
-            <span class="kw">return await</span>
-                _service
-                    .CreateOrderAsync(
-                        request,
-                        cts.Token);
-        }
-        <span class="kw">catch</span> (
-            <span class="type">OperationCanceledException</span>)
-        {
-            <span class="kw">throw new</span>
-                <span class="type">TimeoutException</span>(
-                    <span class="str">"Timeout"</span>);
-        }
-    }
-}
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Async Best Practices</div>
-        <div class="insight-text">Always pass CancellationToken through your async call chains. Use ConfigureAwait(false) in library code. DbContext is not thread-safe; each async context should have its own instance.</div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">12</div>
-        <h2 class="section-title">Distributed Systems: Saga Pattern</h2>
-      </div>
-
-      <div class="prose">
-        <p>In microservices, you can't use traditional ACID transactions. The <strong>Saga pattern</strong> replaces distributed transactions with orchestrated sequences of local transactions and compensating actions.</p>
-
-        <p>A saga is orchestration-based (a central orchestrator directs steps) or choreography-based (services emit events and react).</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Saga Orchestration</label>
-          <div class="code-content"><span class="kw">public class</span> <span class="type">OrderSaga</span>
-{
-    <span class="kw">private readonly</span> <span class="type">IOrderService</span>
-        _orders;
-    <span class="kw">private readonly</span> <span class="type">IInventoryService</span>
-        _inventory;
-    <span class="kw">private readonly</span> <span class="type">IPaymentService</span>
-        _payment;
-
-    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="kw">bool</span>&gt;
-        <span class="attr">ExecuteAsync</span>(<span class="type">OrderRequest</span> req)
-    {
-        <span class="kw">var</span> resId = <span class="kw">null</span> as <span class="type">string</span>;
-        <span class="kw">var</span> payId = <span class="kw">null</span> as <span class="type">string</span>;
-        <span class="kw">var</span> ordId = -1;
-
-        <span class="kw">try</span>
-        {
-            <span class="comment">// Step 1</span>
-            resId = <span class="kw">await</span>
-                _inventory.ReserveAsync(
-                    req.Items);
-
-            <span class="comment">// Step 2</span>
-            payId = <span class="kw">await</span>
-                _payment.ChargeAsync(
-                    req.CustomerId,
-                    req.Total);
-
-            <span class="comment">// Step 3</span>
-            ordId = <span class="kw">await</span>
-                _orders.CreateAsync(req);
-
-            <span class="kw">return</span> <span class="kw">true</span>;
-        }
-        <span class="kw">catch</span>
-        {
-            <span class="comment">// Undo in reverse</span>
-
-            <span class="kw">if</span> (ordId > 0)
-                <span class="kw">await</span> _orders
-                    .CancelAsync(ordId);
-
-            <span class="kw">if</span> (payId != <span class="kw">null</span>)
-                <span class="kw">await</span> _payment
-                    .RefundAsync(payId);
-
-            <span class="kw">if</span> (resId != <span class="kw">null</span>)
-                <span class="kw">await</span> _inventory
-                    .ReleaseAsync(resId);
-
-            <span class="kw">return</span> <span class="kw">false</span>;
-        }
-    }
-}
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">C#: Saga Choreography</label>
-          <div class="code-content"><span class="comment">// Order service publishes</span>
-<span class="kw">public class</span> <span class="type">OrderService</span>
-{
-    <span class="kw">public async</span> <span class="type">Task</span>
-        <span class="attr">CreateAsync</span>(
-            <span class="type">OrderRequest</span> req)
-    {
-        <span class="kw">var</span> order = <span class="kw">new</span>
-            <span class="type">Order</span>();
-        <span class="kw">await</span> _db.SaveAsync(order);
-
-        <span class="comment">// Emit event</span>
-        <span class="kw">await</span> _bus.PublishAsync(
-            <span class="kw">new</span> <span class="type">OrderCreatedEvent</span>
-        {
-            OrderId = order.Id,
-            Items = req.Items,
-            Total = req.Total
-        });
-    }
-}
-
-<span class="comment">// Inventory subscribes</span>
-<span class="kw">public class</span> <span class="type">InventoryService</span>
-{
-    <span class="kw">public async</span> <span class="type">Task</span>
-        <span class="attr">OnOrderCreated</span>(
-            <span class="type">OrderCreatedEvent</span> evt)
-    {
-        <span class="kw">try</span>
-        {
-            <span class="kw">await</span> ReserveAsync(
-                evt.Items);
-
-            <span class="comment">// Emit success</span>
-            <span class="kw">await</span> _bus
-                .PublishAsync(
-                    <span class="kw">new</span>
-                    <span class="type">InventoryReservedEvent</span>
-            {
-                OrderId = evt.OrderId
+                OrderId = order.Id,
+                ProductId = product.Id,
+                Quantity = itemDto.Quantity
             });
         }
-        <span class="kw">catch</span>
-        {
-            <span class="comment">// Emit failure</span>
-            <span class="kw">await</span> _bus
-                .PublishAsync(
-                    <span class="kw">new</span>
-                    <span class="type">OrderFailedEvent</span>
-            {
-                OrderId = evt.OrderId
-            });
-        }
+
+        // Single transaction
+        await _db.SaveChangesAsync(cancellationToken);
     }
+}</pre></div>
+            </div>
+
+            <div class="insight">
+                <strong class="insight-title">When to use explicit UoW:</strong>
+                <p class="insight-text">For complex multi-repository operations or when you need finer control over transaction lifecycle.</p>
+            </div>
+        </section>
+
+        <!-- SECTION 05: Dependency Injection -->
+        <section class="section">
+            <div class="section-header">
+                <span class="section-number">05</span>
+                <h2 class="section-title">Registering in DI Container</h2>
+            </div>
+
+            <div class="prose">
+                <p>Configure Unit of Work and repositories in the service collection.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="comparison-label">Startup/Program.cs</div>
+                <div class="code-content"><pre>public void ConfigureServices(IServiceCollection services)
+{
+    services.AddDbContext&lt;AppDbContext&gt;(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+    // Register repositories
+    services.AddScoped&lt;ICustomerRepository, CustomerRepository&gt;();
+    services.AddScoped&lt;IOrderRepository, OrderRepository&gt;();
+    services.AddScoped&lt;IProductRepository, ProductRepository&gt;();
+
+    // Register Unit of Work
+    services.AddScoped&lt;IUnitOfWork, UnitOfWork&gt;();
+
+    // Services that use UoW
+    services.AddScoped&lt;IOrderService, OrderService&gt;();
 }
-          </div>
+
+// Usage in controller
+[ApiController]
+[Route("api/orders")]
+public class OrderController
+{
+    private readonly IOrderService _orderService;
+
+    public OrderController(IOrderService orderService)
+        => _orderService = orderService;
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; CreateOrder(CreateOrderRequest request, CancellationToken cancellationToken)
+    {
+        await _orderService.CreateOrderAsync(request.CustomerId, request.Items, cancellationToken);
+        return Ok();
+    }
+}</pre></div>
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
+        <div class="key-takeaways">
+            <h3>Key Takeaways</h3>
+            <ul>
+                <li>Unit of Work coordinates multiple repositories in a single transaction.</li>
+                <li>All changes commit together or all rollback on error.</li>
+                <li>DbContext is already a Unit of Work pattern implementation.</li>
+                <li>Explicit UoW useful for complex multi-repository operations.</li>
+                <li>Transaction control prevents partial data corruption.</li>
+                <li>Pair UoW with dependency injection for clean architecture.</li>
+            </ul>
         </div>
-      </div>
 
-      <div class="insight">
-        <div class="insight-title">Saga vs Unit of Work</div>
-        <div class="insight-text">Unit of Work is for single-database consistency (ACID). Saga is for cross-service consistency (eventual). In a saga, if Step 2 fails, you explicitly run compensating transactions to undo Step 1. This is slower and more complex than a simple database transaction, but necessary in distributed systems where you can't use traditional locks.</div>
-      </div>
-    </section>
+        <!-- Chapter Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch23-repository-pattern.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Repository Pattern</span>
+            </a>
+            <a class="nav-item" href="ch25-cqrs.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">CQRS</span>
+            </a>
+        </div>
+    </main>
 
-    <div class="key-takeaways">
-      <h3>Key Takeaways</h3>
-      <ul>
-        <li><strong>Unit of Work groups operations into atomic units—either all succeed or all fail.</strong></li>
-        <li><strong>DbContext IS a Unit of Work</strong>—it tracks changes and commits them atomically via SaveChangesAsync().</li>
-        <li><strong>ACID properties</strong> (Atomicity, Consistency, Isolation, Durability) originate in SQL and are enforced by DbContext.</li>
-        <li><strong>Custom IUnitOfWork abstractions are useful for coordinating multiple repositories or enforcing explicit boundaries.</strong></li>
-        <li><strong>Savepoints enable partial rollback within a transaction.</strong></li>
-        <li><strong>Dapper requires manual transaction management via IDbConnection and IDbTransaction.</strong></li>
-        <li><strong>TransactionScope coordinates transactions across multiple connections (EF Core + Dapper, or multiple databases).</strong></li>
-        <li><strong>Keep transaction boundaries short</strong>—don't hold locks during I/O operations.</li>
-        <li><strong>In web applications, use scoped DbContext lifetime (one instance per HTTP request).</strong></li>
-        <li><strong>Proper error handling includes retry logic and compensating transactions.</strong></li>
-        <li><strong>In microservices, replace distributed transactions with the Saga pattern (orchestration or choreography).</strong></li>
-        <li><strong>Anti-patterns: nested UoW, long-running transactions, mixing explicit and implicit transactions.</strong></li>
-        <li><strong>Always pass CancellationToken through async call chains for graceful shutdown and timeout support.</strong></li>
-      </ul>
-    </div>
-
-    <div class="nav-buttons">
-      <a href="ch23-repository-pattern.html" class="nav-button prev">← Previous: Repository Pattern</a>
-      <a href="ch25-cqrs.html" class="nav-button next">Next: CQRS →</a>
-    </div>
-  </main>
-
-  <footer>
-    <p>SQL to C# - Part 5: Architecture & Real-World Patterns</p>
-    <p><a href="index.html">Back to Table of Contents</a></p>
-  </footer>
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

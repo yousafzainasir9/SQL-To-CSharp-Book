@@ -1,2028 +1,618 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 13: Migrations — Schema as Code — SQL to C#</title>
-<meta name="description" content="Master EF Core migrations: version control for your database schema. Learn ALTER TABLE patterns, migration operations, data seeding, rollbacks, custom SQL, and production deployment strategies.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-}
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
-.nav-links a:hover { color: var(--acc); }
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-.chapter-header h1 {
-  font-size: clamp(32px, 4vw, 42px);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 640px;
-}
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-.section {
-  margin-bottom: 70px;
-}
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.section-num::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-}
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  max-width: 750px;
-}
-.section-text p {
-  margin-bottom: 14px;
-}
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-.code-block {
-  border-radius: 12px;
-  padding: 24px;
-  overflow-x: auto;
-}
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-.code-block.csharp,
-.code-block.csharp-method,
-.code-block.csharp-query {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-.code-block.csharp .code-label,
-.code-block.csharp-method .code-label,
-.code-block.csharp-query .code-label {
-  color: var(--blue);
-}
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.code-block.sql code {
-  color: #e8e4db;
-}
-.code-block.csharp code,
-.code-block.csharp-method code,
-.code-block.csharp-query code {
-  color: var(--ink);
-}
-.code-single {
-  margin-bottom: 28px;
-}
-.code-single .code-block {
-  max-width: 100%;
-}
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px;
-  padding-left: 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin: 80px 0;
-}
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.nav-item.prev {
-  align-items: flex-start;
-}
-.nav-item.next {
-  align-items: flex-end;
-}
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-.footer-inner {
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 14px;
-  color: var(--ink3);
-}
-@media (max-width: 768px) {
-  .code-comparison {
-    grid-template-columns: 1fr;
-  }
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-  .nav-item.next {
-    align-items: flex-start;
-  }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 13: Migrations — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
+
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 13</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<nav>
-  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
-    <a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">Book</span></a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="ch01-tables-vs-classes.html">Start</a></li>
-    </ul>
-  </div>
-</nav>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 13</div>
+            <h1>Migrations</h1>
+            <p class="chapter-intro">A SQL developer writes ALTER TABLE statements to change the schema. A C# developer adds a property to a class and runs a migration. Both change the database structure — one manually, one with version control. Migrations are how Entity Framework tracks and applies schema changes over time.</p>
+        </div>
 
-<div class="wrap">
+        <!-- 01: Add a Phone Number Field -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Add a Phone Number Field"</h2>
 
-<div class="chapter-header">
-  <div class="chapter-num">Chapter 13</div>
-  <h1>Migrations — Schema as Code</h1>
-  <p class="chapter-desc">Master Entity Framework Core migrations: version control for your database schema. Learn ALTER TABLE patterns, migration operations, data seeding, rollbacks, custom SQL integration, and production deployment strategies including idempotent scripts and CI/CD pipelines.</p>
-</div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The customer support team needs to store phone numbers. Add a PhoneNumber column to the Customers table.
+            </div>
 
-<div class="in-this-chapter">
-  <h3>In This Chapter</h3>
-  <ul>
-    <li>ALTER TABLE parallelism: SQL migrations vs EF migrations</li>
-    <li>The migration workflow: Change model, add migration, review, update database</li>
-    <li>Migration operations: CreateTable, AddColumn, DropColumn, CreateIndex, AddForeignKey mapped to SQL</li>
-    <li>Data seeding with HasData and automatic migration generation</li>
-    <li>Rolling back: Down() methods and reverting to previous migrations</li>
-    <li>Custom SQL in migrations for data transformations and stored procedures</li>
-    <li>Production deployment: bundles, idempotent scripts, CI/CD integration</li>
-  </ul>
-</div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Simple. I&rsquo;ll run ALTER TABLE Customers ADD PhoneNumber NVARCHAR(20) NULL. The schema changes immediately. If I need to undo it, I write another ALTER TABLE to DROP the column. Manual process, manual record.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I add a string? property to the Customer class. Then I run dotnet ef migrations add AddPhone. Entity Framework generates a migration file that tracks this change. Running dotnet ef database update applies it to the database.
+                </div>
+            </div>
 
-<div class="section">
-  <div class="section-num">01 — ALTER TABLE VS ADD-MIGRATION</div>
-  <h2>Parallel Thinking: SQL vs EF Migrations</h2>
-
-  <div class="section-text">
-    <p>In SQL, you manually write ALTER TABLE statements to modify schema: ADD COLUMN, DROP COLUMN, CREATE INDEX, etc. These are one-off scripts that modify the database directly. There's no version history unless you manage it yourself. In Entity Framework, migrations are version-controlled changesets generated from your model changes. Each migration is a timestamped C# file that tracks what changed and how to revert it.</p>
-    <p>The power of migrations: they're reversible, version-controlled in git, and integrated with your codebase. Rolling back to a previous schema is as simple as reverting a migration. For SQL, you'd need manual rollback scripts—error-prone and easily forgotten.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL: Manual ALTER TABLE</span>
-      <pre><code>-- Manual script (no version tracking)
-ALTER TABLE Customers 
-  ADD PhoneNumber NVARCHAR(20);
-
--- To undo, you must write reverse script:
--- ALTER TABLE Customers 
---   DROP COLUMN PhoneNumber;
--- No automatic tracking of what changed</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">EF Migration: Generated from Model Change</span>
-      <pre><code>// Step 1: Change model
-public class Customer
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — ALTER TABLE</div>
+                    <div class="code-block sql-block">
+                        <pre>ALTER TABLE Customers
+ADD PhoneNumber NVARCHAR(20) NULL;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Add Property</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Customer
 {
-  public int Id { get; set; }
-  public string Name { get; set; }
-  public string Email { get; set; }
-  public string PhoneNumber { get; set; } // NEW
-}
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string? PhoneNumber { get; set; }
+}</pre>
+                    </div>
+                </div>
+            </div>
 
-// Step 2: dotnet ef migrations add AddPhoneNumber
-// EF generates migration file automatically
+            <div class="code-full">
+                <div class="code-label">C# — CLI Command</div>
+                <div class="code-block csharp-block">
+                    <pre>dotnet ef migrations add AddPhoneNumberToCustomers
+dotnet ef database update</pre>
+                </div>
+            </div>
 
-// Step 3: Migration file (auto-generated)
-public partial class AddPhoneNumber 
-  : Migration
+            <div class="code-full">
+                <div class="code-label">Generated Migration — Up() Method</div>
+                <div class="code-block ef-block">
+                    <pre>public partial class AddPhoneNumberToCustomers : Migration
 {
-  protected override void Up(
-    MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      "PhoneNumber",
-      "Customers",
-      maxLength: 20,
-      nullable: true);
-  }
-
-  protected override void Down(
-    MigrationBuilder mb)
-  {
-    mb.DropColumn("PhoneNumber", "Customers");
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Migrations are Declarative Diffs</strong>
-    <p>EF analyzes your current model against the previous snapshot and generates ONLY the changes needed. If you add a column, it generates AddColumn. If you rename a column (via a specific fluent API call), it generates a RenameColumn operation. The migration system tracks every state transition, making schema evolution trackable and reversible.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Every migration has an Up() method (apply changes) and a Down() method (revert changes). EF generates both automatically for standard operations. The workflow is: modify your model, run dotnet ef migrations add MigrationName, review the generated code, then run dotnet ef database update to apply it to your database.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">02 — THE MIGRATION WORKFLOW</div>
-  <h2>From Model Change to Database Update</h2>
-
-  <div class="section-text">
-    <p>The migration workflow is a four-step loop: (1) Change your model (add properties, change constraints), (2) Add migration (EF introspects your changes and generates a migration file), (3) Review the migration (ensure EF understood your intent correctly), (4) Update the database (execute the Up() method against your database). This cycle repeats every time you evolve your schema.</p>
-    <p>Each migration is a C# file with a timestamp in its name (e.g., 20240401120530_AddPhoneNumber.cs) stored in a Migrations folder. This folder is part of your source code repository, creating an audit trail of schema changes.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Complete Migration Workflow Example</span>
-      <pre><code>// STEP 1: Modify the model (Customer.cs)
-public class Customer
-{
-  public int Id { get; set; }
-  public string Name { get; set; }
-  public string Email { get; set; }
-  // NEW: Add PhoneNumber and LastOrderDate
-  public string PhoneNumber { get; set; }
-  public DateTime? LastOrderDate { get; set; }
-}
-
-// STEP 2: Add migration
-// Terminal: dotnet ef migrations add AddPhoneAndLastOrder
-
-// STEP 3: Review generated migration
-// File: Migrations/20240401120530_AddPhoneAndLastOrder.cs
-public partial class AddPhoneAndLastOrder 
-  : Migration
-{
-  protected override void Up(
-    MigrationBuilder migrationBuilder)
-  {
-    migrationBuilder.AddColumn<string>(
-      name: "PhoneNumber",
-      table: "Customers",
-      type: "nvarchar(max)",
-      nullable: true);
-
-    migrationBuilder.AddColumn<DateTime>(
-      name: "LastOrderDate",
-      table: "Customers",
-      type: "datetime2",
-      nullable: true);
-  }
-
-  protected override void Down(
-    MigrationBuilder migrationBuilder)
-  {
-    migrationBuilder.DropColumn(
-      name: "PhoneNumber",
-      table: "Customers");
-
-    migrationBuilder.DropColumn(
-      name: "LastOrderDate",
-      table: "Customers");
-  }
-}
-
-// STEP 4: Apply migration to database
-// Terminal: dotnet ef database update
-// EF executes Up() against the database</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Idempotency: The Key to Safe Deployments</strong>
-    <p>Migrations are not idempotent by default (running them twice causes errors). In production, you use idempotent scripts (with IF NOT EXISTS checks) to ensure running the same script multiple times is safe. EF Core supports this via dotnet ef migrations script --idempotent, which wraps operations in SQL checks that prevent duplicate execution.</p>
-  </div>
-
-  <div class="section-text">
-    <p>The __EFMigrationsHistory table tracks which migrations have been applied. When you run dotnet ef database update, EF queries this table, determines which migrations haven't run, and executes them in order. This ensures migrations run exactly once, in sequence, preventing conflicts.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">03 — MIGRATION OPERATIONS AND THEIR SQL</div>
-  <h2>Mapping Operations to SQL Statements</h2>
-
-  <div class="section-text">
-    <p>EF migration operations translate directly to SQL DDL statements. CreateTable maps to CREATE TABLE, AddColumn to ALTER TABLE ADD, CreateIndex to CREATE INDEX, etc. Understanding this mapping helps you debug migrations and predict their impact. Each operation has SQL consequences: some are safe (AddColumn with default), some require table rewrites (AddColumn without nullable).</p>
-    <p>The migration builder exposes these operations: migrationBuilder.CreateTable(), AddColumn(), DropColumn(), RenameColumn(), CreateIndex(), AddForeignKey(), etc. Each generates the corresponding SQL DDL.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">8+ Migration Operations and Their SQL</span>
-      <pre><code>protected override void Up(
-  MigrationBuilder mb)
-{
-  // 1. CreateTable → CREATE TABLE
-  mb.CreateTable(
-    name: "Customers",
-    columns: table => new
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-      Id = table.Column<int>(nullable: false)
-        .Annotation("SqlServer:Identity", 
-          "1, 1"),
-      Name = table.Column<string>(
-        maxLength: 100, nullable: false),
-      Email = table.Column<string>(
-        maxLength: 100, nullable: false)
-    },
-    constraints: table =>
-    {
-      table.PrimaryKey("PK_Customers", 
-        x => x.Id);
-      table.UniqueConstraint("UX_Email", 
-        x => x.Email);
-    });
-  // SQL: CREATE TABLE Customers (...)
-
-  // 2. AddColumn → ALTER TABLE ADD
-  mb.AddColumn<string>(
-    name: "PhoneNumber",
-    table: "Customers",
-    maxLength: 20,
-    nullable: true);
-  // SQL: ALTER TABLE Customers 
-  //   ADD PhoneNumber NVARCHAR(20) NULL;
-
-  // 3. DropColumn → ALTER TABLE DROP
-  mb.DropColumn(
-    name: "LegacyField",
-    table: "Customers");
-  // SQL: ALTER TABLE Customers 
-  //   DROP COLUMN LegacyField;
-
-  // 4. RenameColumn → sp_rename
-  mb.RenameColumn(
-    name: "CompanyName",
-    table: "Customers",
-    newName: "OrganizationName");
-  // SQL: EXEC sp_rename 'Customers.CompanyName',
-  //   'OrganizationName';
-
-  // 5. CreateIndex → CREATE INDEX
-  mb.CreateIndex(
-    name: "IX_Email",
-    table: "Customers",
-    column: "Email");
-  // SQL: CREATE INDEX IX_Email 
-  //   ON Customers(Email);
-
-  // 6. DropIndex → DROP INDEX
-  mb.DropIndex(
-    name: "IX_Email",
-    table: "Customers");
-  // SQL: DROP INDEX IX_Email ON Customers;
-
-  // 7. AddForeignKey → ALTER TABLE ADD CONSTRAINT
-  mb.AddForeignKey(
-    name: "FK_Orders_Customers",
-    table: "Orders",
-    column: "CustomerId",
-    principalTable: "Customers",
-    principalColumn: "Id",
-    onDelete: ReferentialAction.Cascade);
-  // SQL: ALTER TABLE Orders 
-  //   ADD CONSTRAINT FK_Orders_Customers
-  //   FOREIGN KEY (CustomerId) 
-  //   REFERENCES Customers(Id) 
-  //   ON DELETE CASCADE;
-
-  // 8. DropForeignKey → ALTER TABLE DROP CONSTRAINT
-  mb.DropForeignKey(
-    name: "FK_Orders_Customers",
-    table: "Orders");
-  // SQL: ALTER TABLE Orders 
-  //   DROP CONSTRAINT FK_Orders_Customers;
-
-  // 9. AlterColumn → ALTER TABLE ALTER COLUMN
-  mb.AlterColumn<string>(
-    name: "Name",
-    table: "Customers",
-    type: "nvarchar(200)",
-    nullable: false);
-  // SQL: ALTER TABLE Customers 
-  //   ALTER COLUMN Name NVARCHAR(200) NOT NULL;
-
-  // 10. CreateSequence (rarely used)
-  mb.CreateSequence(
-    name: "OrderNumberSequence",
-    startValue: 1000L,
-    incrementBy: 1);
-  // SQL: CREATE SEQUENCE OrderNumberSequence 
-  //   START WITH 1000 INCREMENT BY 1;
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Performance Impact: RenameColumn is Dangerous</strong>
-    <p>Some operations cause table rewrites: AddColumn on a NOT NULL column without a default, DropColumn, AlterColumn to narrow the type. These lock the table during execution. RenameColumn via sp_rename is deceptive: it works, but downstream code using old column names will break. Always verify the generated SQL for large tables.</p>
-  </div>
-
-  <div class="section-text">
-    <p>When you run dotnet ef migrations add, EF generates the Up() and Down() methods. For standard operations, both are generated automatically. For complex scenarios (like RenameColumn where EF can't determine intent), you must manually edit the migration to specify the operation correctly. Always review migrations before applying them.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">04 — DATA SEEDING WITH HASDATA</div>
-  <h2>HasData: Seed Data as Migrations</h2>
-
-  <div class="section-text">
-    <p>HasData allows you to seed initial data in your model configuration. This data is tracked by migrations and generates INSERT statements automatically. Unlike manual INSERT scripts, seed data is version-controlled and reproducible: running migrations applies all seed data atomically. This is ideal for reference data: roles, status values, system users.</p>
-    <p>HasData is configured in OnModelCreating, and EF generates InsertData() calls in your migration. The seed data becomes part of the schema version, not a separate concern.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">SQL: Manual INSERT</span>
-      <pre><code>-- Separate script (no version tracking)
-INSERT INTO Roles (Id, Name) 
-  VALUES (1, 'Admin');
-INSERT INTO Roles (Id, Name) 
-  VALUES (2, 'User');
-INSERT INTO Roles (Id, Name) 
-  VALUES (3, 'Guest');
-
--- To undo, manually write DELETE</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">EF: HasData with Migration</span>
-      <pre><code>protected override void OnModelCreating(
-  ModelBuilder mb)
-{
-  mb.Entity<Role>().HasData(
-    new Role { Id = 1, Name = "Admin" },
-    new Role { Id = 2, Name = "User" },
-    new Role { Id = 3, Name = "Guest" }
-  );
-}
-
-// Migration generated automatically:
-// migrationBuilder.InsertData(
-//   table: "Roles",
-//   columns: new[] { "Id", "Name" },
-//   values: new object[,] {
-//     { 1, "Admin" },
-//     { 2, "User" },
-//     { 3, "Guest" }
-//   });</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>HasData Tracking: Immutable Reference Data</strong>
-    <p>EF tracks HasData entities and generates UpdateData() or DeleteData() operations if you remove or modify them in subsequent migrations. This is powerful for reference data that changes rarely, but dangerous if misused: modifying HasData in production migrations requires careful planning to avoid data loss or corruption on existing databases where data has been manually modified.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">HasData Workflow and Migration Generation</span>
-      <pre><code>// OnModelCreating: Define seed data
-protected override void OnModelCreating(
-  ModelBuilder mb)
-{
-  mb.Entity<OrderStatus>().HasData(
-    new OrderStatus 
-    { 
-      Id = 1, 
-      Name = "Pending",
-      Description = "Order received" 
-    },
-    new OrderStatus 
-    { 
-      Id = 2, 
-      Name = "Shipped",
-      Description = "Order sent" 
-    },
-    new OrderStatus 
-    { 
-      Id = 3, 
-      Name = "Delivered",
-      Description = "Order delivered" 
+        migrationBuilder.AddColumn&lt;string&gt;(
+            name: "PhoneNumber",
+            table: "Customers",
+            type: "nvarchar(max)",
+            nullable: true);
     }
-  );
-}
 
-// Terminal: dotnet ef migrations add AddOrderStatuses
-
-// Generated Migration
-public partial class AddOrderStatuses : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.CreateTable(
-      name: "OrderStatuses",
-      columns: table => new
-      {
-        Id = table.Column<int>(nullable: false),
-        Name = table.Column<string>(
-          maxLength: 50, nullable: false),
-        Description = table.Column<string>(
-          nullable: true)
-      },
-      constraints: table =>
-      {
-        table.PrimaryKey("PK_OrderStatuses", x => x.Id);
-      });
-
-    mb.InsertData(
-      table: "OrderStatuses",
-      columns: new[] { "Id", "Name", "Description" },
-      values: new object[,]
-      {
-        { 1, "Pending", "Order received" },
-        { 2, "Shipped", "Order sent" },
-        { 3, "Delivered", "Order delivered" }
-      });
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropTable(name: "OrderStatuses");
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="section-text">
-    <p>HasData is excellent for static reference data that comes with your application. It's less suitable for user-generated data or data that changes frequently. For that, use separate seeding scripts or a database seeding service that runs during application startup.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">05 — ROLLING BACK: DOWN MIGRATIONS</div>
-  <h2>Reverting to Previous Schemas</h2>
-
-  <div class="section-text">
-    <p>Every migration has a Down() method that reverses the Up() changes. If you applied a migration and realized it's incorrect, you can revert to a previous migration. The terminal command is: dotnet ef database update PreviousMigrationName. EF executes Down() methods in reverse order until it reaches the target migration. This is powerful for development and testing, but must be used carefully in production because Down() may result in data loss.</p>
-    <p>The __EFMigrationsHistory table records which migrations have been applied. Running dotnet ef database update targets a specific migration by name or removes all migrations if no name is provided.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Rollback Scenario and Down() Methods</span>
-      <pre><code>// Scenario: You added a migration, but realized it's wrong
-// Migrations applied: InitialCreate, AddPhoneNumber, AddPhoneIndex
-
-// Terminal: dotnet ef database update AddPhoneNumber
-// This reverts AddPhoneIndex (runs its Down() method)
-
-// Migration: AddPhoneIndex.cs
-public partial class AddPhoneIndex : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.CreateIndex(
-      name: "IX_Customers_PhoneNumber",
-      table: "Customers",
-      column: "PhoneNumber");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropIndex(
-      name: "IX_Customers_PhoneNumber",
-      table: "Customers");
-    // Reverts to state before index was created
-  }
-}
-
-// Key points:
-// 1. Down() must undo exactly what Up() did
-// 2. Down() may cause data loss if Up() added NOT NULL columns
-// 3. In production, rollbacks are rare; prevention is better
-// 4. Always backup before running migrations on prod
-// 5. Test migrations against production schema first
-
-// Check current migration status
-// Terminal: dotnet ef migrations list
-// Shows all migrations and which are applied</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Rollbacks Can Fail or Cause Data Loss</strong>
-    <p>If your Up() method adds a NOT NULL column without a default, Down() removes it—data in that column is lost permanently. Down() is auto-generated for standard operations but may need manual editing for complex scenarios. Always understand what your Down() method does before running it on a database you care about.</p>
-  </div>
-
-  <div class="section-text">
-    <p>In development and testing, rollbacks are common and safe. In production, they're rare and dangerous. Instead of rolling back, you typically create a new migration that fixes the problem. This way, the migration history stays linear and auditable.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">06 — CUSTOM SQL IN MIGRATIONS</div>
-  <h2>Data Migrations and Stored Procedures</h2>
-
-  <div class="section-text">
-    <p>Sometimes migrations need more than standard table changes. You might need to populate data, rename columns safely, or deploy stored procedures. For these, you write custom SQL directly in the migration using migrationBuilder.Sql(). This allows arbitrary SQL execution within the migration framework, tracked and versioned with your schema changes.</p>
-    <p>Custom SQL is powerful but requires care: unlike auto-generated operations, you must write both Up() and Down() to be fully reversible. Down() should undo what Up() did.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">3+ Real-World Custom SQL Examples</span>
-      <pre><code>// Example 1: Data migration with computed field
-public partial class PopulateFullName : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    // Add FullName column
-    mb.AddColumn<string>(
-      name: "FullName",
-      table: "Customers",
-      type: "nvarchar(200)",
-      nullable: true);
-
-    // Populate FullName from FirstName + LastName
-    mb.Sql(
-      @"UPDATE Customers 
-        SET FullName = FirstName + ' ' + LastName
-        WHERE FirstName IS NOT NULL 
-          AND LastName IS NOT NULL");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropColumn("FullName", "Customers");
-  }
-}
-
-// Example 2: Safe column rename with custom SQL
-public partial class RenameCompanyName : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    // Add new column
-    mb.AddColumn<string>(
-      name: "OrganizationName",
-      table: "Customers",
-      maxLength: 200,
-      nullable: true);
-
-    // Copy data from old to new
-    mb.Sql(
-      @"UPDATE Customers 
-        SET OrganizationName = CompanyName");
-
-    // Drop old column
-    mb.DropColumn("CompanyName", "Customers");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "CompanyName",
-      table: "Customers",
-      maxLength: 200,
-      nullable: true);
-
-    mb.Sql(
-      @"UPDATE Customers 
-        SET CompanyName = OrganizationName");
-
-    mb.DropColumn("OrganizationName", "Customers");
-  }
-}
-
-// Example 3: Deploy stored procedure
-public partial class CreateOrderReportProcedure 
-  : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.Sql(@"
-      CREATE PROCEDURE sp_GetMonthlyOrderReport
-        @Month INT,
-        @Year INT
-      AS
-      BEGIN
-        SELECT 
-          DATETRUNC(DAY, OrderDate) AS OrderDay,
-          COUNT(*) AS OrderCount,
-          SUM(Total) AS DailyTotal
-        FROM Orders
-        WHERE MONTH(OrderDate) = @Month
-          AND YEAR(OrderDate) = @Year
-        GROUP BY DATETRUNC(DAY, OrderDate)
-        ORDER BY OrderDay;
-      END
-    ");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.Sql(
-      @"DROP PROCEDURE IF EXISTS 
-        sp_GetMonthlyOrderReport");
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Custom SQL is Unvalidated: Test Thoroughly</strong>
-    <p>EF doesn't analyze or validate custom SQL. If your Sql() call has a syntax error, it won't be caught until you run the migration against the database. Always test migrations against a test database before applying to production.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Custom SQL migrations are essential for real-world schema evolution, especially when migrating data or deploying database objects like stored procedures, views, or functions that EF can't express via Fluent API.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">07 — PRODUCTION DEPLOYMENT STRATEGIES</div>
-  <h2>Bundles, Idempotent Scripts, and CI/CD Integration</h2>
-
-  <div class="section-text">
-    <p>In production, migrations must be reliable and safe. Standard migrations require EF runtime and tools, which you may not want on production servers. EF Core offers two production patterns: (1) Bundle: dotnet ef migrations bundle generates a self-contained executable that applies migrations without EF Core tools, (2) Idempotent script: dotnet ef migrations script --idempotent generates SQL with IF NOT EXISTS checks that safely run multiple times. Both integrate with CI/CD pipelines for automated, safe deployments.</p>
-    <p>The canonical production pattern: generate a bundle or idempotent script in your CI/CD pipeline, review it, then execute it during deployment. No EF tools needed on production; migrations are pure SQL.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Production Deployment Strategies</span>
-      <pre><code>// STRATEGY 1: Migrations Bundle
-// Terminal (in build pipeline):
-// dotnet ef migrations bundle --output /tmp/migrationBundle.exe
-
-// On production:
-// .\migrationBundle.exe --connection "Server=prod-db;..."
-// Self-contained, no EF tools needed, idempotent
-
-// STRATEGY 2: Idempotent SQL Script
-// Terminal (in build pipeline):
-// dotnet ef migrations script --idempotent --output /tmp/migrations.sql
-
-// Generated SQL includes IF NOT EXISTS checks:
-// IF NOT EXISTS (SELECT 1 FROM __EFMigrationsHistory ...)
-// BEGIN
-//   CREATE TABLE ...
-// END
-
-// On production:
-// sqlcmd -S prod-server -d prod-db -i /tmp/migrations.sql
-// Pure SQL, no .NET runtime needed
-
-// STRATEGY 3: CI/CD Integration (GitHub Actions Example)
-name: Deploy to Production
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.0'
-
-      - name: Generate Migration Bundle
-        run: |
-          dotnet ef migrations bundle \
-            --output ./migrationBundle \
-            --self-contained
-
-      - name: Upload to Deployment Server
-        run: scp ./migrationBundle deploy@prod:/home/deploy/
-
-      - name: Apply Migrations
-        run: |
-          ssh deploy@prod '/home/deploy/migrationBundle \
-            --connection "Server=prod-db;Database=MyApp;..."'
-
-      - name: Verify Deployment
-        run: |
-          # Query database to verify schema is up-to-date
-          sqlcmd -S prod-db -d MyApp \
-            -Q "SELECT COUNT(*) FROM __EFMigrationsHistory" 
-
-// STRATEGY 4: Blue-Green Deployment
-// 1. Maintain two identical database schemas (blue, green)
-// 2. Apply migrations to green database first
-// 3. Run integration tests against green
-// 4. If tests pass, switch application traffic to green
-// 5. If tests fail, keep traffic on blue; debug green
-// 6. Next deployment swaps roles
-
-// STRATEGY 5: Monitoring and Rollback Plan
-// Track migration application:
--- Query migration history
-SELECT * FROM __EFMigrationsHistory ORDER BY Id DESC;
-
-// If a migration causes issues:
-// 1. Immediately switch traffic back to previous schema (blue-green)
-// 2. Run Down() migration to revert
-// 3. Create new migration to fix the issue
-// 4. Test thoroughly before re-deploying</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Never Run Migrations Directly on Production</strong>
-    <p>In production, always use bundles or idempotent scripts generated in your CI/CD pipeline. Never log into production and run dotnet ef database update manually. This prevents inconsistencies, creates audit trails, and allows review before execution.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Best practice: test migrations against a production-like schema first. Many teams run migrations against a staging database that mirrors production, verify everything works, then run the same migration on production. This eliminates surprises and validates that Down() works correctly if you need to rollback.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">08 — SCHEMA EVOLUTION THEORY</div>
-  <h2>SQL ALTER TABLE History vs Migrations as Version Control</h2>
-
-  <div class="section-text">
-    <p>In traditional SQL development, schema changes happen via ad-hoc ALTER TABLE statements, manually executed by DBAs. The schema history is implicit: you have to query system tables to understand what changed and when. Migrations flip this model. Instead of ad-hoc SQL, you write C# code that generates SQL. The migration history is explicit and version-controlled in Git alongside your application code. Every schema change is a versioned artifact, reproducible and auditable.</p>
-    <p>This shift has profound implications. With migrations, you can recreate your entire database schema from scratch by replaying all migrations in order. If you want to understand why a column exists, you look at the migration that created it. If you need to know who added a column and when, you check Git blame on that migration file. Migrations make schema history transparent and testable—you can run migrations against a test database to validate they work before applying to production.</p>
-  </div>
-
-  <div class="code-comparison">
-    <div class="code-block sql">
-      <span class="code-label">Traditional Ad-Hoc SQL Approach</span>
-      <pre><code>-- Changes made manually by DBA
--- No version control, implicit history
-
--- Monday, 10 AM (John did this)
-ALTER TABLE Customers ADD Email NVARCHAR(255);
-
--- Wednesday, 2 PM (Sarah did this)
-ALTER TABLE Customers ADD PhoneNumber VARCHAR(20);
-
--- History is lost: no audit trail, unclear why
-
--- To understand current schema:
--- Query INFORMATION_SCHEMA or sp_help
-SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'Customers';
-
--- Problem: No way to rollback
--- Problem: No reproducibility
--- Problem: Unclear who changed what</code></pre>
-    </div>
-
-    <div class="code-block csharp">
-      <span class="code-label">EF Migrations Approach (Version Controlled)</span>
-      <pre><code>// Git history shows exact schema evolution
-// Each migration is a versioned file
-
-// Migrations/20240101_InitialCreate.cs
-public partial class InitialCreate : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.CreateTable("Customers", c => new
+    protected override void Down(MigrationBuilder migrationBuilder)
     {
-      Id = c.Column<int>(),
-      Name = c.Column<string>()
-    });
-  }
-}
-
-// Migrations/20240115_AddEmail.cs
-public partial class AddEmail : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "Email",
-      table: "Customers");
-  }
-}
-
-// Migrations/20240117_AddPhone.cs
-public partial class AddPhone : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "PhoneNumber",
-      table: "Customers");
-  }
-}
-
-// Replay history to recreate schema
-// dotnet ef database update
-// Executes all migrations in order
-// Result: identical schema on dev, test, prod
-
-// Audit trail visible via Git
-// git log --oneline Migrations/
-// Shows who changed what and when
-
-// Rollback capability
-// dotnet ef database update AddEmail
-// Reverts AddPhone migration safely
-
-// Reproducible: new developer runs
-// dotnet ef database update
-// Gets identical schema, no manual steps</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Migrations = Schema as Code</strong>
-    <p>Treating migrations as code—versioned in Git, reviewed in PRs, tested before merge—brings software engineering rigor to database schema. You can't accidentally modify production schema outside of migrations. All changes flow through the same pipeline as application code changes, ensuring traceability and auditability.</p>
-  </div>
-
-  <div class="section-text">
-    <p>The fundamental benefit: a new developer can clone the repository and run one command to have the entire database schema set up locally, with all seed data. This is impossible with ad-hoc SQL. Every developer, every test environment, and every production instance has identical schema because they all replay the same migrations.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">09 — DATA MIGRATIONS DURING SCHEMA CHANGES</div>
-  <h2>Migrating Data While Evolving Schema</h2>
-
-  <div class="section-text">
-    <p>Adding a column is simple. Renaming a column safely is complex. You need to create a new column, copy data, drop the old, all while the application might be reading the old column. Migrations handle this via custom SQL. The pattern: (1) Add new column, (2) Populate from old column, (3) Deploy application code that uses new column, (4) Drop old column in next migration. For zero-downtime deployads, you deploy application code between migrations, allowing old and new code to coexist during transition.</p>
-    <p>Data migrations are also essential when normalizing denormalized data or applying business logic transformations. If you're splitting a FullName column into FirstName and LastName, you write a migration that parses the full name and populates the new columns. The migration framework ensures this transformation is atomic and versioned.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Data Migration Pattern: Safe Column Rename</span>
-      <pre><code>// Migration 1: AddNewEmailField
-// Goal: Safely migrate from Email to EmailAddress
-public partial class AddNewEmailField : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    // Create new column (nullable for existing rows)
-    mb.AddColumn<string>(
-      name: "EmailAddress",
-      table: "Customers",
-      type: "nvarchar(255)",
-      nullable: true);
-
-    // Copy data from old to new column
-    mb.Sql(
-      @"UPDATE Customers
-        SET EmailAddress = Email
-        WHERE Email IS NOT NULL");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropColumn("EmailAddress", "Customers");
-  }
-}
-
-// Application code deployed here
-// Update application to use EmailAddress
-// Old Email column still readable for safety
-
-// Migration 2: DropOldEmailField
-// After application change is deployed everywhere
-public partial class DropOldEmailField : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.DropColumn("Email", "Customers");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "Email",
-      table: "Customers",
-      type: "nvarchar(255)",
-      nullable: true);
-
-    // Restore data if needed
-    mb.Sql(
-      @"UPDATE Customers
-        SET Email = EmailAddress
-        WHERE EmailAddress IS NOT NULL");
-  }
-}
-
-// Timeline:
-// Day 1: Deploy migration 1 (add EmailAddress)
-// Day 1-2: Deploy app code change (use EmailAddress)
-// Day 2: Deploy migration 2 (drop Email)
-// Result: Zero downtime, safe transition
-
-// Data transformation example
-public partial class NormalizeNames : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    // Add columns for normalized data
-    mb.AddColumn<string>(
-      name: "FirstName",
-      table: "Customers",
-      nullable: true);
-
-    mb.AddColumn<string>(
-      name: "LastName",
-      table: "Customers",
-      nullable: true);
-
-    // Split FullName into components
-    // This is simplified; real SQL would be more robust
-    mb.Sql(
-      @"UPDATE Customers
-        SET FirstName = LTRIM(SUBSTRING(
-          FullName, 1,
-          CHARINDEX(' ', FullName) - 1)),
-            LastName = RTRIM(SUBSTRING(
-          FullName,
-          CHARINDEX(' ', FullName) + 1,
-          LEN(FullName)))
-        WHERE FullName IS NOT NULL");
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropColumn("FirstName", "Customers");
-    mb.DropColumn("LastName", "Customers");
-  }
-}
-
-// Handling nullable transitions
-public partial class MakeEmailRequired : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    // First, populate any NULL emails with placeholder
-    mb.Sql(
-      @"UPDATE Customers
-        SET Email = 'unknown@example.com'
-        WHERE Email IS NULL");
-
-    // Then make column NOT NULL
-    mb.AlterColumn<string>(
-      name: "Email",
-      table: "Customers",
-      type: "nvarchar(255)",
-      nullable: false);
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.AlterColumn<string>(
-      name: "Email",
-      table: "Customers",
-      type: "nvarchar(255)",
-      nullable: true);
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Separate Schema Changes From Data Migrations</strong>
-    <p>Complex data migrations should be tested separately. Run the data-heavy Sql() against a production-like dataset to ensure it completes in acceptable time. Adding an index to a 1-billion-row table takes hours; migrations should account for this (use ONLINE index creation in SQL Server, or background migration strategies).</p>
-  </div>
-
-  <div class="section-text">
-    <p>For large tables, consider splitting data migrations into separate deployment windows. Migrate data in batches outside of peak hours. Migrations are powerful, but data transformation at scale requires planning. Monitor migration performance; if a migration takes longer than acceptable, create new strategies like bulk copy utilities alongside the migration.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">10 — MIGRATION BUNDLES FOR DEPLOYMENT</div>
-  <h2>Self-Contained Executables for Safe Production Deployments</h2>
-
-  <div class="section-text">
-    <p>Bundles are self-contained executables that apply migrations without EF Core tools installed on the production server. You generate a bundle in your CI/CD pipeline, ship it with your application, and run it as part of deployment. This is safer and more reliable than relying on dotnet ef tools on production. Bundles handle connection retries, idempotency, and rollback logging automatically.</p>
-    <p>The bundle contains compiled migration code. When executed, it reads the __EFMigrationsHistory table, determines which migrations need applying, and applies them atomically. Bundles work offline; they don't need an internet connection or access to your .NET project files. For regulated environments, bundles provide an audit trail: you know exactly which migration bundle was deployed when.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Migration Bundle Generation and Deployment</span>
-      <pre><code>// In CI/CD pipeline (GitHub Actions example)
-name: Create Migration Bundle
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.0'
-
-      - name: Restore
-        run: dotnet restore
-
-      - name: Generate Migration Bundle
-        run: |
-          dotnet ef migrations bundle \
-            --output ./publish/migrationBundle \
-            --project ./src/Data/Data.csproj \
-            --self-contained
-
-      - name: Upload bundle as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: migration-bundle
-          path: ./publish/migrationBundle
-
-// On production server
-// Download bundle from artifact
-// Run it:
-
-// Windows
-.\migrationBundle --connection "Server=prod-db;Database=MyApp;User=admin;Password=secret;"
-
-// Linux
-./migrationBundle --connection "Server=prod-db;Database=MyApp;User=admin;Password=secret;"
-
-// Exit codes:
-// 0: Success
-// 1: Failure (check logs)
-// Bundle output includes SQL executed and timestamps
-
-// Bundle features:
-// - Self-contained: no .NET SDK needed
-// - Idempotent: safe to run multiple times
-// - Connection retry: handles transient failures
-// - Detailed logging: shows what ran
-// - No dependency on application being deployed
-
-// Versioning bundles
-// Timestamp bundle to track which was deployed
-// Mv migrationBundle migrationBundle_2024-01-20_15-30-45.exe
-// Deploy and track which version was used
-
-// Rollback with bundles
-// Bundles can revert migrations if needed:
-./migrationBundle --connection "..." --targetMigration "PreviousMigrationName"
-
-// This is safer than manual rollback:
-// - Recorded in deployment logs
-// - Same code path as forward migrations
-// - Tested before deployment</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Bundles Are the Production Standard</strong>
-    <p>For production, always use bundles. Never use dotnet ef database update on production servers. Bundles are self-contained, auditable, and require no EF Core tools. They're the safest way to apply migrations in regulated environments where you need to prove what ran and when.</p>
-  </div>
-
-  <div class="section-text">
-    <p>Bundles also support connection strings via command-line arguments, allowing the same bundle to run against multiple databases. This is crucial for multi-environment deployments: build once, deploy to dev/staging/prod with different connection strings.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">11 — SEED DATA WITH HASDATA()</div>
-  <h2>Embedding Reference Data in Migrations</h2>
-
-  <div class="section-text">
-    <p>HasData() in OnModelCreating seeds data into migrations. When you run dotnet ef migrations add, EF detects HasData() calls and generates migration code to insert that data. This ensures reference data (lookup tables, static enums, configuration values) exists on every database instance without manual seeding scripts. Seed data is version-controlled alongside your schema, making it reproducible.</p>
-    <p>HasData() is perfect for reference data but unsuitable for user-generated data. Use it for status enums, default configurations, and lookup tables that your application depends on. For large datasets or data that changes, use separate seeding services or database snapshots.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">HasData() Seed Data Patterns</span>
-      <pre><code>public class AppDbContext : DbContext
-{
-  public DbSet<OrderStatus> OrderStatuses { get; set; }
-  public DbSet<Country> Countries { get; set; }
-  public DbSet<PaymentMethod> PaymentMethods { get; set; }
-
-  protected override void OnModelCreating(
-    ModelBuilder modelBuilder)
-  {
-    // Seed OrderStatus lookup table
-    modelBuilder.Entity<OrderStatus>()
-      .HasData(
-        new OrderStatus { Id = 1, Name = "Pending" },
-        new OrderStatus { Id = 2, Name = "Processing" },
-        new OrderStatus { Id = 3, Name = "Shipped" },
-        new OrderStatus { Id = 4, Name = "Delivered" },
-        new OrderStatus { Id = 5, Name = "Cancelled" }
-      );
-
-    // Seed Countries with common ones
-    modelBuilder.Entity<Country>()
-      .HasData(
-        new Country { Id = 1, Code = "US", Name = "United States" },
-        new Country { Id = 2, Code = "CA", Name = "Canada" },
-        new Country { Id = 3, Code = "UK", Name = "United Kingdom" },
-        new Country { Id = 4, Code = "DE", Name = "Germany" },
-        new Country { Id = 5, Code = "FR", Name = "France" }
-      );
-
-    // Seed PaymentMethods
-    modelBuilder.Entity<PaymentMethod>()
-      .HasData(
-        new PaymentMethod
-        {
-          Id = 1,
-          Name = "Credit Card",
-          IsActive = true
-        },
-        new PaymentMethod
-        {
-          Id = 2,
-          Name = "PayPal",
-          IsActive = true
-        },
-        new PaymentMethod
-        {
-          Id = 3,
-          Name = "Bank Transfer",
-          IsActive = true
-        },
-        new PaymentMethod
-        {
-          Id = 4,
-          Name = "Cheque",
-          IsActive = false
-        }
-      );
-  }
-}
-
-// Generated migration includes:
-public partial class SeedInitialData : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.InsertData(
-      table: "OrderStatus",
-      columns: new[] { "Id", "Name" },
-      values: new object[,]
-      {
-        { 1, "Pending" },
-        { 2, "Processing" },
-        { 3, "Shipped" },
-        { 4, "Delivered" },
-        { 5, "Cancelled" }
-      });
-
-    mb.InsertData(
-      table: "Countries",
-      columns: new[] { "Id", "Code", "Name" },
-      values: new object[,]
-      {
-        { 1, "US", "United States" },
-        { 2, "CA", "Canada" },
-        // ... more countries
-      });
-
-    // ... PaymentMethods too
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DeleteData(
-      table: "OrderStatus",
-      keyColumn: "Id",
-      keyValues: new object[] { 1, 2, 3, 4, 5 });
-
-    mb.DeleteData(
-      table: "Countries",
-      keyColumn: "Id",
-      keyValues: new object[] { 1, 2, 3, 4, 5 });
-
-    mb.DeleteData(
-      table: "PaymentMethods",
-      keyColumn: "Id",
-      keyValues: new object[] { 1, 2, 3, 4 });
-  }
-}
-
-// Updating seed data in subsequent migration
-public partial class UpdatePaymentMethods : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.UpdateData(
-      table: "PaymentMethods",
-      keyColumn: "Id",
-      keyValue: 4,
-      column: "IsActive",
-      value: true); // Cheque is now active again
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.UpdateData(
-      table: "PaymentMethods",
-      keyColumn: "Id",
-      keyValue: 4,
-      column: "IsActive",
-      value: false);
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>HasData() is for Small, Static Datasets</strong>
-    <p>HasData() is ideal for enums, status tables, and configuration. Don't use it for datasets larger than ~1000 rows or data that changes frequently. For those, maintain separate seed scripts or use SQL Server's bulk insert mechanisms. HasData() keeps seed data visible in code and version-controlled, but large datasets are unwieldy in migrations.</p>
-  </div>
-
-  <div class="section-text">
-    <p>A practical pattern: use HasData() for schema-critical reference data that your application requires to function. Use separate seeding services for demo data or test data that's useful but not required.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">12 — TEAM MIGRATION CONFLICTS</div>
-  <h2>Handling Concurrent Migration Development</h2>
-
-  <div class="section-text">
-    <p>In teams, multiple developers create migrations simultaneously. If developer A creates "AddPhoneNumber" and developer B creates "AddEmail", and both migrations are added before being merged, Git will have two branches with conflicting migration histories. Migrations are named by timestamp, making conflicts rare but possible. The solution: coordinate migration creation or use a naming convention that prevents conflicts (e.g., developer initials + feature).</p>
-    <p>EF provides dotnet ef migrations add with --configuration flag to handle this. If a conflict is detected, you can regenerate migrations to combine them or manually resolve the conflict by editing migration classes. The __EFMigrationsHistory table prevents accidentally running migrations twice—it tracks which migrations have been applied, so conflicting migrations can coexist as long as their SQL is compatible.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Migration Conflict Resolution Patterns</span>
-      <pre><code>// Scenario: Two developers create migrations simultaneously
-
-// Developer A: AddPhoneNumber migration
-// Migrations/20240120_AddPhoneNumber.cs
-public partial class AddPhoneNumber : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "PhoneNumber",
-      table: "Customers",
-      maxLength: 20);
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropColumn("PhoneNumber", "Customers");
-  }
-}
-
-// Developer B: AddEmail migration
-// Migrations/20240120_AddEmail.cs (same timestamp!)
-public partial class AddEmail : Migration
-{
-  protected override void Up(MigrationBuilder mb)
-  {
-    mb.AddColumn<string>(
-      name: "Email",
-      table: "Customers",
-      maxLength: 255);
-  }
-
-  protected override void Down(MigrationBuilder mb)
-  {
-    mb.DropColumn("Email", "Customers");
-  }
-}
-
-// Both migrations committed to main branch
-// Result: Git conflict, unclear migration order
-
-// Solution 1: Regenerate to combine migrations
-// Terminal: dotnet ef migrations remove
-// This removes the last migration added
-// Then: dotnet ef migrations add CombinedChanges
-// EF generates one migration with both changes
-
-// Solution 2: Manual resolution
-// Edit migration names to have unique timestamps:
-// 20240120_120000_AddPhoneNumber.cs
-// 20240120_120001_AddEmail.cs
-// Then update __EFMigrationsHistory if needed
-
-// Solution 3: Establish naming convention
-// AddMigrationName --schema [InitialName]
-// Example:
-// Alice_AddPhoneNumber
-// Bob_AddEmail
-// Prevents timestamp collision
-
-// Best practice in teams:
-// 1. Pull latest before creating migration
-// 2. Coordinate large schema changes
-// 3. Use feature branches until migration is final
-// 4. Review migrations in pull requests before merge
-// 5. Run integration tests against merged migrations
-
-// Checking for migration conflicts programmatically
-public class MigrationService
-{
-  private readonly AppDbContext _context;
-
-  public MigrationService(AppDbContext context)
-  {
-    _context = context;
-  }
-
-  public async Task<List<string>>
-    GetPendingMigrationsAsync()
-  {
-    // Returns migrations not yet applied
-    var migrations = await _context.Database
-      .GetPendingMigrationsAsync();
-
-    return migrations.ToList();
-  }
-
-  public async Task<List<string>>
-    GetAppliedMigrationsAsync()
-  {
-    // Returns migrations already applied
-    var migrations = await _context.Database
-      .GetAppliedMigrationsAsync();
-
-    return migrations.ToList();
-  }
-
-  // Use this to detect unmerged migrations
-  public bool HasConflictingMigrations()
-  {
-    var pending = _context.Database
-      .GetPendingMigrations()
-      .ToList();
-
-    // If multiple pending migrations exist
-    // and they modify the same table,
-    // log a warning
-    return pending.Count > 1;
-  }
-}</code></pre>
-    </div>
-  </div>
-
-  <div class="key-insight">
-    <strong>Merge Migrations in Pull Request Reviews</strong>
-    <p>Always review migrations in pull requests. Ensure migrations from different developers don't conflict or cause unexpected schema. If two developers both modify Customers table, the second migration might fail. Catch these issues in review, not in production.</p>
-  </div>
-
-  <div class="section-text">
-    <p>A team practice: designate one person to merge long-running branches to prevent migration conflicts. Once migrations are finalized, they're immutable in production—changing applied migrations causes data corruption. Prevent this by enforcing strict migration review processes.</p>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-num">13 — REVERSE ENGINEERING (SCAFFOLDING) EXISTING DATABASES</div>
-  <h2>Generating Models From Existing Database Schemas</h2>
-
-  <div class="section-text">
-    <p>If you inherit an existing database, you can scaffold DbContext and models from it. The dotnet ef dbcontext scaffold command reverse-engineers the schema, generating C# classes that match existing tables. This is a one-time operation; afterward, you manage the schema via migrations as usual. Scaffolding is also useful for exploring unfamiliar databases or integrating with legacy systems.</p>
-    <p>Scaffolding generates complete OnModelCreating configurations, including foreign keys, indexes, and constraints. The generated code often needs cleanup—removing unwanted tables, adjusting naming conventions—but it's a great starting point. After scaffolding, move the generated files into your project structure and create an initial migration to version control the existing schema.</p>
-  </div>
-
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">Scaffolding Existing Database</span>
-      <pre><code>// Terminal: Scaffold an existing database
-dotnet ef dbcontext scaffold \
-  "Server=legacy-db;Database=OldApp;User=sa;Password=secret;" \
-  Microsoft.EntityFrameworkCore.SqlServer \
-  --output-dir Models \
-  --context OldAppContext \
-  --data-annotations \
-  --use-database-names
-
-// Generated OldAppContext.cs:
-public partial class OldAppContext : DbContext
-{
-  public OldAppContext()
-  {
-  }
-
-  public OldAppContext(
-    DbContextOptions<OldAppContext> options)
-    : base(options)
-  {
-  }
-
-  public virtual DbSet<Customer> Customers { get; set; }
-  public virtual DbSet<Order> Orders { get; set; }
-  public virtual DbSet<Product> Products { get; set; }
-
-  protected override void OnConfiguring(
-    DbContextOptionsBuilder optionsBuilder)
-  {
-    if (!optionsBuilder.IsConfigured)
-    {
-      optionsBuilder.UseSqlServer(
-        "Server=legacy-db;Database=OldApp;...");
+        migrationBuilder.DropColumn(
+            name: "PhoneNumber",
+            table: "Customers");
     }
-  }
+}</pre>
+                </div>
+            </div>
+        </section>
 
-  protected override void OnModelCreating(
-    ModelBuilder modelBuilder)
-  {
-    // All tables, constraints, indexes mapped
-    modelBuilder.Entity<Customer>(entity =>
+        <!-- 02: Deploy Schema Changes to Production -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Deploy Schema Changes to Production"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                New columns are ready. They need to go to staging, then production. We must be able to deploy safely and know which migrations have been applied.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I run SQL scripts manually or use a deployment tool. I have to track what&rsquo;s been applied myself. Scripts are version controlled, but I have to manage them. For prod, I might use a tool like Flyway or hand off to DevOps.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I can run dotnet ef database update in a CI/CD pipeline. Or I call db.Database.MigrateAsync() at app startup in code. Entity Framework tracks applied migrations in the __EFMigrationsHistory table automatically.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">C# — CLI Deploy</div>
+                    <div class="code-block csharp-block">
+                        <pre># In dev
+dotnet ef database update
+
+# In CI/CD (bundle migrations)
+dotnet ef migrations bundle --self-contained
+
+# Offline bundle for prod
+./efbundle.exe
+
+# Or from code
+await db.Database.MigrateAsync();</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Program.cs — Run at Startup</div>
+                    <div class="code-block csharp-block">
+                        <pre>var app = builder.Build();
+
+if (app.Environment.IsProduction())
+{
+    // Auto-apply migrations on app start
+    using (var scope = app.Services
+        .CreateScope())
     {
-      entity.HasKey(e => e.CustomerId)
-        .HasName("PK_Customer");
-
-      entity.Property(e => e.Name)
-        .IsRequired()
-        .HasMaxLength(100);
-
-      entity.Property(e => e.CreatedDate)
-        .HasDefaultValueSql("GETUTCDATE()");
-    });
-
-    modelBuilder.Entity<Order>(entity =>
-    {
-      entity.HasKey(e => e.OrderId);
-
-      entity.HasOne(d => d.Customer)
-        .WithMany(p => p.Orders)
-        .HasForeignKey(d => d.CustomerId);
-    });
-
-    OnModelCreatingPartial(modelBuilder);
-  }
-
-  partial void OnModelCreatingPartial(
-    ModelBuilder modelBuilder);
+        var db = scope.ServiceProvider
+            .GetRequiredService&lt;AppDbContext&gt;();
+        await db.Database.MigrateAsync();
+    }
 }
 
-// Next step: Create initial migration
-dotnet ef migrations add InitialScaffold
+app.Run();</pre>
+                    </div>
+                </div>
+            </div>
 
-// This migration will be empty (schema already
-// exists), but it establishes the migration baseline
+            <div class="code-full">
+                <div class="code-label">__EFMigrationsHistory Table — Entity Framework&rsquo;s Record</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT MigrationId, ProductVersion
+FROM __EFMigrationsHistory
+ORDER BY MigrationId DESC;
 
-// Then proceed with normal migrations for
-// future schema changes
+-- Output:
+-- MigrationId                               | ProductVersion
+-- 20240401150000_AddPhoneNumberToCustomers | 8.0.0
+-- 20240331120000_CreateCustomersTable      | 8.0.0</pre>
+                </div>
+            </div>
+        </section>
 
-// Scaffolding tips:
-// 1. Use --data-annotations for attribute-based config
-// 2. Use --context-dir for custom path
-// 3. Use --models-dir for custom model path
-// 4. Generate to separate branch first, review
-// 5. Delete generated files, regenerate if schema changed
-// 6. Move to OnModelCreating fluent config
-//    for cleaner code (optional but recommended)
+        <!-- 03: Roll Back a Bad Migration -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Roll Back a Bad Migration"</h2>
 
-// Handling large databases (filter tables)
-dotnet ef dbcontext scaffold \
-  "Server=legacy-db;Database=OldApp;..." \
-  Microsoft.EntityFrameworkCore.SqlServer \
-  --output-dir Models \
-  --table Customers \
-  --table Orders \
-  --table Products
-  // Only scaffolds these tables, ignores rest</code></pre>
-    </div>
-  </div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The last migration deleted data by mistake or caused a constraint conflict. Undo it. The migration before that one worked fine.
+            </div>
 
-  <div class="key-insight">
-    <strong>Scaffolding is a Starting Point, Not Permanent</strong>
-    <p>Use scaffolding to bootstrap models from existing databases. After scaffolding, treat the generated code like any other code: review it, test it, refactor as needed. Don't expect scaffolding to generate perfect code; use it to save initial typing and mapping work.</p>
-  </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I write a new ALTER TABLE script to undo the change. Or I restore a backup. It&rsquo;s manual and error-prone. If the original script dropped a column, I have to write the reverse by hand.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I run dotnet ef database update PreviousMigrationName. Entity Framework executes the Down() method of the current migration, automatically rolling back the change. The migration code has both Up() and Down() defined.
+                </div>
+            </div>
 
-  <div class="section-text">
-    <p>Scaffolding is also useful during development when you want to understand a complex schema. Generate models, examine the OnModelCreating configuration, and learn how EF mapped the database. This is especially valuable when dealing with legacy systems or unfamiliar schemas.</p>
-  </div>
-</div>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">C# — Rollback Command</div>
+                    <div class="code-block csharp-block">
+                        <pre># List all migrations
+dotnet ef migrations list
 
-<div class="section">
-  <div class="section-num">14 — SQL SCRIPT GENERATION</div>
-  <h2>Generating SQL Scripts From Migrations</h2>
+# Roll back to a previous migration
+dotnet ef database update 20240331120000_CreateCustomersTable
 
-  <div class="section-text">
-    <p>The dotnet ef migrations script command generates pure SQL from your migrations. You can generate idempotent scripts (safe to run multiple times) or targeted scripts (from one migration to another). This is essential for production deployments where you want to review SQL before executing and maintain complete SQL audit trails. Generated scripts include all migration operations translated to SQL DDL and DML.</p>
-    <p>Script generation is also useful for documentation. You can generate the complete database creation script and share it with DBAs, include it in deployment documentation, or archive it for compliance. The script shows exactly what will be applied, allowing for review and approval before deployment.</p>
-  </div>
+# Or remove the last migration entirely
+dotnet ef migrations remove</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Migration Down() — Automatic Reversal</div>
+                    <div class="code-block ef-block">
+                        <pre>public partial class AddPhoneNumberToCustomers
+    : Migration
+{
+    protected override void Up(MigrationBuilder m)
+    {
+        // Applies the change
+        m.AddColumn&lt;string&gt;(
+            name: "PhoneNumber",
+            table: "Customers",
+            type: "nvarchar(max)",
+            nullable: true);
+    }
 
-  <div class="code-single">
-    <div class="code-block csharp">
-      <span class="code-label">SQL Script Generation From Migrations</span>
-      <pre><code>// Terminal: Generate all pending migrations as SQL
-dotnet ef migrations script --output migrations.sql
+    protected override void Down(MigrationBuilder m)
+    {
+        // Reverts the change
+        m.DropColumn(
+            name: "PhoneNumber",
+            table: "Customers");
+    }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-// Generated SQL (example):
-BEGIN TRANSACTION;
-GO
+        <!-- 04: Run Custom SQL During Migration -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Run Custom SQL During Migration"</h2>
 
-CREATE TABLE [Customers] (
-  [Id] int NOT NULL IDENTITY,
-  [Name] nvarchar(max) NOT NULL,
-  [Email] nvarchar(255),
-  [CreatedDate] datetime2 NOT NULL
-  CONSTRAINT [PK_Customers] PRIMARY KEY ([Id])
-);
-GO
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                We&rsquo;re adding a new Status column. During migration, set all existing customers to status &ldquo;Active&rdquo;. Also create an index on this column for fast filtering.
+            </div>
 
-CREATE TABLE [Orders] (
-  [Id] int NOT NULL IDENTITY,
-  [CustomerId] int NOT NULL,
-  [OrderDate] datetime2 NOT NULL,
-  [Total] decimal(18, 2),
-  CONSTRAINT [PK_Orders] PRIMARY KEY ([Id]),
-  CONSTRAINT [FK_Orders_Customers_CustomerId]
-    FOREIGN KEY ([CustomerId])
-    REFERENCES [Customers] ([Id])
-    ON DELETE CASCADE
-);
-GO
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I write a SQL script: ALTER TABLE ADD column, UPDATE to seed data, CREATE INDEX. All in one script. Straightforward.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I add the property to the class. In the migration, I use migrationBuilder.Sql() to run raw SQL alongside the EF-generated commands. I can add column, seed data, and create indexes all in the Up() method.
+                </div>
+            </div>
 
--- Insert seed data
-INSERT INTO [OrderStatuses] ([Id], [Name])
-VALUES (1, 'Pending');
-INSERT INTO [OrderStatuses] ([Id], [Name])
-VALUES (2, 'Shipped');
-GO
+            <div class="code-full">
+                <div class="code-label">Migration — AddColumn + SQL + Index</div>
+                <div class="code-block ef-block">
+                    <pre>public partial class AddStatusToCustomers : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        // Add the column
+        migrationBuilder.AddColumn&lt;string&gt;(
+            name: "Status",
+            table: "Customers",
+            type: "nvarchar(20)",
+            nullable: false,
+            defaultValue: "Active");
 
-INSERT INTO [__EFMigrationsHistory]
-  ([MigrationId], [ProductVersion])
-VALUES
-  ('20240120000000_InitialCreate', '6.0.0');
-GO
+        // Run raw SQL to update existing rows
+        migrationBuilder.Sql(
+            @"UPDATE Customers
+              SET Status = 'Active'
+              WHERE Status IS NULL");
 
-COMMIT;
-GO
+        // Create an index for fast filtering
+        migrationBuilder.CreateIndex(
+            name: "IX_Customers_Status",
+            table: "Customers",
+            column: "Status");
+    }
 
-// Terminal: Idempotent script (safe for rerun)
-dotnet ef migrations script --idempotent --output idempotent.sql
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropIndex(
+            name: "IX_Customers_Status",
+            table: "Customers");
 
-// Generated idempotent SQL includes IF NOT EXISTS:
-IF NOT EXISTS(
-  SELECT * FROM [__EFMigrationsHistory]
-  WHERE [MigrationId] = '20240120000000_InitialCreate')
-BEGIN
-  CREATE TABLE [Customers] (
-    [Id] int NOT NULL IDENTITY,
-    [Name] nvarchar(max) NOT NULL
-  );
-  GO
+        migrationBuilder.DropColumn(
+            name: "Status",
+            table: "Customers");
+    }
+}</pre>
+                </div>
+            </div>
 
-  INSERT INTO [__EFMigrationsHistory]
-    ([MigrationId], [ProductVersion])
-  VALUES
-    ('20240120000000_InitialCreate', '6.0.0');
-  GO
-END
+            <div class="code-full">
+                <div class="code-label">Seeding Data — More Complex Example</div>
+                <div class="code-block ef-block">
+                    <pre>protected override void Up(MigrationBuilder migrationBuilder)
+{
+    migrationBuilder.AddColumn&lt;int&gt;(
+        name: "CategoryId",
+        table: "Products",
+        nullable: false,
+        defaultValue: 0);
 
-// Idempotent scripts allow safe reruns:
-// sqlcmd -S server -d database -i idempotent.sql
-// Run multiple times: same result, no errors
+    // Seed the Categories table
+    migrationBuilder.Sql(
+        @"INSERT INTO Categories (Name, IsActive)
+          VALUES ('Electronics', 1),
+                 ('Clothing', 1),
+                 ('Books', 1)");
 
-// Terminal: Generate specific migration range
-dotnet ef migrations script InitialCreate AddPhoneNumber \
-  --output upgrade_to_phone.sql
+    // Assign default category
+    migrationBuilder.Sql(
+        @"UPDATE Products
+          SET CategoryId = (
+              SELECT Id FROM Categories
+              WHERE Name = 'Electronics'
+          )");
 
-// Generates SQL from InitialCreate to AddPhoneNumber
+    // Create foreign key
+    migrationBuilder.CreateIndex(
+        name: "IX_Products_CategoryId",
+        table: "Products",
+        column: "CategoryId");
+}</pre>
+                </div>
+            </div>
+        </section>
 
-// Terminal: Generate for rollback
-dotnet ef migrations script AddPhoneNumber InitialCreate \
-  --output rollback_to_initial.sql
+        <!-- 05: Clean Up Old Migrations -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Clean Up 50 Old Migrations"</h2>
 
-// Generates DOWN() SQL to revert AddPhoneNumber
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The project has accumulated 50 migrations over 2 years. It&rsquo;s hard to manage and slow to replay. Consolidate them into a fresh baseline.
+            </div>
 
-// Usage in CI/CD pipeline
-name: Generate Migration Script
-on:
-  pull_request:
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I would just keep all the scripts. There&rsquo;s nothing to clean up — they&rsquo;re just files. But tracking them all is messy.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Entity Framework lets me squash migrations. I can delete old migration files, combine them into one, and reset the baseline. This keeps history clean and deployment faster. The database sees the same end result.
+                </div>
+            </div>
 
-jobs:
-  script:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v1
+            <div class="code-full">
+                <div class="code-label">Strategy 1: Squash Migrations</div>
+                <div class="code-block csharp-block">
+                    <pre># Remove old migration files from the Migrations folder
+# Keep only the most recent one
 
-      - name: Generate migration script
-        run: |
-          dotnet ef migrations script \
-            --idempotent \
-            --output migrations.sql
+# Generate a new "baseline" migration that represents the current state
+dotnet ef migrations add InitialCreateFresh
 
-      - name: Comment script in PR
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
-            const script = fs.readFileSync('migrations.sql');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '```sql\n' + script + '\n```'
-            });
+# Or, remove and re-scaffold from the current model
+dotnet ef migrations remove
+dotnet ef migrations add InitialCreate</pre>
+                </div>
+            </div>
 
-// This allows reviewers to see SQL changes
-// before approving the PR</code></pre>
-    </div>
-  </div>
+            <div class="code-full">
+                <div class="code-label">Strategy 2: Reset Baseline for Existing Database</div>
+                <div class="code-block ef-block">
+                    <pre>// When database already exists in production
+protected override void Up(MigrationBuilder migrationBuilder)
+{
+    // This migration does nothing — it&rsquo;s a snapshot
+    // The database already has all the old schema
+}
 
-  <div class="key-insight">
-    <strong>Script Generation Enables SQL Review and Auditing</strong>
-    <p>For regulated environments, generating SQL scripts is essential. You can review the exact SQL that will be applied, get DBA approval, and archive it for audit trails. Idempotent scripts are safe for automation: they won't fail if run multiple times.</p>
-  </div>
+protected override void Down(MigrationBuilder migrationBuilder)
+{
+    throw new NotSupportedException(
+        "This baseline migration cannot be rolled back.");
+}</pre>
+                </div>
+            </div>
 
-  <div class="section-text">
-    <p>A deployment best practice: generate the script in your CI/CD pipeline, upload it as an artifact, and include it in deployment documentation. This creates a record of exactly what was deployed and when. If something goes wrong, you have the SQL to investigate and potentially fix manually.</p>
-  </div>
-</div>
+            <div class="code-full">
+                <div class="code-label">Strategy 3: Snapshot + Reset</div>
+                <div class="code-block csharp-block">
+                    <pre># Export all current tables/indexes as a fresh migration
+dotnet ef migrations add ResetBaseline
 
-<div class="key-takeaways">
-  <h3>Key Takeaways</h3>
-  <ul>
-    <li>Migrations are version-controlled, reversible schema changes generated from model modifications</li>
-    <li>Workflow: Change model, add migration, review, update database</li>
-    <li>Each migration maps to SQL DDL: CreateTable→CREATE TABLE, AddColumn→ALTER TABLE ADD, etc.</li>
-    <li>HasData embeds seed data in migrations, tracked and reproducible across databases</li>
-    <li>Every migration has Up() (apply) and Down() (revert) methods for full reversibility</li>
-    <li>Custom SQL via migrationBuilder.Sql() allows data migrations, stored procedures, and complex transformations</li>
-    <li>Production deployments use bundles (self-contained executable) or idempotent scripts (pure SQL with IF NOT EXISTS)</li>
-    <li>Blue-green deployment strategies test migrations on green database before switching production traffic</li>
-  </ul>
-</div>
+# In production, mark as applied without running
+dotnet ef database update --connection "YourConnectionString" --no-build
 
-<div class="chapter-nav">
-  <a href="ch12-dbcontext.html" class="nav-item prev">
-    <div class="nav-label">Previous Chapter</div>
-    <div class="nav-title">DbContext</div>
-  </a>
-  <a href="ch14-loading-strategies.html" class="nav-item next">
-    <div class="nav-label">Next Chapter</div>
-    <div class="nav-title">Loading Strategies</div>
-  </a>
-</div>
+# Going forward, all new migrations start from this baseline</pre>
+                </div>
+            </div>
+        </section>
 
-</div>
+        <!-- 06: Merge Conflicts Between Developers -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Two Developers Changed the Same Model"</h2>
 
-<footer>
-  <div class="wrap">
-    <div class="footer-inner">
-      <p>SQL to C#: A Practical Guide to Entity Framework and Modern Database Patterns</p>
-      <p style="margin-top: 10px; font-size: 12px; color: var(--ink4);">Chapter 13 — Migrations: Schema as Code</p>
-    </div>
-  </div>
-</footer>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Alice added a Phone column in branch A. Bob added an Email2 column in branch B. Both branches create a migration with the same timestamp. Merging causes a conflict.
+            </div>
 
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Two SQL scripts, same namespace? Doesn&rsquo;t apply here. But I&rsquo;d merge them manually and test. Conflicts are a natural part of source control.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Entity Framework migrations are files too — they can have merge conflicts. Both developers generated migrations with similar names. I need to rename one, regenerate the snapshot, and make sure they apply in sequence.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Conflict Resolution Steps</div>
+                <div class="code-block csharp-block">
+                    <pre># Branch A: 20240401_AddPhone.cs
+# Branch B: 20240401_AddEmail2.cs
+
+# After merging, conflicts exist in:
+# - Migrations/20240401_AddPhone.cs
+# - Migrations/20240401_AddEmail2.cs
+# - Migrations/AppDbContextModelSnapshot.cs
+
+# Step 1: Manually resolve the migration file conflicts
+#         (keep both Up() and Down() methods)
+
+# Step 2: Rename one migration to apply after the other
+#         20240401_AddPhone.cs &rarr; 20240401_AddPhoneNumber.cs
+#         20240402_AddEmail2.cs
+
+# Step 3: Regenerate the snapshot to include both changes
+dotnet ef migrations add ResolveConflict
+
+# Step 4: Delete the helper migration (we created it just to sync)
+dotnet ef migrations remove
+
+# Step 5: Apply in order
+dotnet ef database update</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Merged Migration File — Both Changes Combined</div>
+                <div class="code-block ef-block">
+                    <pre>public partial class AddPhoneAndEmail : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        // From Alice&rsquo;s change
+        migrationBuilder.AddColumn&lt;string&gt;(
+            name: "PhoneNumber",
+            table: "Customers",
+            type: "nvarchar(max)",
+            nullable: true);
+
+        // From Bob&rsquo;s change
+        migrationBuilder.AddColumn&lt;string&gt;(
+            name: "Email2",
+            table: "Customers",
+            type: "nvarchar(255)",
+            nullable: true);
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn(
+            name: "PhoneNumber",
+            table: "Customers");
+
+        migrationBuilder.DropColumn(
+            name: "Email2",
+            table: "Customers");
+    }
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Regenerate ModelSnapshot After Merge</div>
+                <div class="code-block csharp-block">
+                    <pre># The snapshot becomes out of sync after merging
+# Regenerate it to match the combined entity model
+dotnet ef migrations script
+
+# Or, create a dummy migration to sync
+dotnet ef migrations add _SyncSnapshot
+dotnet ef migrations remove
+
+# Now the snapshot reflects both Alice&rsquo;s and Bob&rsquo;s changes</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch12-dbcontext.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">DbContext</span>
+            </a>
+            <a class="nav-item" href="ch14-loading-strategies.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Loading Strategies</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

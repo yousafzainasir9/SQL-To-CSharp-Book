@@ -1,1474 +1,710 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 6: WHERE → .Where() — Filtering Data — SQL to C#</title>
-<meta name="description" content="Master WHERE filtering in SQL and LINQ. Learn boolean logic, NULL handling, IN clauses, string matching, and Entity Framework translation.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 06: WHERE &amp; Filtering — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-}
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
 
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-.nav-links a:hover { color: var(--acc); }
-
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-
-.chapter-header h1 {
-  font-size: clamp(32px, 4vw, 42px);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 640px;
-}
-
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-
-.section {
-  margin-bottom: 70px;
-}
-
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.section-num::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-}
-
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  max-width: 750px;
-}
-
-.section-text p {
-  margin-bottom: 14px;
-}
-
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.triple-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.code-block {
-  border-radius: 12px;
-  padding: 24px;
-  overflow-x: auto;
-}
-
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-
-.code-block.csharp,
-.code-block.csharp-method,
-.code-block.csharp-query {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-
-.code-block.csharp .code-label,
-.code-block.csharp-method .code-label,
-.code-block.csharp-query .code-label {
-  color: var(--blue);
-}
-
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.code-block.sql code {
-  color: #e8e4db;
-}
-
-.code-block.csharp code,
-.code-block.csharp-method code,
-.code-block.csharp-query code {
-  color: var(--ink);
-}
-
-.code-single {
-  margin-bottom: 28px;
-}
-
-.code-single .code-block {
-  max-width: 100%;
-}
-
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px;
-  padding-left: 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin: 80px 0;
-}
-
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item.prev {
-  align-items: flex-start;
-}
-
-.nav-item.next {
-  align-items: flex-end;
-}
-
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-
-.footer-inner {
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 14px;
-  color: var(--ink3);
-}
-
-@media (max-width: 1024px) {
-  .triple-comparison {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .code-comparison,
-  .triple-comparison {
-    grid-template-columns: 1fr;
-  }
-
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-
-  .nav-item.next {
-    align-items: flex-start;
-  }
-}
-</style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 06</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-<nav>
-  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
-    <a href="index.html" class="nav-brand">
-      SQL to C#
-      <span class="nav-pill">Ch 06</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">← All Chapters</a></li>
-    </ul>
-  </div>
-</nav>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 06</div>
+            <h1>WHERE &amp; Filtering</h1>
+            <p class="chapter-intro">You get a requirement: "Show only active customers in New York." A SQL developer writes <code>WHERE IsActive = 1 AND City = 'New York'</code>. A C# developer writes <code>.Where(c =&gt; c.IsActive &amp;&amp; c.City == "New York")</code>. Same logic, different syntax.</p>
+        </div>
 
-<div class="wrap">
-  <header class="chapter-header">
-    <div class="chapter-num">Chapter 06</div>
-    <h1>WHERE → .Where() — Filtering Data</h1>
-    <p class="chapter-desc">Master SQL WHERE filtering and LINQ .Where() methods. Learn boolean logic, NULL semantics across SQL and C#, string matching patterns, and the subtle differences in three-valued logic that cause bugs.</p>
-  </header>
+        <!-- 01: Basic WHERE -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Only Active Customers"</h2>
 
-  <div class="in-this-chapter">
-    <h3>In This Chapter</h3>
-    <ul>
-      <li>WHERE fundamentals: boolean predicates and filtering at the database</li>
-      <li>Comparison operators and their behavior across SQL and C#</li>
-      <li>Boolean logic: AND, OR, NOT, and operator precedence</li>
-      <li>IN clause mapping to .Contains()</li>
-      <li>BETWEEN and range comparisons</li>
-      <li>NULL handling: three-valued logic vs two-valued logic</li>
-      <li>LIKE patterns and string matching methods</li>
-      <li>EXISTS and ALL: subquery predicates with .Any() and .All()</li>
-      <li>Dynamic query building with chained .Where() calls</li>
-      <li>Performance implications of filtering strategies</li>
-    </ul>
-  </div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Dashboard shows only active customers. We need to filter out inactive accounts.
+            </div>
 
-  <!-- SECTION 01: Simple Conditions -->
-  <section class="section">
-    <div class="section-num">01</div>
-    <h2>Simple Conditions and Comparison Operators</h2>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I need a WHERE clause. Filter where IsActive equals 1 (true). This runs in the database, so it filters before sending data back.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I need a .Where() method on the query. Filter where c.IsActive is true. LINQ translates this to SQL WHERE for me automatically.
+                </div>
+            </div>
 
-    <p class="section-text">
-      WHERE filtering is the foundation of data retrieval. A WHERE clause contains one or more boolean expressions that evaluate to true or false for each row. Only rows where the expression evaluates to true are included in the result set. LINQ's .Where() method works identically: you provide a predicate (a function returning bool), and only elements satisfying the predicate are retained.
-    </p>
-
-    <p class="section-text">
-      The key principle: filter at the database, not in your application. The database is optimized for filtering millions of rows in parallel. Your C# application is optimized for logic and presentation. Mixing these responsibilities is a common source of performance problems.
-    </p>
-
-    <p class="section-text">
-      All comparison operators map directly:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Comparison Operators</span>
-        <pre><code>SQL    C#     Meaning
-=      ==     Equal to
-!=     !=     Not equal to
-<>     !=     Not equal to (SQL alternative)
-<      <      Less than
->      >      Greater than
-<=     <=     Less than or equal to
->=     >=     Greater than or equal to</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Basic filtering:
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL</span>
-        <pre><code>SELECT *
-FROM Products
-WHERE Price > 100;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var result = products
-  .Where(p => p.Price > 100)
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from p in products
-              where p.Price > 100
-              select p)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Multiple conditions (all must be true):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Multiple Conditions</span>
-        <pre><code>SELECT Id, Name, Price
-FROM Products
-WHERE Price >= 50 AND Price <= 200
-  AND Category = 'Electronics';</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Multiple Conditions</span>
-        <pre><code>var result = context.Products
-  .Where(p => p.Price >= 50
-    && p.Price <= 200
-    && p.Category == "Electronics")
-  .Select(p => new {
-    p.Id,
-    p.Name,
-    p.Price
-  })
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Filter at the Database Level</strong>
-      <p>A critical principle: fetch only the rows you need. Never call .ToList() and then .Where() in C#. This fetches every row from the database and filters in memory—catastrophically inefficient. Always chain .Where() before .ToList() so the filter executes at the database. The database has indexes, query optimization, and parallelization. Your C# code does not.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 02: Boolean Logic -->
-  <section class="section">
-    <div class="section-num">02</div>
-    <h2>AND / OR / NOT Logic and Precedence</h2>
-
-    <p class="section-text">
-      Complex WHERE clauses combine conditions with AND (all must be true), OR (at least one must be true), and NOT (negate the result). Both SQL and C# have the same logical operators (though with different syntax), and both follow the same operator precedence: AND binds tighter than OR. This means AND conditions are evaluated first.
-    </p>
-
-    <p class="section-text">
-      AND logic (all conditions required):
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL AND</span>
-        <pre><code>SELECT *
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT Id, Name, Email
 FROM Customers
-WHERE Country = 'USA'
-  AND Status = 'Active'
-  AND CreatedDate >= '2023-01-01';</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var result = customers
-  .Where(c => c.Country == "USA"
-    && c.Status == "Active"
-    && c.CreatedDate >=
-      new DateTime(2023, 1, 1))
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from c in customers
-              where c.Country == "USA"
-                && c.Status == "Active"
-                && c.CreatedDate >=
-                  new DateTime(2023, 1, 1)
-              select c)
-  .ToList();</code></pre>
-      </div>
-    </div>
+WHERE IsActive = 1;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.IsActive)
+    .Select(c =&gt; new { c.Id, c.Name, c.Email })
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await (
+    from c in db.Customers.AsNoTracking()
+    where c.IsActive
+    select new { c.Id, c.Name, c.Email }
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <p class="section-text">
-      OR logic (at least one condition required):
-    </p>
+        <!-- 02: AND/OR/NOT -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Find Premium Customers in Specific Cities"</h2>
 
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL OR</span>
-        <pre><code>SELECT *
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Marketing needs active customers in New York or Los Angeles with account balance greater than $1000. These are our high-value prospects.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I'll use AND, OR, and NOT. AND binds tighter than OR, so I need parentheses: <code>WHERE IsActive = 1 AND (City = 'NY' OR City = 'LA') AND Balance &gt; 1000</code>.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I'll use &amp;&amp; (AND), || (OR), and ! (NOT). Same precedence rules apply: &amp;&amp; binds tighter than ||, so parentheses matter.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT Id, Name, City, Balance
 FROM Customers
-WHERE Country = 'USA'
-  OR Country = 'Canada'
-  OR Country = 'Mexico';</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# OR (Chained)</span>
-        <pre><code>var result = customers
-  .Where(c => c.Country == "USA"
-    || c.Country == "Canada"
-    || c.Country == "Mexico")
-  .ToList();
+WHERE IsActive = 1
+  AND (City = 'NY' OR City = 'LA')
+  AND Balance &gt; 1000
+ORDER BY Balance DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>var premiumCustomers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.IsActive
+        &amp;&amp; (c.City == "NY" || c.City == "LA")
+        &amp;&amp; c.Balance &gt; 1000)
+    .OrderByDescending(c =&gt; c.Balance)
+    .Select(c =&gt; new { c.Id, c.Name, c.City, c.Balance })
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-// For cleaner OR with lists, use IN pattern:
-var countries = new[] { "USA", "Canada", "Mexico" };
-var result2 = customers
-  .Where(c => countries.Contains(c.Country))
-  .ToList();</code></pre>
-      </div>
-    </div>
+            <div class="code-full">
+                <div class="code-label">C# — LINQ Query Syntax</div>
+                <div class="code-block csharp-block">
+                    <pre>var premiumCustomers = await (
+    from c in db.Customers.AsNoTracking()
+    where c.IsActive
+       &amp;&amp; (c.City == "NY" || c.City == "LA")
+       &amp;&amp; c.Balance &gt; 1000
+    orderby c.Balance descending
+    select new { c.Id, c.Name, c.City, c.Balance }
+).ToListAsync(ct);</pre>
+                </div>
+            </div>
+        </section>
 
-    <p class="section-text">
-      NOT logic and negation:
-    </p>
+        <!-- 03: LIKE / String matching -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Search Products by Name"</h2>
 
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL NOT</span>
-        <pre><code>-- Find products that are NOT food
--- and NOT cheap
-SELECT *
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Search bar that finds products containing user's search text. Users type partial names. Must be fast.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    LIKE '%search%' finds text anywhere. LIKE 'search%' finds text at the start. LIKE '%search' finds text at the end. %search% can be slow without indexes.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Contains() for "anywhere", .StartsWith() for "begins with", .EndsWith() for "ends with". EF translates these to SQL LIKE. For special LIKE patterns, use EF.Functions.Like().
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — LIKE Patterns</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Find "Laptop" anywhere in name
+SELECT Id, Name, Price
 FROM Products
-WHERE NOT (Category = 'Food'
-  AND Price < 10);
+WHERE Name LIKE '%Laptop%';
 
--- Equivalent using De Morgan's Law:
-WHERE Category != 'Food'
-  OR Price >= 10;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# NOT</span>
-        <pre><code>// Direct negation with !
-var result = products
-  .Where(p => !(p.Category == "Food"
-    && p.Price < 10))
-  .ToList();
-
-// Equivalent (De Morgan's Law):
-var result2 = products
-  .Where(p => p.Category != "Food"
-    || p.Price >= 10)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Operator precedence: AND evaluated before OR. Always use parentheses for clarity:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Precedence and Parentheses</span>
-        <pre><code>// This expression:
-var result = customers
-  .Where(c => c.Status == "Active" && c.Country == "USA"
-    || c.Email.Contains("@gmail"))
-  .ToList();
-
-// Is parsed as: (Active AND USA) OR gmail
-// Because && binds tighter than ||
-
-// If you intended: Active AND (USA OR gmail):
-var result2 = customers
-  .Where(c => c.Status == "Active"
-    && (c.Country == "USA" || c.Email.Contains("@gmail")))
-  .ToList();
-
-// ALWAYS use parentheses to remove ambiguity
-// Even when not strictly required by precedence</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Parentheses = Clarity</strong>
-      <p>Explicit parentheses make your intent unmistakable. Someone reading your code (maybe you, six months later) can instantly understand the logic without remembering operator precedence. The performance impact is zero, but the readability impact is enormous.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 03: IN Clause -->
-  <section class="section">
-    <div class="section-num">03</div>
-    <h2>IN Clause → .Contains()</h2>
-
-    <p class="section-text">
-      SQL's IN operator checks whether a value appears in a list. Rather than writing WHERE Status = 'A' OR Status = 'B' OR Status = 'C', you write WHERE Status IN ('A', 'B', 'C'). It's syntactic sugar for multiple OR conditions, but far more readable. LINQ provides .Contains(), which generates the same SQL but with cleaner C# syntax.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL IN</span>
-        <pre><code>SELECT *
-FROM Customers
-WHERE City IN ('London', 'Paris',
-  'Berlin', 'Amsterdam');</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var cities = new[] {
-  "London", "Paris",
-  "Berlin", "Amsterdam"
-};
-
-var result = customers
-  .Where(c => cities.Contains(c.City))
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var cities = new[] {
-  "London", "Paris",
-  "Berlin", "Amsterdam"
-};
-
-var result = (from c in customers
-              where cities.Contains(c.City)
-              select c)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      NOT IN (exclude matches):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL NOT IN</span>
-        <pre><code>SELECT *
-FROM Customers
-WHERE City NOT IN ('London', 'Paris', 'Berlin');</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# NOT IN</span>
-        <pre><code>var excluded = new[] { "London", "Paris", "Berlin" };
-
-var result = customers
-  .Where(c => !excluded.Contains(c.City))
-  .ToList();
-
-// Read as: where city is NOT in the excluded list</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      IN with subqueries (finding orders containing specific products):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL IN with Subquery</span>
-        <pre><code>SELECT *
-FROM Orders o
-WHERE OrderId IN (
-  SELECT OrderId FROM OrderItems
-  WHERE ProductId IN (42, 99, 157)
-);</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# IN with Subquery</span>
-        <pre><code>var productIds = new[] { 42, 99, 157 };
-
-var orderIds = context.OrderItems
-  .Where(oi => productIds.Contains(oi.ProductId))
-  .Select(oi => oi.OrderId)
-  .Distinct()
-  .ToList();
-
-var result = context.Orders
-  .Where(o => orderIds.Contains(o.OrderId))
-  .ToList();
-
-// Or more elegantly with single query:
-var result2 = context.Orders
-  .Where(o => context.OrderItems
-    .Where(oi => productIds.Contains(oi.ProductId))
-    .Select(oi => oi.OrderId)
-    .Contains(o.OrderId))
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>IN Performance: Both Good and Bad</strong>
-      <p>IN with a small list (tens of values) is efficient; the database uses hash matching. IN with millions of values can slow down. For very large lists, consider loading into a temp table in the database. Entity Framework handles reasonable list sizes well. Avoid thousands of values in a single IN clause.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 04: BETWEEN -->
-  <section class="section">
-    <div class="section-num">04</div>
-    <h2>BETWEEN → Range Comparisons</h2>
-
-    <p class="section-text">
-      SQL's BETWEEN operator checks if a value falls within a range, inclusive on both boundaries. LINQ has no direct BETWEEN equivalent; instead, use >= and <= comparisons. The generated SQL is identical, and the semantics are the same. BETWEEN is purely syntactic convenience in SQL; C# is equally expressive using basic comparisons.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL BETWEEN</span>
-        <pre><code>SELECT *
+-- Find products starting with "Dell"
+SELECT Id, Name, Price
 FROM Products
-WHERE Price BETWEEN 50 AND 200;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var result = products
-  .Where(p => p.Price >= 50
-    && p.Price <= 200)
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from p in products
-              where p.Price >= 50
-                && p.Price <= 200
-              select p)
-  .ToList();</code></pre>
-      </div>
-    </div>
+WHERE Name LIKE 'Dell%';
 
-    <p class="section-text">
-      Date ranges (extremely common):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Date BETWEEN</span>
-        <pre><code>SELECT *
-FROM Orders
-WHERE OrderDate BETWEEN '2024-01-01'
-  AND '2024-12-31';</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Date Range</span>
-        <pre><code>var startDate = new DateTime(2024, 1, 1);
-var endDate = new DateTime(2024, 12, 31);
-
-var result = orders
-  .Where(o => o.OrderDate >= startDate
-    && o.OrderDate <= endDate)
-  .ToList();
-
-// Or using DateOnly (modern C#):
-var result2 = orders
-  .Where(o => o.OrderDate.Date >= startDate.Date
-    && o.OrderDate.Date <= endDate.Date)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      NOT BETWEEN (outside a range):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL NOT BETWEEN</span>
-        <pre><code>SELECT *
+-- Find products ending with "Pro"
+SELECT Id, Name, Price
 FROM Products
-WHERE Price NOT BETWEEN 50 AND 200;
+WHERE Name LIKE '%Pro';</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — String Methods</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Anywhere in name (LIKE '%Laptop%')
+var results = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.Name.Contains("Laptop"))
+    .ToListAsync(ct);
 
--- Equivalent to:
-WHERE Price < 50 OR Price > 200;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# NOT BETWEEN</span>
-        <pre><code>// Direct approach (De Morgan's Law):
-var result = products
-  .Where(p => p.Price < 50 || p.Price > 200)
-  .ToList();
+// Starts with "Dell" (LIKE 'Dell%')
+var results = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.Name.StartsWith("Dell"))
+    .ToListAsync(ct);
 
-// Or negate the range:
-var result2 = products
-  .Where(p => !(p.Price >= 50 && p.Price <= 200))
-  .ToList();</code></pre>
-      </div>
-    </div>
+// Ends with "Pro" (LIKE '%Pro')
+var results = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.Name.EndsWith("Pro"))
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-    <div class="key-insight">
-      <strong>BETWEEN Includes Both Boundaries</strong>
-      <p>This is critical: BETWEEN is inclusive on both ends. Price BETWEEN 50 AND 200 includes both 50 and 200. In C#, use >= and <=, never > and <. An off-by-one error here can silently exclude edge cases you didn't notice in testing.</p>
-    </div>
-  </section>
+            <div class="code-full">
+                <div class="code-label">C# — Advanced: EF.Functions.Like() for Case-Insensitive</div>
+                <div class="code-block ef-block">
+                    <pre>using Microsoft.EntityFrameworkCore;
 
-  <!-- SECTION 05: NULL Handling -->
-  <section class="section">
-    <div class="section-num">05</div>
-    <h2>NULL Handling: Three-Valued Logic vs Two-Valued Logic</h2>
+// Case-insensitive search (SQL collation-safe)
+var search = "laptop";
+var results = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; EF.Functions.Like(p.Name, $"%{search}%"))
+    .ToListAsync(ct);</pre>
+                </div>
+            </div>
 
-    <p class="section-text">
-      This is one of the most important sections: NULL semantics differ fundamentally between SQL and C#, and this difference causes subtle bugs that are maddening to debug. Understanding this is essential for writing correct queries.
-    </p>
+            <div class="code-full">
+                <div class="code-label">Dapper — Raw SQL with LIKE</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(connectionString);
+var search = "laptop";
+var results = await conn.QueryAsync&lt;ProductDto&gt;(
+    @"SELECT Id, Name, Price
+      FROM Products
+      WHERE Name LIKE @Pattern",
+    new { Pattern = $"%{search}%" },
+    commandTimeout: 30);</pre>
+                </div>
+            </div>
+        </section>
 
-    <p class="section-text">
-      SQL uses three-valued logic: true, false, and unknown. When you compare any value to NULL, the result is unknown—not false. C# uses two-valued logic: true or false. NULL in C# is a reference (object is null) or a nullable type value (int? is null). This difference means the same comparison can behave differently in SQL versus C#.
-    </p>
+        <!-- 04: NULL handling -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Handle Missing Data"</h2>
 
-    <p class="section-text">
-      The infamous NULL = NULL problem:
-    </p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Some customers don't have a phone number on file. Find customers with missing phone numbers AND find customers who DO have a phone number.
+            </div>
 
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL NULL Comparisons</span>
-        <pre><code>-- This returns 0 rows
-SELECT * FROM Customers WHERE Phone = NULL;
--- Because NULL = NULL evaluates to unknown,
--- not true. Unknown rows are filtered out.
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    NULL is not a value—it's the absence of a value. I can't use <code>WHERE Phone = NULL</code> (always false). I must use <code>IS NULL</code> or <code>IS NOT NULL</code>.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I can use <code>.Where(c =&gt; c.Phone == null)</code>. EF translates this to SQL <code>IS NULL</code> automatically. For combining null checks, I can use the <code>??</code> operator or nested conditions.
+                </div>
+            </div>
 
--- Correct way to find NULL values:
-SELECT * FROM Customers WHERE Phone IS NULL;
-
--- And to exclude NULLs:
-SELECT * FROM Customers WHERE Phone IS NOT NULL;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# NULL Comparisons</span>
-        <pre><code>// C# == null checks for null correctly
-var result = customers
-  .Where(c => c.Phone == null)
-  .ToList();
-
-var result2 = customers
-  .Where(c => c.Phone != null)
-  .ToList();
-
-// EF translates these to IS NULL / IS NOT NULL
-// But complex logic with NULL is still tricky</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Why this matters: complex boolean logic with NULLs behaves counterintuitively in SQL:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Three-Valued Logic Problem</span>
-        <pre><code>-- This finds customers with specific phone
--- or no phone at all
-SELECT * FROM Customers
-WHERE Phone = '555-1234' OR Phone IS NULL;
-
--- Now, what does this return?
-SELECT * FROM Customers
-WHERE NOT (Phone = '555-1234');
-
--- WRONG EXPECTATION: All except 555-1234
--- REALITY: Only non-NULL values that aren't 555-1234
--- NULL rows are excluded!
--- Because NOT unknown = unknown (filtered out)
-
--- To include NULLs:
-WHERE Phone != '555-1234' OR Phone IS NULL;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Two-Valued Logic</span>
-        <pre><code>// C# logic is simpler: null is null or not
-var result = customers
-  .Where(c => c.Phone == "555-1234" || c.Phone == null)
-  .ToList();
-
-// NOT works as you'd expect:
-var result2 = customers
-  .Where(c => c.Phone != "555-1234")
-  .ToList();
-
-// But EF translates C# to SQL with its
-// three-valued semantics, so edge cases
-// with NULL can still surprise you</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Using COALESCE and ?? to handle NULL safely:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL COALESCE</span>
-        <pre><code>-- Convert NULL to a known value
-SELECT *
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — IS NULL / IS NOT NULL</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Find customers with no phone
+SELECT Id, Name, Phone
 FROM Customers
--- Treat NULL phone as "Unknown"
-WHERE COALESCE(Phone, 'Unknown') = '555-1234'
-  OR COALESCE(Phone, 'Unknown') = 'Unknown';
+WHERE Phone IS NULL;
 
--- ISNULL (SQL Server):
-WHERE ISNULL(Phone, 'Unknown') != '';</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Null Coalescing (??)</span>
-        <pre><code>// Use ?? to provide defaults
-var result = customers
-  .Where(c => (c.Phone ?? "Unknown") == "555-1234"
-    || (c.Phone ?? "Unknown") == "Unknown")
-  .ToList();
+-- Find customers WITH a phone
+SELECT Id, Name, Phone
+FROM Customers
+WHERE Phone IS NOT NULL;
 
-// EF translates ?? to COALESCE in SQL
-// This makes NULL behavior predictable</code></pre>
-      </div>
-    </div>
+-- Customers without email OR phone
+SELECT Id, Name
+FROM Customers
+WHERE Email IS NULL OR Phone IS NULL;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — == null / != null</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Find customers with no phone
+var customers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Phone == null)
+    .Select(c =&gt; new { c.Id, c.Name, c.Phone })
+    .ToListAsync(ct);
 
-    <div class="key-insight">
-      <strong>Always Test NULL Cases Explicitly</strong>
-      <p>Three-valued logic is counterintuitive. If your WHERE clause uses NOT or complex boolean combinations with nullable columns, write specific tests with NULL values. Use .ToQueryString() to verify the generated SQL. When uncertain, use COALESCE (SQL) or ?? (C#) to convert NULL to a known value first, eliminating three-valued logic.</p>
-    </div>
-  </section>
+// Find customers WITH a phone
+var customers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Phone != null)
+    .Select(c =&gt; new { c.Id, c.Name, c.Phone })
+    .ToListAsync(ct);
 
-  <!-- SECTION 06: LIKE and String Matching -->
-  <section class="section">
-    <div class="section-num">06</div>
-    <h2>LIKE Patterns → String Methods</h2>
+// No email OR no phone
+var customers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Email == null || c.Phone == null)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-    <p class="section-text">
-      SQL's LIKE operator matches string patterns using wildcard characters. LINQ has no LIKE operator; instead, use string methods (.Contains(), .StartsWith(), .EndsWith()). Entity Framework translates these to LIKE patterns in the generated SQL, making them equivalent. For complex patterns not easily expressed with these methods, use EF.Functions.Like() for direct control.
-    </p>
+            <div class="code-full">
+                <div class="code-label">C# — Using COALESCE vs ?? Operator</div>
+                <div class="code-block ef-block">
+                    <pre>using Microsoft.EntityFrameworkCore;
 
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL LIKE</span>
-        <pre><code>-- Contains 'smith'
-SELECT * FROM Customers
-WHERE Name LIKE '%smith%';
-
--- Starts with 'John'
-SELECT * FROM Customers
-WHERE Name LIKE 'John%';
-
--- Ends with 'son'
-SELECT * FROM Customers
-WHERE Name LIKE '%son';</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>// Contains 'smith'
-var r1 = customers
-  .Where(c => c.Name.Contains("smith"))
-  .ToList();
-
-// Starts with 'John'
-var r2 = customers
-  .Where(c => c.Name.StartsWith("John"))
-  .ToList();
-
-// Ends with 'son'
-var r3 = customers
-  .Where(c => c.Name.EndsWith("son"))
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>// Contains
-var r1 = (from c in customers
-          where c.Name.Contains("smith")
-          select c).ToList();
-
-// Starts with
-var r2 = (from c in customers
-          where c.Name.StartsWith("John")
-          select c).ToList();
-
-// Ends with
-var r3 = (from c in customers
-          where c.Name.EndsWith("son")
-          select c).ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Case sensitivity varies by database:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Case Sensitivity</span>
-        <pre><code>-- SQL Server: case-insensitive by default
-SELECT * FROM Customers WHERE Name LIKE 'john%';
--- Matches 'John', 'john', 'JOHN'
-
--- PostgreSQL: case-sensitive by default
-SELECT * FROM Customers WHERE Name LIKE 'john%';
--- Only matches exact case 'john'
-
--- PostgreSQL case-insensitive:
-SELECT * FROM Customers WHERE Name ILIKE 'john%';</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Case Handling</span>
-        <pre><code>// C# methods are case-sensitive
-var result = customers
-  .Where(c => c.Name.StartsWith("John"))
-  .ToList();
-
-// For case-insensitive, use StringComparison
-var result2 = customers
-  .Where(c => c.Name.StartsWith("john",
-    StringComparison.OrdinalIgnoreCase))
-  .ToList();
-
-// EF translates to COLLATE or UPPER/LOWER
-// depending on the database</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Complex patterns with EF.Functions.Like():
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Complex Patterns with EF.Functions</span>
-        <pre><code>using Microsoft.EntityFrameworkCore;
-
-// Pattern: contains 'a' then 'b'
-var result = context.Customers
-  .Where(c => EF.Functions.Like(c.Name, "%a%b%"))
-  .ToList();
-
-// Pattern: starts with 'J', ends with 'n'
-var result2 = context.Customers
-  .Where(c => EF.Functions.Like(c.Name, "J%n"))
-  .ToList();
-
-// Escape special characters if needed:
-var result3 = context.Customers
-  .Where(c => EF.Functions.Like(c.Name, "%@%%", "@"))
-  // This finds names containing literal @ or %
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Index Usage and Performance</strong>
-      <p>LIKE patterns beginning with % (like %smith) cannot use an index on the column. The database must perform a full table scan. Patterns without leading % (like smith%) can use an index efficiently. For full-text search on large text columns, use full-text indexes instead of LIKE. Use LIKE only for short strings or when you can start the pattern without a wildcard.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 07: EXISTS and ALL -->
-  <section class="section">
-    <div class="section-num">07</div>
-    <h2>EXISTS → .Any() and ALL → .All()</h2>
-
-    <p class="section-text">
-      SQL's EXISTS checks if a subquery returns any rows. ALL checks if a condition is true for all rows returned by a subquery. LINQ provides .Any() and .All() methods on sequences, making these operations cleaner and more intuitive in C# than in SQL. Both are powerful for filtering based on related data without needing to fetch and compare explicitly.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL EXISTS</span>
-        <pre><code>SELECT *
-FROM Customers c
-WHERE EXISTS (
-  SELECT 1 FROM Orders o
-  WHERE o.CustomerId = c.Id
-);</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var result = customers
-  .Where(c => c.Orders.Any())
-  .ToList();
-
-// Read: "customers that have at least one order"</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from c in customers
-              where c.Orders.Any()
-              select c)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      EXISTS with conditions (customers with recent orders):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL EXISTS with Condition</span>
-        <pre><code>SELECT *
-FROM Customers c
-WHERE EXISTS (
-  SELECT 1 FROM Orders o
-  WHERE o.CustomerId = c.Id
-    AND o.OrderDate >= '2024-01-01'
-);</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# .Any() with Predicate</span>
-        <pre><code>var result = customers
-  .Where(c => c.Orders.Any(o =>
-    o.OrderDate >= new DateTime(2024, 1, 1)))
-  .ToList();
-
-// Read: "customers with at least one recent order"</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      NOT EXISTS (finding records with no related data):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL NOT EXISTS</span>
-        <pre><code>SELECT *
-FROM Customers c
-WHERE NOT EXISTS (
-  SELECT 1 FROM Orders o
-  WHERE o.CustomerId = c.Id
-);</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# !.Any()</span>
-        <pre><code>var result = customers
-  .Where(c => !c.Orders.Any())
-  .ToList();
-
-// Read: "customers with no orders"</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      ALL (verify condition on all related rows):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL ALL</span>
-        <pre><code>-- Find customers where ALL orders exceed $100
-SELECT *
-FROM Customers c
-WHERE 100 < ALL (
-  SELECT Total FROM Orders o
-  WHERE o.CustomerId = c.Id
-);</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# .All()</span>
-        <pre><code>var result = customers
-  .Where(c => c.Orders.All(o => o.Total > 100))
-  .ToList();
-
-// Read: "customers where every order exceeds $100"</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>.Any() vs .All(): Know the Difference</strong>
-      <p>.Any() can short-circuit: the database returns as soon as one matching row is found. .All() must check every related row. On navigation properties, EF generates SQL EXISTS for .Any() and NOT EXISTS for the negation. Use .Any() to check if a relation exists; use .All() to verify all related items satisfy a condition. Performance-wise, .Any() is faster when the collection is large.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 08: Dynamic Filtering -->
-  <section class="section">
-    <div class="section-num">08</div>
-    <h2>Dynamic Query Building with Chained .Where()</h2>
-
-    <p class="section-text">
-      A powerful LINQ feature is building queries dynamically by chaining multiple .Where() calls. Each .Where() applies an AND condition. This is essential for search forms where users select different filter criteria, applying only the filters they choose. The beauty is that LINQ doesn't execute the query until .ToList(), so all conditions are compiled into a single database round-trip.
-    </p>
-
-    <p class="section-text">
-      Building queries incrementally:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Chained .Where() for Dynamic Filters</span>
-        <pre><code>// Start with base query (IQueryable, not executed yet)
-IQueryable<Product> query = context.Products;
-
-// Apply filters conditionally based on user input
-if (!string.IsNullOrEmpty(searchTerm))
-{
-  query = query.Where(p => p.Name.Contains(searchTerm));
-}
-
-if (minPrice.HasValue)
-{
-  query = query.Where(p => p.Price >= minPrice);
-}
-
-if (maxPrice.HasValue)
-{
-  query = query.Where(p => p.Price <= maxPrice);
-}
-
-if (!string.IsNullOrEmpty(category))
-{
-  query = query.Where(p => p.Category == category);
-}
-
-// Execute query ONCE, after all conditions are set
-var result = query.ToList();
-
-// Generated SQL includes all WHERE clauses
-// combined with AND operators, exactly as if
-// you'd written them in a single WHERE clause</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Real-world example: customer search form:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Real-World: Search Form Implementation</span>
-        <pre><code>public class CustomerSearchRequest
-{
-  public string Name { get; set; }
-  public string Country { get; set; }
-  public decimal? MinSpent { get; set; }
-  public decimal? MaxSpent { get; set; }
-}
-
-public List<CustomerDto> SearchCustomers(
-  CustomerSearchRequest request)
-{
-  // Start with base query
-  var query = context.Customers.AsQueryable();
-
-  // Apply name filter (searches name AND email)
-  if (!string.IsNullOrWhiteSpace(request.Name))
-  {
-    query = query.Where(c =>
-      c.Name.Contains(request.Name)
-      || c.Email.Contains(request.Name));
-  }
-
-  // Apply country filter
-  if (!string.IsNullOrWhiteSpace(request.Country))
-  {
-    query = query.Where(c => c.Country == request.Country);
-  }
-
-  // Apply spending filters
-  if (request.MinSpent.HasValue)
-  {
-    query = query.Where(c =>
-      c.Orders.Sum(o => o.Total ?? 0)
-        >= request.MinSpent);
-  }
-
-  if (request.MaxSpent.HasValue)
-  {
-    query = query.Where(c =>
-      c.Orders.Sum(o => o.Total ?? 0)
-        <= request.MaxSpent);
-  }
-
-  // Project and execute
-  return query
-    .Select(c => new CustomerDto {
-      Id = c.Id,
-      Name = c.Name,
-      Country = c.Country,
-      TotalSpent = c.Orders.Sum(o => o.Total ?? 0)
+// SQL COALESCE — use EF.Functions
+// Get phone or email, prefer phone
+var contacts = await db.Customers
+    .AsNoTracking()
+    .Select(c =&gt; new {
+        c.Id,
+        c.Name,
+        PreferredContact = EF.Functions.Coalesce(c.Phone, c.Email)
     })
-    .OrderBy(c => c.Name)
-    .ToList();
-}</code></pre>
-      </div>
-    </div>
+    .ToListAsync(ct);
 
-    <p class="section-text">
-      For OR logic across multiple fields, build more carefully:
-    </p>
+// Client-side: use ?? operator (after data loads)
+var custList = await db.Customers.AsNoTracking().ToListAsync(ct);
+var contacts = custList.Select(c =&gt; new {
+    c.Id,
+    c.Name,
+    PreferredContact = c.Phone ?? c.Email ?? "No contact"
+}).ToList();</pre>
+                </div>
+            </div>
+        </section>
 
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Dynamic OR Logic</span>
-        <pre><code>// Building OR conditions dynamically requires
-// Expression composition or predicate builder
-var statusList = new List<string> { "Active", "Pending" };
+        <!-- 05: IN / Contains -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Filter by Multiple Categories"</h2>
 
-// Simple: chain the OR inside a single Where
-var result = context.Orders
-  .Where(o =>
-    (o.Status == "Active" || o.Status == "Pending")
-    && o.OrderDate >= startDate)
-  .ToList();
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Show products in Electronics, Books, or Clothing categories. Must be efficient—SQL IN clause is perfect for this.
+            </div>
 
-// For complex dynamic OR, consider using
-// System.Linq.Dynamic.Core library:
-// var dynamicQuery = orders.AsQueryable()
-//   .Where("Status == @0 || Status == @1", "Active", "Pending")
-//   .ToList();
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    <code>WHERE CategoryId IN (1, 2, 3)</code> is efficient. The database checks if the value matches any item in the list quickly using an index.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I'll use <code>.Where(p =&gt; ids.Contains(p.CategoryId))</code>. EF is smart: it generates <code>IN</code> in SQL, not multiple ORs.
+                </div>
+            </div>
 
-// Or build predicates manually using Expression trees
-// But this is complex; keep filters simple when possible</code></pre>
-      </div>
-    </div>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — IN Clause</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Show products in 3 categories
+SELECT Id, Name, CategoryId, Price
+FROM Products
+WHERE CategoryId IN (1, 2, 3)
+ORDER BY Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — .Contains()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var categoryIds = new[] { 1, 2, 3 };
+var products = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; categoryIds.Contains(p.CategoryId))
+    .OrderBy(p =&gt; p.Name)
+    .Select(p =&gt; new { p.Id, p.Name, p.CategoryId, p.Price })
+    .ToListAsync(ct);
 
-    <div class="key-insight">
-      <strong>Chained .Where() = Multiple AND Conditions</strong>
-      <p>Each .Where() adds an AND condition. This is perfect for search filters where users select multiple criteria independently. Keep queries as IQueryable (don't call .ToList()) until ready to execute. Entity Framework compiles all chained operations into a single SQL WHERE clause before hitting the database, so performance is equivalent to writing everything in one WHERE.</p>
-    </div>
-  </section>
+// Also works with List&lt;T&gt;
+var cats = new List&lt;int&gt; { 1, 2, 3 };
+var products = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; cats.Contains(p.CategoryId))
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-  <!-- KEY TAKEAWAYS -->
-  <div class="key-takeaways">
-    <h3>Key Takeaways</h3>
-    <ul>
-      <li>WHERE filtering must happen at the database level using .Where() before .ToList(). Fetching all rows and filtering in C# is catastrophically inefficient.</li>
-      <li>Comparison operators map directly: = to ==, <> to !=, < and >, <= and >=. All six operators work identically across SQL and C#.</li>
-      <li>Boolean logic uses AND (&&), OR (||), and NOT (!). AND binds tighter than OR. Always use parentheses to make logic explicit, even when precedence would be clear.</li>
-      <li>IN clause translates to .Contains() in C#. Both are syntactic sugar for multiple OR conditions but far more readable and performant.</li>
-      <li>BETWEEN has no direct LINQ equivalent; use >= and <= instead. Remember: BETWEEN is inclusive on both boundaries—a common source of off-by-one errors.</li>
-      <li>NULL semantics differ critically: SQL uses three-valued logic (true/false/unknown), C# uses two-valued. Use IS NULL / IS NOT NULL in SQL, == null / != null in C#. For complex logic, use COALESCE (??) to convert NULL to known values.</li>
-      <li>LIKE patterns map to .Contains(), .StartsWith(), .EndsWith(). Patterns without leading % can use indexes; leading % wildcards cannot. Use EF.Functions.Like() for complex patterns.</li>
-      <li>EXISTS becomes .Any(), ALL becomes .All(). Both are powerful for filtering on related data. Use .Any() to check existence (can short-circuit); use .All() to verify a condition on all related items.</li>
-      <li>Chain multiple .Where() calls to build dynamic queries. Each adds an AND condition. Keep as IQueryable until .ToList() so EF compiles everything into one SQL statement.</li>
-      <li>Always verify generated SQL with .ToQueryString() to ensure filters translate correctly and efficiently. Never assume—verify your expectations.</li>
-    </ul>
-  </div>
+            <div class="code-full">
+                <div class="code-label">Dapper — IN with Parameters</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(connectionString);
+var categoryIds = new[] { 1, 2, 3 };
+var products = await conn.QueryAsync&lt;ProductDto&gt;(
+    @"SELECT Id, Name, CategoryId, Price
+      FROM Products
+      WHERE CategoryId IN @CatIds
+      ORDER BY Name",
+    new { CatIds = categoryIds.AsEnumerable() });</pre>
+                </div>
+            </div>
+        </section>
 
-  <!-- CHAPTER NAV -->
-  <div class="chapter-nav">
-    <a href="ch05-select-projections.html" class="nav-item prev">
-      <span class="nav-label">Previous Chapter</span>
-      <span class="nav-title">SELECT → .Select() — Projections</span>
-    </a>
-    <a href="ch07-groupby-aggregation.html" class="nav-item next">
-      <span class="nav-label">Next Chapter</span>
-      <span class="nav-title">GROUP BY → .GroupBy() — Aggregation</span>
-    </a>
-  </div>
-</div>
+        <!-- 06: Subquery filters / Any/All -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Find Customers with High-Value Orders"</h2>
 
-<footer>
-  <div class="wrap">
-    <p class="footer-inner">SQL to C#: A practical guide to translating database logic into modern C# LINQ patterns.</p>
-  </div>
-</footer>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Find customers who have placed at least one order over $500. This requires checking related data—orders.
+            </div>
 
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I need a subquery with EXISTS or IN: <code>WHERE EXISTS (SELECT 1 FROM Orders WHERE CustomerId = c.Id AND Total &gt; 500)</code>. This checks if ANY order is over $500.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I'll use .Any() on the navigation property: <code>.Where(c =&gt; c.Orders.Any(o =&gt; o.Total &gt; 500))</code>. EF converts this to an EXISTS subquery automatically.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — EXISTS</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT Id, Name, Email
+FROM Customers c
+WHERE EXISTS (
+    SELECT 1
+    FROM Orders o
+    WHERE o.CustomerId = c.Id
+      AND o.Total &gt; 500
+)
+ORDER BY Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — .Any()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var bigSpenders = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Orders
+        .Any(o =&gt; o.Total &gt; 500))
+    .OrderBy(c =&gt; c.Name)
+    .Select(c =&gt; new { c.Id, c.Name, c.Email })
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — .All() for "Every Order Must Meet Condition"</div>
+                <div class="code-block ef-block">
+                    <pre>// Find customers where ALL orders are over $50 (high-value customers)
+var allHighValue = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Orders.Count &gt; 0
+        &amp;&amp; c.Orders.All(o =&gt; o.Total &gt; 50))
+    .ToListAsync(ct);
+
+// Find customers where NO orders are cancelled
+var activeCustomers = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; !c.Orders.Any(o =&gt; o.Status == "Cancelled"))
+    .ToListAsync(ct);</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">SQL — Alternative: IN with Subquery</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT Id, Name, Email
+FROM Customers
+WHERE Id IN (
+    SELECT DISTINCT CustomerId
+    FROM Orders
+    WHERE Total &gt; 500
+)
+ORDER BY Name;</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 07: Index awareness -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">07</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Make Filters Faster"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Which WHERE patterns are index-friendly vs which force table scans? Some filters kill performance.
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>WHERE Pattern</th>
+                        <th>Index-Friendly?</th>
+                        <th>Why?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>WHERE City = 'NY'</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>Direct equality on indexed column is fast</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE Price &gt; 100</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>Range queries use index seek</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE Name LIKE 'A%'</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>Prefix match can use index (start-bound)</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE Name LIKE '%ABC%'</code></td>
+                        <td><strong>No</strong></td>
+                        <td>Wildcard on both sides forces scan</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE YEAR(CreatedAt) = 2024</code></td>
+                        <td><strong>No</strong></td>
+                        <td>Function on column prevents index use</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE CreatedAt &gt;= '2024-01-01'</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>No function—index works</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE Name = @name COLLATE Latin1_General_CS_AS</code></td>
+                        <td><strong>Maybe</strong></td>
+                        <td>Collation can prevent index if mismatched</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE Price * 2 &gt; 1000</code></td>
+                        <td><strong>No</strong></td>
+                        <td>Expression on column prevents index</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE CategoryId IN (1, 2, 3)</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>IN is optimized; translates to multiple seeks</td>
+                    </tr>
+                    <tr>
+                        <td><code>WHERE IsActive = 1 AND City = 'NY'</code></td>
+                        <td><strong>Yes</strong></td>
+                        <td>Composite index on (IsActive, City)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="code-full">
+                <div class="code-label">Best Practices: How to Keep Filters Fast</div>
+                <div class="code-block ef-block">
+                    <pre>// FAST: Direct column comparison
+var active = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.IsActive &amp;&amp; c.City == "NY")
+    .ToListAsync(ct);
+
+// SLOW: Function on column
+var active = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.Name.ToUpper() == "JOHN")
+    .ToListAsync(ct);
+
+// FAST: Date range (no function)
+var recent = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; c.CreatedAt &gt;= new DateTime(2024, 1, 1))
+    .ToListAsync(ct);
+
+// SLOW: Function on date column
+var recent = await db.Customers
+    .AsNoTracking()
+    .Where(c =&gt; EF.Functions.DateDiffDay(c.CreatedAt, DateTime.Now) &lt; 30)
+    .ToListAsync(ct);
+
+// FAST: LIKE with prefix
+var search = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.Name.StartsWith("Dell"))
+    .ToListAsync(ct);
+
+// SLOW: LIKE with both wildcards
+var search = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.Name.Contains("laptop"))
+    .ToListAsync(ct);
+
+// BETTER: Full-text search for complex patterns
+var search = await db.Products
+    .AsNoTracking()
+    .FromSqlInterpolated(
+        $@"SELECT * FROM Products
+           WHERE CONTAINS(Name, {searchTerm})")
+    .ToListAsync(ct);</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch05-select-projections.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">SELECT &amp; Projections</span>
+            </a>
+            <a class="nav-item" href="ch07-groupby-aggregation.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">GROUP BY &amp; Aggregation</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

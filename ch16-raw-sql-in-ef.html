@@ -1,1931 +1,562 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chapter 16: Raw SQL in EF Core — When ORM Isn't Enough | SQL to C#</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 16: Raw SQL in EF — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-    :root {
-      --bg: #f8f7f3;
-      --bg2: #f0ede6;
-      --bg3: #e8e4db;
-      --white: #fff;
-      --ink: #1c1a17;
-      --ink2: #3d3a34;
-      --ink3: #6b6760;
-      --ink4: #a8a49e;
-      --rule: #dedad3;
-      --acc: #c96b1e;
-      --acc-l: #fdf3eb;
-      --acc-b: #f5c99a;
-      --green: #1d6b45;
-      --green-l: #edf8f2;
-      --green-b: #9fd9bc;
-      --blue: #1a4f8a;
-      --blue-l: #edf2fb;
-      --blue-b: #afc8ef;
-      --amber: #7a5200;
-      --amber-l: #fdf8ec;
-      --amber-b: #e8d08a;
-    }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-    html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-    body {
-      font-family: 'Source Serif 4', serif;
-      background-color: var(--bg);
-      color: var(--ink);
-      line-height: 1.7;
-    }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-    /* Navigation */
-    nav {
-      position: sticky;
-      top: 0;
-      height: 54px;
-      background-color: var(--white);
-      border-bottom: 1px solid var(--rule);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .nav-brand {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--acc);
-    }
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-    .nav-chapter {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background-color: var(--acc-l);
-      color: var(--acc);
-      padding: 0.4rem 1rem;
-      border-radius: 20px;
-      text-decoration: none;
-    }
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-    /* Main container */
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
 
-    /* Header */
-    header {
-      margin-bottom: 3rem;
-    }
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      color: var(--ink);
-    }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-    .chapter-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      color: var(--acc);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-    }
-
-    .chapter-subtitle {
-      font-family: 'Source Serif 4', serif;
-      font-size: 1.1rem;
-      color: var(--ink3);
-      font-weight: 300;
-      margin-bottom: 2rem;
-    }
-
-    /* In This Chapter */
-    .in-this-chapter {
-      background-color: var(--blue-l);
-      border-left: 4px solid var(--blue);
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-      border-radius: 4px;
-    }
-
-    .in-this-chapter h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--blue);
-      margin-bottom: 1rem;
-    }
-
-    .in-this-chapter ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .in-this-chapter li {
-      margin-bottom: 0.6rem;
-      font-size: 0.95rem;
-      color: var(--ink2);
-      padding-left: 1.5rem;
-      position: relative;
-    }
-
-    .in-this-chapter li:before {
-      content: "▸";
-      position: absolute;
-      left: 0;
-      color: var(--blue);
-    }
-
-    /* Section styling */
-    .section {
-      margin-bottom: 3rem;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .section-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: var(--acc);
-      line-height: 1;
-      min-width: 3rem;
-    }
-
-    .section-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    /* Prose */
-    .prose {
-      margin-bottom: 1.5rem;
-      color: var(--ink2);
-      line-height: 1.8;
-    }
-
-    .prose p {
-      margin-bottom: 1rem;
-    }
-
-    .prose strong {
-      color: var(--ink);
-      font-weight: 600;
-    }
-
-    .prose em {
-      color: var(--ink3);
-      font-style: italic;
-    }
-
-    /* Code comparison */
-    .comparison {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .comparison-block {
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .comparison-label {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.75rem 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .sql-block {
-      background-color: var(--ink);
-    }
-
-    .sql-block .comparison-label {
-      background-color: var(--ink2);
-      color: var(--white);
-    }
-
-    .csharp-block {
-      background-color: var(--blue-l);
-    }
-
-    .csharp-block .comparison-label {
-      background-color: var(--blue);
-      color: var(--white);
-    }
-
-    .code-content {
-      background-color: var(--ink);
-      color: #e8e8e8;
-      padding: 1.25rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      overflow-x: auto;
-      min-height: 120px;
-      display: flex;
-      align-items: flex-start;
-    }
-
-    .csharp-block .code-content {
-      background-color: var(--white);
-      color: var(--ink);
-      border: 1px solid var(--blue-b);
-    }
-
-    /* Syntax highlighting */
-    .kw { color: #569cd6; }
-    .str { color: #ce9178; }
-    .comment { color: #6a9955; }
-    .type { color: #4ec9b0; }
-    .attr { color: #9cdcfe; }
-    .num { color: #b5cea8; }
-
-    .csharp-block .kw { color: var(--blue); }
-    .csharp-block .str { color: #a85e2a; }
-    .csharp-block .comment { color: #555; }
-    .csharp-block .type { color: #0066cc; }
-
-    /* Insight box */
-    .insight {
-      background-color: var(--acc-l);
-      border-left: 4px solid var(--acc);
-      padding: 1.5rem;
-      margin: 2rem 0;
-      border-radius: 4px;
-    }
-
-    .insight-title {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--acc);
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-    }
-
-    .insight-text {
-      color: var(--ink2);
-      font-size: 0.95rem;
-      line-height: 1.7;
-    }
-
-    .insight-text strong {
-      color: var(--ink);
-    }
-
-    /* Key Takeaways */
-    .key-takeaways {
-      background-color: var(--green-l);
-      border-left: 4px solid var(--green);
-      padding: 2rem;
-      margin: 3rem 0;
-      border-radius: 4px;
-    }
-
-    .key-takeaways h3 {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--green);
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
-    }
-
-    .key-takeaways ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .key-takeaways li {
-      margin-bottom: 0.8rem;
-      padding-left: 1.5rem;
-      position: relative;
-      color: var(--ink2);
-      line-height: 1.7;
-    }
-
-    .key-takeaways li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: var(--green);
-      font-weight: 600;
-    }
-
-    /* Navigation buttons */
-    .nav-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    .nav-button {
-      font-family: 'Outfit', sans-serif;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.2s;
-      border: 1px solid var(--rule);
-      color: var(--ink);
-    }
-
-    .nav-button:hover {
-      background-color: var(--bg2);
-      border-color: var(--ink3);
-    }
-
-    .nav-button.prev { text-align: left; }
-    .nav-button.next { text-align: right; }
-
-    /* Footer */
-    footer {
-      background-color: var(--bg2);
-      padding: 2rem;
-      margin-top: 4rem;
-      text-align: center;
-      color: var(--ink3);
-      font-size: 0.9rem;
-      border-top: 1px solid var(--rule);
-    }
-
-    footer a {
-      color: var(--acc);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      main { padding: 1.5rem 1rem; }
-      h1 { font-size: 1.8rem; }
-      .comparison { grid-template-columns: 1fr; }
-      nav { padding: 0 1rem; }
-      .section-title { font-size: 1.2rem; }
-    }
-  </style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-brand">SQL to C#</div>
-    <a href="#" class="nav-chapter">Chapter 16</a>
-  </nav>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 16</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
 
-  <main>
-    <header>
-      <div class="chapter-number">Part 3 · Chapter 16</div>
-      <h1>Raw SQL in EF Core — When ORM Isn't Enough</h1>
-      <p class="chapter-subtitle">Entity Framework is powerful, but not every query can be expressed in LINQ. Learn FromSqlRaw, FromSqlInterpolated, ExecuteSqlRaw, and when to mix raw SQL with EF's automatic tracking and included relationships.</p>
-    </header>
-
-    <div class="in-this-chapter">
-      <h3>In This Chapter</h3>
-      <ul>
-        <li>FromSqlRaw() and FromSqlInterpolated() for querying with SQL while still using IQueryable</li>
-        <li>Safe parameterization with FromSqlInterpolated vs vulnerable string concatenation</li>
-        <li>ExecuteSqlRaw() for non-query commands: bulk updates, DDL, stored procedures</li>
-        <li>Mixing raw SQL with LINQ: Include(), Where(), and composition</li>
-        <li>Database views and table-valued functions in EF models</li>
-        <li>Decision framework: when to use LINQ vs raw SQL vs stored procedures</li>
-      </ul>
-    </div>
-
-    <!-- Section 01 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">01</div>
-        <h2 class="section-title">FromSqlRaw — Querying with SQL</h2>
-      </div>
-
-      <div class="prose">
-        <p><span style="font-family: JetBrains Mono;">FromSqlRaw()</span> lets you execute a SQL SELECT statement, but the result is still an <span style="font-family: JetBrains Mono;">IQueryable&lt;T&gt;</span>. This means you can chain LINQ operators on top: <span style="font-family: JetBrains Mono;">.Where()</span>, <span style="font-family: JetBrains Mono;">.OrderBy()</span>, <span style="font-family: JetBrains Mono;">.Include()</span>, etc.</p>
-
-        <p>This is perfect for complex queries that are easier to write in SQL than LINQ.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">FromSqlRaw with Parameterization</div>
-          <div class="code-content">
-<span class="comment">// Basic raw SQL query</span>
-<span class="kw">var</span> products = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">"SELECT * FROM Products "</span> +
-        <span class="str">"WHERE Price &gt; {0}"</span>,
-        100m)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Result is still IQueryable</span>
-<span class="comment">// You can chain LINQ</span>
-<span class="kw">var</span> filtered = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">"SELECT * FROM Products"</span>)
-    .<span class="type">Where</span>(p =&gt; p.IsActive)
-    .<span class="type">OrderBy</span>(p =&gt; p.Name)
-    .<span class="type">Take</span>(10)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// EF converts to:</span>
-<span class="comment">// SELECT * FROM (</span>
-<span class="comment">//   SELECT * FROM Products</span>
-<span class="comment">// ) AS t WHERE t.IsActive = 1</span>
-<span class="comment">// ORDER BY t.Name</span>
-<span class="comment">// OFFSET 0 ROWS FETCH NEXT 10</span>
-          </div>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 16</div>
+            <h1>Raw SQL in EF</h1>
+            <p class="chapter-intro"><strong>Requirement:</strong> "This query is too complex for LINQ." Sometimes you need raw SQL power inside EF Core. <code>FromSqlInterpolated</code> for queries, <code>ExecuteSqlInterpolated</code> for commands. You get full SQL control while keeping EF's entity mapping.</p>
         </div>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Direct Query</label>
-          <div class="code-content">
-<span class="comment">-- You have to write the</span>
-<span class="comment">-- entire SELECT yourself</span>
+        <!-- 01: Run a complex query -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Run a Complex Query That LINQ Can't Express"</h2>
 
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> Price &gt; 100;
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Calculate each customer's total spend and rank them by spend within their region using a window function. LINQ doesn't support window functions natively.
+            </div>
 
-<span class="comment">-- Want to filter, order, and</span>
-<span class="comment">-- limit? You write it all:</span>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    This is perfect for a window function. ROW_NUMBER() OVER (PARTITION BY Region ORDER BY Total DESC) ranks customers by spend within each region. Write the SQL and let the database do it fast.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    LINQ can't express window functions, so I'll use <code>FromSqlInterpolated()</code> to pass raw SQL directly. EF still maps the result to <code>Customer</code> entities. Always use interpolated (parameterized) queries, never raw string concat.
+                </div>
+            </div>
 
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> Price &gt; 100
-  <span class="kw">AND</span> IsActive = 1
-<span class="kw">ORDER BY</span> Name
-<span class="kw">LIMIT</span> 10;
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Window Function</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT
+    Id, Name, Email, Region,
+    SUM(Amount) AS TotalSpend,
+    ROW_NUMBER() OVER (
+        PARTITION BY Region
+        ORDER BY SUM(Amount) DESC
+    ) AS RankInRegion
+FROM Customers
+GROUP BY Id, Name, Email, Region
+ORDER BY Region, RankInRegion;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — FromSqlInterpolated</div>
+                    <div class="code-block csharp-block">
+                        <pre>var results = await db.Customers
+    .FromSqlInterpolated($@"
+        SELECT Id, Name, Email,
+               Region, SUM(Amount)
+               AS TotalSpend,
+               ROW_NUMBER() OVER (
+                   PARTITION BY Region
+                   ORDER BY SUM(Amount) DESC
+               ) AS RankInRegion
+        FROM Customers
+        GROUP BY Id, Name, Email,
+                 Region")
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-<span class="comment">-- No composition, just SQL</span>
-          </div>
-        </div>
-      </div>
+            <div class="requirement" style="background: var(--acc-l); border-color: var(--acc-b);">
+                <strong>Key Point:</strong> Always use <code>FromSqlInterpolated()</code> or <code>ExecuteSqlInterpolated()</code> with C# string interpolation. Never concatenate SQL strings manually—parameterization prevents SQL injection.
+            </div>
+        </section>
 
-      <div class="prose">
-        <p><strong>Rules for FromSqlRaw():</strong></p>
-        <ul style="margin-left: 1.5rem; color: var(--ink2);">
-          <li style="margin-bottom: 0.5rem;">Your SQL must return <strong>all columns</strong> of the entity</li>
-          <li style="margin-bottom: 0.5rem;">Columns must be properly aliased if selecting from subqueries</li>
-          <li style="margin-bottom: 0.5rem;">Parameters use <span style="font-family: JetBrains Mono;">{0}, {1}, ...</span> placeholders</li>
-          <li style="margin-bottom: 0.5rem;">Parameters are still parameterized (safe from SQL injection)</li>
-        </ul>
-      </div>
+        <!-- 02: Add LINQ filters on raw SQL -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Add LINQ Filters on Top of Raw SQL"</h2>
 
-      <div class="insight">
-        <div class="insight-title">FromSqlRaw Wraps Your SQL as a Subquery</div>
-        <div class="insight-text">
-          When you chain LINQ after <span style="font-family: JetBrains Mono;">FromSqlRaw()</span>, EF wraps your SQL in a subquery and applies the LINQ operators in the outer query. This is efficient but requires proper column naming. Your SELECT statement must return properly named columns that match the entity properties.
-        </div>
-      </insight>
-    </section>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Run a complex raw SQL base query, then dynamically add filters like <code>.Where()</code>, <code>.OrderBy()</code>, and pagination on top of it.
+            </div>
 
-    <!-- Section 02 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">02</div>
-        <h2 class="section-title">FromSqlInterpolated — Safe Parameterization</h2>
-      </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Build a WHERE clause dynamically to add extra filters. Could use subqueries or CTEs if it gets complex, but EF will wrap my raw SQL in a subquery anyway.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Chain LINQ operators after <code>FromSqlInterpolated()</code>. EF wraps the raw SQL in a subquery and applies the LINQ filters on top. This gives me both SQL power and C# flexibility.
+                </div>
+            </div>
 
-      <div class="prose">
-        <p><span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> uses C# string interpolation to safely parameterize your SQL. Variables in the interpolated string automatically become SQL parameters, not string concatenation.</p>
+            <div class="code-full">
+                <div class="code-label">C# — FromSql + LINQ Chaining</div>
+                <div class="code-block csharp-block">
+                    <pre>var customers = await db.Customers
+    .FromSqlInterpolated($@"
+        SELECT Id, Name, Email, Region,
+               ISNULL(LastPurchaseDate,
+                      CAST('1900-01-01' AS DATETIME2))
+               AS LastPurchaseDate
+        FROM Customers")
+    .Where(c => c.Region == "West")
+    .Where(c => c.LastPurchaseDate &gt; DateTime.Now.AddMonths(-6))
+    .OrderByDescending(c => c.LastPurchaseDate)
+    .Skip(skip)
+    .Take(pageSize)
+    .ToListAsync(ct);</pre>
+                </div>
+            </div>
 
-        <p><strong>This is the safe way to pass user input to raw SQL queries.</strong> Never concatenate strings directly into SQL.</p>
-      </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>What EF Generates</strong>
+                    EF wraps your raw SQL in a subquery, then applies WHERE and ORDER BY on top. The database gets a single, optimized query.
+                </div>
+                <div class="think-csharp">
+                    <strong>Best Practice</strong>
+                    Use this pattern when you need a complex base query (window functions, CTEs, subqueries) but also need dynamic filtering and sorting from C#.
+                </div>
+            </div>
+        </section>
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">SAFE: FromSqlInterpolated</div>
-          <div class="code-content">
-<span class="comment">// Safe: interpolation becomes</span>
-<span class="comment">// SQL parameter</span>
-<span class="kw">decimal</span> minPrice = 100m;
-<span class="kw">var</span> products = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlInterpolated</span>(
-        <span class="str">$"SELECT * FROM Products "</span> +
-        <span class="str">$"WHERE Price &gt; {minPrice}"</span>)
-    .<span class="type">ToListAsync</span>();
+        <!-- 03: Update/Delete without loading -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Run an UPDATE or DELETE Without Loading Entities"</h2>
 
-<span class="comment">// EF generates:</span>
-<span class="comment">// SELECT * FROM Products</span>
-<span class="comment">// WHERE Price &gt; @p0</span>
-<span class="comment">// Parameters: @p0 = 100</span>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Deactivate 10,000 stale customer accounts based on their last login date. Loading all entities into memory is wasteful.
+            </div>
 
-<span class="comment">// Even if minPrice is user input</span>
-<span class="comment">// SQL injection is impossible</span>
-<span class="kw">var</span> userInput = <span class="str">"0; DROP TABLE Products"</span>;
-<span class="comment">// It becomes a literal string parameter</span>
-<span class="comment">// Safe!</span>
-          </div>
-        </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    UPDATE table SET column = value WHERE condition. The database does it in one shot, no round trips.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use <code>ExecuteSqlInterpolatedAsync()</code> instead of <code>FromSqlInterpolated()</code>. It's a non-query command. It returns the number of affected rows, not data.
+                </div>
+            </div>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">DANGEROUS: String Concatenation</label>
-          <div class="code-content">
-<span class="comment">-- NEVER do this:</span>
-<span class="comment">-- DANGEROUS!!! SQL Injection</span>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Update Command</div>
+                    <div class="code-block sql-block">
+                        <pre>UPDATE Customers
+SET Status = 'Inactive'
+WHERE LastLogin &lt; @StaleSinceDate
+  AND Status = 'Active';</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — ExecuteSqlInterpolated</div>
+                    <div class="code-block csharp-block">
+                        <pre>var staleSinceDate = DateTime.Now
+    .AddMonths(-6);
 
-<span class="kw">DECLARE</span> @minPrice <span class="type">DECIMAL</span>;
-<span class="kw">SET</span> @minPrice = 100;
+int affectedRows = await db.Database
+    .ExecuteSqlInterpolatedAsync(
+        $@"UPDATE Customers
+           SET Status = 'Inactive'
+           WHERE LastLogin &lt; {staleSinceDate}
+             AND Status = 'Active'",
+        ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-<span class="comment">-- If you concatenate strings:</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> Price &gt; + @minPrice
-  <span class="kw">OR</span> 1=1; <span class="comment">-- Attacker injected this</span>
+            <div class="code-full">
+                <div class="code-label">C# — Delete Command</div>
+                <div class="code-block csharp-block">
+                    <pre>int deletedRows = await db.Database
+    .ExecuteSqlInterpolatedAsync(
+        $@"DELETE FROM AuditLogs
+           WHERE CreatedAt &lt; {oldCutoffDate}",
+        ct);</pre>
+                </div>
+            </div>
 
-<span class="comment">-- If attacker controls minPrice:</span>
-<span class="comment">-- Input: "100 OR 1=1"</span>
-<span class="comment">-- Now query returns ALL products</span>
-<span class="comment">-- Disaster!</span>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>Performance Win</strong>
+                    No SELECT, no round trips, no entity tracking. The database processes millions of rows instantly.
+                </div>
+                <div class="think-csharp">
+                    <strong>Return Value</strong>
+                    <code>ExecuteSqlInterpolatedAsync()</code> returns <code>int</code>—the count of affected rows. Use it for validation: if you expected 10,000 rows to update but only 5,000 were, something's wrong.
+                </div>
+            </div>
+        </section>
 
-<span class="comment">-- Always use parameterization</span>
-          </div>
-        </div>
-      </div>
+        <!-- 04: Call a stored procedure -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Call a Stored Procedure"</h2>
 
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">UNSAFE: String Concatenation</label>
-          <div class="code-content">
-<span class="comment">// DO NOT DO THIS!!!</span>
-<span class="comment">// VULNERABLE TO SQL INJECTION</span>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                DBA wrote a complex stored procedure for a monthly customer report. We need to call it from C# and map the result to entities.
+            </div>
 
-<span class="kw">string</span> minPrice = userInput;
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    EXEC sp_GetCustomerReport @StartDate, @EndDate. The stored procedure handles complex logic, joins, aggregations. C# just needs to invoke it.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>FromSqlInterpolated()</code> for stored procs that return results. <code>ExecuteSqlInterpolated()</code> for stored procs that don't. EF handles the parameter binding.
+                </div>
+            </div>
 
-<span class="comment">// String concatenation</span>
-<span class="kw">var</span> query = <span class="str">"SELECT * FROM Products "</span> +
-             <span class="str">"WHERE Price &gt; "</span> + minPrice;
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Stored Procedure</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_GetCustomerReport
+    @StartDate DATETIME2,
+    @EndDate DATETIME2
+AS
+SELECT
+    CustomerId, Name, Email,
+    SUM(Amount) AS TotalSpent,
+    COUNT(*) AS OrderCount
+FROM Orders
+WHERE OrderDate BETWEEN @StartDate AND @EndDate
+GROUP BY CustomerId, Name, Email
+ORDER BY TotalSpent DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Call Stored Proc</div>
+                    <div class="code-block csharp-block">
+                        <pre>var start = new DateTime(2024, 1, 1);
+var end = new DateTime(2024, 12, 31);
 
-<span class="kw">var</span> products = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlRaw</span>(query)
-    .<span class="type">ToListAsync</span>();
+var results = await db.Customers
+    .FromSqlInterpolated(
+        $@"EXEC sp_GetCustomerReport
+              @StartDate = {start},
+              @EndDate = {end}")
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
 
-<span class="comment">// If minPrice = "100 OR 1=1"</span>
-<span class="comment">// Query becomes:</span>
-<span class="comment">// SELECT * FROM Products</span>
-<span class="comment">// WHERE Price &gt; 100 OR 1=1</span>
-<span class="comment">// Returns ALL rows!</span>
-<span class="comment">// Data breach!</span>
-          </div>
-        </div>
+            <div class="code-full">
+                <div class="code-label">C# — Stored Proc Returning Nothing</div>
+                <div class="code-block csharp-block">
+                    <pre>// Stored proc that just does work
+// (archival, cleanup, etc.)
+int rowsAffected = await db.Database
+    .ExecuteSqlInterpolatedAsync(
+        $@"EXEC sp_ArchiveOldOrders
+              @CutoffDate = {cutoffDate}",
+        ct);</pre>
+                </div>
+            </div>
+        </section>
 
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL Injection Attack</label>
-          <div class="code-content">
-<span class="comment">-- Attacker input:</span>
-<span class="str">"0 OR 1=1 DROP TABLE Users;"</span>
+        <!-- 05: Map to custom DTO -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Map Raw SQL Results to a Custom DTO"</h2>
 
-<span class="comment">-- If you concatenate directly:</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> Price &gt; 0 <span class="kw">OR</span> 1=1;
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Report query returns custom computed columns that don't match any entity. Map results to a read-only DTO instead.
+            </div>
 
-<span class="comment">-- Or worse:</span>
-<span class="kw">DROP TABLE</span> Users;
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SELECT computed columns: employee name, department, salary, bonus, tax-adjusted income. These don't map to a single entity.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Create a [Keyless] entity (or use .HasNoKey() in config) as a DTO. Register it in DbContext. Use <code>FromSqlInterpolated()</code> just like a normal entity.
+                </div>
+            </div>
 
-<span class="comment">-- Database destroyed!</span>
-
-<span class="comment">-- With parameterization,</span>
-<span class="comment">-- it's treated as a literal value</span>
-<span class="comment">-- Safe!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Always Use FromSqlInterpolated with User Input</div>
-        <div class="insight-text">
-          <span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> automatically converts interpolated variables to SQL parameters. Never use <span style="font-family: JetBrains Mono;">FromSqlRaw()</span> with concatenated user input. Always use interpolation or explicit parameters.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 03 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">03</div>
-        <h2 class="section-title">ExecuteSqlRaw — Non-Query Commands</h2>
-      </div>
-
-      <div class="prose">
-        <p>Sometimes you need to execute SQL that doesn't return entities: bulk updates, DDL statements, or stored procedures that return no result set.</p>
-
-        <p>Use <span style="font-family: JetBrains Mono;">context.Database.ExecuteSqlRaw()</span> for these scenarios. It executes the SQL and returns the number of rows affected.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">ExecuteSqlRaw for Bulk Operations</label>
-          <div class="code-content">
-<span class="comment">// Bulk update without loading</span>
-<span class="comment">// entities</span>
-<span class="kw">var</span> rowsAffected = <span class="kw">await</span>
-    context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">"UPDATE Products "</span> +
-        <span class="str">"SET Price = Price * {0} "</span> +
-        <span class="str">"WHERE Category = {1}"</span>,
-        1.1m, <span class="str">"Electronics"</span>);
-
-<span class="type">Console</span>.<span class="type">WriteLine</span>(
-    <span class="str">$"{rowsAffected} products updated"</span>);
-
-<span class="comment">// Bulk delete</span>
-<span class="kw">await</span> context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">"DELETE FROM Orders "</span> +
-        <span class="str">"WHERE OrderDate &lt; {0}"</span>,
-        <span class="type">DateTime</span>.UtcNow
-            .<span class="type">AddMonths</span>(-12));
-
-<span class="comment">// Execute stored procedure</span>
-<span class="kw">await</span> context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">"EXEC sp_GenerateReport {0}"</span>,
-        <span class="type">DateTime</span>.UtcNow);
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Direct Execution</label>
-          <div class="code-content">
-<span class="comment">-- Bulk update</span>
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price = Price * 1.1
-<span class="kw">WHERE</span> Category = <span class="str">'Electronics'</span>;
-
-<span class="comment">-- Check rows affected</span>
-<span class="kw">SELECT</span> @@ROWCOUNT;
-
-<span class="comment">-- Bulk delete</span>
-<span class="kw">DELETE FROM</span> Orders
-<span class="kw">WHERE</span> OrderDate &lt; <span class="str">'2023-01-01'</span>;
-
-<span class="comment">-- Execute stored procedure</span>
-<span class="kw">EXEC</span> sp_GenerateReport <span class="str">'2024-01-01'</span>;
-
-<span class="comment">-- All direct SQL, no ORM</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>When to use ExecuteSqlRaw():</strong></p>
-        <ul style="margin-left: 1.5rem; color: var(--ink2);">
-          <li style="margin-bottom: 0.5rem;">Bulk updates or deletes (don't load all entities)</li>
-          <li style="margin-bottom: 0.5rem;">DDL statements (CREATE, ALTER, DROP)</li>
-          <li style="margin-bottom: 0.5rem;">Stored procedures that return no result set</li>
-          <li style="margin-bottom: 0.5rem;">Complex operations that would be slow with LINQ</li>
-        </ul>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">ExecuteSqlRaw Bypasses Change Tracking</div>
-        <div class="insight-text">
-          <span style="font-family: JetBrains Mono;">ExecuteSqlRaw()</span> modifies the database directly without loading or tracking entities. If you have loaded entities in memory that match the updated/deleted rows, those entities will be out of sync. Reload or clear the change tracker if needed.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 04 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">04</div>
-        <h2 class="section-title">Mixing Raw SQL and LINQ</h2>
-      </div>
-
-      <div class="prose">
-        <p>One of the most powerful features of EF is the ability to start with raw SQL and chain LINQ operators. Your SQL becomes the base query, and LINQ adds additional filtering, ordering, or includes.</p>
-
-        <p>This combines the power of both: complex SQL logic with LINQ composition.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Raw SQL + LINQ Composition</label>
-          <div class="code-content">
-<span class="comment">// Start with complex SQL</span>
-<span class="kw">var</span> query =
-    context.Customers
-    .<span class="type">FromSqlInterpolated</span>(
-        <span class="str">$"SELECT DISTINCT c.* "</span> +
-        <span class="str">$"FROM Customers c "</span> +
-        <span class="str">$"WHERE c.CreatedAt &gt; {cutoffDate}"</span>)
-    .<span class="type">Include</span>(c =&gt; c.Orders)
-    .<span class="type">Where</span>(c =&gt; c.IsActive)
-    .<span class="type">OrderBy</span>(c =&gt; c.Name);
-
-<span class="comment">// EF generates:</span>
-<span class="comment">// SELECT DISTINCT c.*, o.* FROM (</span>
-<span class="comment">//   SELECT DISTINCT c.* FROM Customers c</span>
-<span class="comment">//   WHERE c.CreatedAt &gt; @p0</span>
-<span class="comment">// ) AS t</span>
-<span class="comment">// LEFT JOIN Orders o ON c.Id=o.CustomerId</span>
-<span class="comment">// WHERE t.IsActive = 1</span>
-<span class="comment">// ORDER BY t.Name</span>
-
-<span class="kw">var</span> results = <span class="kw">await</span> query
-    .<span class="type">ToListAsync</span>();
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Equivalent SQL</label>
-          <div class="code-content">
-<span class="comment">-- Complex base query with</span>
-<span class="comment">-- additional filters and joins</span>
-
-<span class="kw">SELECT</span> DISTINCT c.*, o.*
-<span class="kw">FROM</span> (
-    <span class="kw">SELECT DISTINCT</span> c.*
-    <span class="kw">FROM</span> Customers c
-    <span class="kw">WHERE</span> c.CreatedAt &gt; <span class="str">'2024-01-01'</span>
-) <span class="kw">AS</span> t
-<span class="kw">LEFT JOIN</span> Orders o
-    <span class="kw">ON</span> t.Id = o.CustomerId
-<span class="kw">WHERE</span> t.IsActive = 1
-<span class="kw">ORDER BY</span> t.Name;
-
-<span class="comment">-- EF generates this automatically</span>
-<span class="comment">-- from the FromSqlRaw + LINQ</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Important rules for composing LINQ with raw SQL:</strong></p>
-        <ul style="margin-left: 1.5rem; color: var(--ink2);">
-          <li style="margin-bottom: 0.5rem;">Your SQL must return <strong>all entity columns</strong>, properly named</li>
-          <li style="margin-bottom: 0.5rem;">EF wraps your SQL in a subquery, so aliases matter</li>
-          <li style="margin-bottom: 0.5rem;"><span style="font-family: JetBrains Mono;">Include()</span> still works—it generates JOINs</li>
-          <li style="margin-bottom: 0.5rem;">Not all LINQ operations are composable (some are evaluated client-side)</li>
-        </ul>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">FromSqlRaw Makes Your SQL the Subquery</div>
-        <div class="insight-text">
-          When you chain LINQ after <span style="font-family: JetBrains Mono;">FromSqlRaw()</span>, EF wraps your SQL in a subquery. This is efficient for databases like SQL Server but can be inefficient on some other databases. If you're adding simple filters, it's better to include them in your original SQL string.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 05 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">05</div>
-        <h2 class="section-title">Views and Table-Valued Functions</h2>
-      </div>
-
-      <div class="prose">
-        <p>Database views and table-valued functions (TVFs) are SQL patterns that EF can model. Views are read-only projections; TVFs are parametrized queries stored in the database.</p>
-
-        <p>You can query both using <span style="font-family: JetBrains Mono;">FromSqlRaw()</span> or by creating EF entity types that map to them.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Querying a Database View</label>
-          <div class="code-content">
-<span class="comment">// Entity class for view</span>
-<span class="kw">public class</span> <span class="type">ActiveCustomerView</span> {
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Name { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public int</span> OrderCount { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// In DbContext:</span>
-<span class="kw">public</span> <span class="type">DbSet</span>&lt;
-    <span class="type">ActiveCustomerView</span>&gt;
-    ActiveCustomers { <span class="kw">get</span>; <span class="kw">set</span>; }
-
-<span class="comment">// In OnModelCreating:</span>
-<span class="kw">protected override void</span>
-    <span class="type">OnModelCreating</span>(
-        <span class="type">ModelBuilder</span> modelBuilder)
+            <div class="code-full">
+                <div class="code-label">C# — Keyless DTO Entity</div>
+                <div class="code-block csharp-block">
+                    <pre>[Keyless]
+public class EmployeeReport
 {
-    modelBuilder
-        .<span class="type">Entity</span>&lt;
-            <span class="type">ActiveCustomerView</span>&gt;()
-        .<span class="type">HasNoKey</span>()
-        .<span class="type">ToView</span>(
-            <span class="str">"ActiveCustomers"</span>);
-}
+    public string EmployeeName { get; set; } = "";
+    public string DepartmentName { get; set; } = "";
+    public decimal BaseSalary { get; set; }
+    public decimal BonusAmount { get; set; }
+    public decimal TaxAdjustedIncome { get; set; }
+}</pre>
+                </div>
+            </div>
 
-<span class="comment">// Query the view</span>
-<span class="kw">var</span> results = <span class="kw">await</span>
-    context.ActiveCustomers
-    .<span class="type">Where</span>(c =&gt;
-        c.OrderCount &gt; 10)
-    .<span class="type">ToListAsync</span>();
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Create View</label>
-          <div class="code-content">
-<span class="kw">CREATE VIEW</span> ActiveCustomers <span class="kw">AS</span>
-<span class="kw">SELECT</span>
-    c.Id,
-    c.Name,
-    <span class="type">COUNT</span>(o.Id)
-        <span class="kw">AS</span> OrderCount
-<span class="kw">FROM</span> Customers c
-<span class="kw">LEFT JOIN</span> Orders o
-    <span class="kw">ON</span> c.Id = o.CustomerId
-<span class="kw">WHERE</span> c.IsActive = 1
-<span class="kw">GROUP BY</span>
-    c.Id, c.Name;
-
-<span class="comment">-- Query the view</span>
-<span class="kw">SELECT</span> *
-<span class="kw">FROM</span> ActiveCustomers
-<span class="kw">WHERE</span> OrderCount &gt; 10;
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Table-Valued Functions (TVFs):</strong></p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Querying a Table-Valued Function</label>
-          <div class="code-content">
-<span class="comment">// Call TVF using FromSqlRaw</span>
-<span class="kw">var</span> recentOrders = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">FromSqlInterpolated</span>(
-        <span class="str">$"SELECT * FROM "</span> +
-        <span class="str">$"dbo.GetOrdersByDate({date})"</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Or use DbSet mapped to TVF</span>
-<span class="kw">protected override void</span>
-    <span class="type">OnModelCreating</span>(
-        <span class="type">ModelBuilder</span> m)
+            <div class="code-full">
+                <div class="code-label">C# — Register in DbContext</div>
+                <div class="code-block csharp-block">
+                    <pre>public class AppDbContext : DbContext
 {
-    m.<span class="type">Entity</span>&lt;<span class="type">Order</span>&gt;()
-        .<span class="type">ToFunction</span>(
-            <span class="str">"GetOrdersByDate"</span>);
-}
+    public DbSet&lt;Employee&gt; Employees { get; set; }
+    public DbSet&lt;Department&gt; Departments { get; set; }
 
-<span class="comment">// Then call with parameter</span>
-<span class="kw">var</span> results = <span class="kw">await</span>
-    context.<span class="type">GetOrdersByDate</span>(date)
-    .<span class="type">ToListAsync</span>();
-          </div>
+    // Register the keyless entity
+    public DbSet&lt;EmployeeReport&gt; EmployeeReports { get; set; }
+
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity&lt;EmployeeReport&gt;()
+            .HasNoKey();
+    }
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Query with FromSql</div>
+                <div class="code-block csharp-block">
+                    <pre>var reports = await db.EmployeeReports
+    .FromSqlInterpolated($@"
+        SELECT
+            e.Name AS EmployeeName,
+            d.Name AS DepartmentName,
+            e.Salary AS BaseSalary,
+            ISNULL(b.Amount, 0) AS BonusAmount,
+            e.Salary + ISNULL(b.Amount, 0)
+                - (e.Salary * 0.25) AS TaxAdjustedIncome
+        FROM Employees e
+        JOIN Departments d ON e.DepartmentId = d.Id
+        LEFT JOIN Bonuses b ON e.Id = b.EmployeeId
+        WHERE d.IsActive = 1")
+    .ToListAsync(ct);</pre>
+                </div>
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>Column Name Matching</strong>
+                    SQL column names must match C# property names (case-insensitive). Use AS aliases if needed.
+                </div>
+                <div class="think-csharp">
+                    <strong>Read-Only Pattern</strong>
+                    [Keyless] entities are ideal for reports and projections. No primary key, no change tracking, no insert/update/delete.
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: Debug generated SQL -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Debug What SQL EF Is Generating"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Query is slow. Need to see the actual SQL EF generates, not just the LINQ code.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Use SQL Profiler to capture what the app sends to the database. See the exact query, parameters, and execution time.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Enable EF logging to intercept and print SQL. Use <code>.ToQueryString()</code> to inspect a single query. This reveals what EF actually sends to the database.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — ToQueryString() Method</div>
+                <div class="code-block csharp-block">
+                    <pre>var query = db.Customers
+    .Where(c => c.Status == "Active")
+    .OrderByDescending(c => c.CreatedAt)
+    .Select(c => new { c.Id, c.Name });
+
+// See the SQL without executing it
+string generatedSql = query.ToQueryString();
+Console.WriteLine(generatedSql);
+
+// Then execute
+var results = await query.ToListAsync(ct);</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Enable EF Logging in ConfigureServices</div>
+                <div class="code-block csharp-block">
+                    <pre>services.AddDbContext&lt;AppDbContext&gt;(options =>
+{
+    options
+        .UseSqlServer(connectionString)
+        .LogTo(
+            Console.WriteLine,
+            LogLevel.Information,
+            DbContextLoggerOptions.DefaultWithQueryBuilder);
+});</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Custom Logging Handler</div>
+                <div class="code-block csharp-block">
+                    <pre>services.AddDbContext&lt;AppDbContext&gt;(options =>
+{
+    options
+        .UseSqlServer(connectionString)
+        .LogTo(sql =>
+        {
+            // Log to file, monitoring system, console
+            File.AppendAllText("sql.log",
+                $"{DateTime.Now:G} | {sql}\n");
+            Console.WriteLine($"SQL: {sql}");
+        },
+        LogLevel.Information);
+});</pre>
+                </div>
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>Parameter Values</strong>
+                    Logging shows the SQL query structure. To see actual parameter values, enable <code>DbContextLoggerOptions.UtcTime</code> or use SQL Profiler on the server side.
+                </div>
+                <div class="think-csharp">
+                    <strong>Performance Insight</strong>
+                    <code>ToQueryString()</code> is zero-cost—it doesn't execute. Perfect for debugging before hitting the database. Logging is production-safe if you filter by LogLevel.
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch15-change-tracking.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Change Tracking</span>
+            </a>
+            <a class="nav-item" href="ch17-ef-performance.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">EF Performance</span>
+            </a>
         </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Create TVF</label>
-          <div class="code-content">
-<span class="kw">CREATE FUNCTION</span>
-    dbo.GetOrdersByDate(
-        @date <span class="kw">DATE</span>)
-<span class="kw">RETURNS TABLE</span>
-<span class="kw">AS RETURN</span> (
-    <span class="kw">SELECT</span> *
-    <span class="kw">FROM</span> Orders
-    <span class="kw">WHERE</span> OrderDate &gt;= @date
-);
-
-<span class="comment">-- Call the TVF</span>
-<span class="kw">SELECT</span> *
-<span class="kw">FROM</span> dbo
-    .GetOrdersByDate(<span class="str">'2024-01-01'</span>);
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Views Don't Have Keys in EF</div>
-        <div class="insight-text">
-          Views don't have primary keys, so you must use <span style="font-family: JetBrains Mono;">.HasNoKey()</span> when configuring them in <span style="font-family: JetBrains Mono;">OnModelCreating()</span>. You can still query them with LINQ, but you can't modify them.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 06 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">06</div>
-        <h2 class="section-title">FromSqlRaw vs FromSqlInterpolated: Security Deep Dive</h2>
-      </div>
-
-      <div class="prose">
-        <p>The difference between <span style="font-family: JetBrains Mono;">FromSqlRaw()</span> and <span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> is critical for security. FromSqlRaw() requires manual parameterization, while FromSqlInterpolated() uses C# string interpolation to automatically create parameters. Using the wrong method with user input opens SQL injection vulnerabilities.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">VULNERABLE: FromSqlRaw with Concatenation</label>
-          <div class="code-content">
-<span class="comment">// DANGEROUS! User input directly in SQL</span>
-<span class="kw">var</span> userId = GetUserIdFromRequest();
-<span class="comment">// Attacker sends: 1 OR 1=1</span>
-
-<span class="kw">var</span> user = <span class="kw">await</span>
-    context.Users
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">"SELECT * FROM Users "</span> +
-        <span class="str">"WHERE Id = "</span> + userId)
-    .<span class="type">FirstOrDefaultAsync</span>();
-
-<span class="comment">// Generated SQL: (UNSAFE)</span>
-<span class="comment">// SELECT * FROM Users</span>
-<span class="comment">// WHERE Id = 1 OR 1=1</span>
-<span class="comment">// ^ Returns ALL users!</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Resulting SQL Injection Attack</label>
-          <div class="code-content">
-<span class="comment">-- What attacker submits:</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Users
-<span class="kw">WHERE</span> Id = 1 <span class="kw">OR</span> 1=1;
-
-<span class="comment">-- Returns all users instead of one</span>
-<span class="comment">-- Attacker can now steal all data</span>
-
-<span class="comment">-- Or worse: DROP TABLE attack</span>
-<span class="kw">WHERE</span> Id = 1; <span class="kw">DROP TABLE</span> Users;--
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">SAFE: FromSqlRaw with Explicit Parameters</label>
-          <div class="code-content">
-<span class="comment">// SAFE: Manual parameterization</span>
-<span class="kw">var</span> userId = GetUserIdFromRequest();
-
-<span class="kw">var</span> user = <span class="kw">await</span>
-    context.Users
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">"SELECT * FROM Users "</span> +
-        <span class="str">"WHERE Id = {0}"</span>,
-        userId)
-    .<span class="type">FirstOrDefaultAsync</span>();
-
-<span class="comment">// Generated SQL: (SAFE)</span>
-<span class="comment">// SELECT * FROM Users</span>
-<span class="comment">// WHERE Id = @p0</span>
-<span class="comment">// Parameter: @p0 = "1 OR 1=1"</span>
-<span class="comment">// ^ Treated as literal value, not SQL</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">BEST: FromSqlInterpolated</label>
-          <div class="code-content">
-<span class="comment">// SAFEST: String interpolation</span>
-<span class="comment">// handles parameterization automatically</span>
-<span class="kw">var</span> userId = GetUserIdFromRequest();
-
-<span class="kw">var</span> user = <span class="kw">await</span>
-    context.Users
-    .<span class="type">FromSqlInterpolated</span>(
-        <span class="str">$"SELECT * FROM Users "</span> +
-        <span class="str">$"WHERE Id = {userId}"</span>)
-    .<span class="type">FirstOrDefaultAsync</span>();
-
-<span class="comment">// EF automatically creates parameter:</span>
-<span class="comment">// SELECT * FROM Users</span>
-<span class="comment">// WHERE Id = @p0</span>
-<span class="comment">// Variable userId becomes SQL parameter</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Key Security Rules:</strong></p>
-        <ul style="margin-left: 1.5rem; color: var(--ink2);">
-          <li style="margin-bottom: 0.5rem;"><strong>Never</strong> concatenate user input directly into SQL strings with FromSqlRaw()</li>
-          <li style="margin-bottom: 0.5rem;">Always use <span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> when variables come from user input</li>
-          <li style="margin-bottom: 0.5rem;">If using FromSqlRaw(), use the <span style="font-family: JetBrains Mono;">{0}, {1}</span> placeholders and pass parameters as separate arguments</li>
-          <li style="margin-bottom: 0.5rem;">Parameterized queries treat all user input as literal data, not executable SQL</li>
-          <li style="margin-bottom: 0.5rem;">This defense works regardless of what characters the attacker submits (quotes, semicolons, SQL keywords)</li>
-        </ul>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">FromSqlInterpolated Is the Modern Standard</div>
-        <div class="insight-text">
-          C# string interpolation with <span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> is cleaner and safer than manual parameter placeholders. EF automatically converts interpolated variables to SQL parameters. Always prefer <span style="font-family: JetBrains Mono;">FromSqlInterpolated()</span> for any user input, and FromSqlRaw() only for static SQL strings.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 07 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">07</div>
-        <h2 class="section-title">Database-Specific Functions in Raw SQL</h2>
-      </div>
-
-      <div class="prose">
-        <p>LINQ can express basic operations, but many databases offer powerful, specialized functions that LINQ cannot translate. Examples include SQL Server's STRING_AGG and OPENJSON, PostgreSQL's array functions, and MySQL's GROUP_CONCAT. Raw SQL is the only way to access these database-specific features directly.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL Server: STRING_AGG for Aggregation</label>
-          <div class="code-content">
-<span class="comment">-- Concatenate values with delimiter</span>
-<span class="kw">SELECT</span>
-    CustomerId,
-    <span class="type">STRING_AGG</span>(ProductName, <span class="str">','</span>)
-        <span class="kw">WITHIN GROUP</span>
-        (<span class="kw">ORDER BY</span> OrderDate)
-        <span class="kw">AS</span> ProductList
-<span class="kw">FROM</span> Orders o
-<span class="kw">JOIN</span> OrderItems oi
-    <span class="kw">ON</span> o.Id = oi.OrderId
-<span class="kw">GROUP BY</span> CustomerId;
-
-<span class="comment">-- Result:</span>
-<span class="comment">-- CustomerId | ProductList</span>
-<span class="comment">-- 1          | Widget,Gadget,Gizmo</span>
-<span class="comment">-- 2          | Doohickey,Thingamajig</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Using STRING_AGG in EF</label>
-          <div class="code-content">
-<span class="comment">// Cannot express STRING_AGG in LINQ</span>
-<span class="comment">// Must use raw SQL</span>
-
-<span class="kw">var</span> result = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT</span>
-        <span class="str">CustomerId,</span>
-        <span class="str">STRING_AGG(ProductName, ',')</span>
-        <span class="str">WITHIN GROUP (ORDER BY OrderDate)</span>
-        <span class="str">AS ProductList</span>
-        <span class="str">FROM Orders o</span>
-        <span class="str">JOIN OrderItems oi</span>
-        <span class="str">ON o.Id = oi.OrderId</span>
-        <span class="str">GROUP BY CustomerId"</span>)
-    .<span class="type">ToListAsync</span>();
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL Server: OPENJSON for JSON Parsing</label>
-          <div class="code-content">
-<span class="comment">-- Parse JSON data into rows</span>
-<span class="kw">SELECT</span>
-    j.value <span class="kw">AS</span> id,
-    j.[key] <span class="kw">AS</span> [key]
-<span class="kw">FROM</span> Products p
-<span class="kw">CROSS APPLY</span>
-    <span class="type">OPENJSON</span>(p.MetadataJson)
-        <span class="kw">WITH</span> (
-            id <span class="kw">INT</span> <span class="str">'$.id'</span>,
-            [key] <span class="kw">NVARCHAR</span>(100) <span class="str">'$.key'</span>
-        ) j
-<span class="kw">WHERE</span> p.Id > 10;
-
-<span class="comment">-- Transforms JSON to relational rows</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Using OPENJSON in EF</label>
-          <div class="code-content">
-<span class="comment">// Define class for parsed JSON</span>
-<span class="kw">public class</span> <span class="type">JsonMetadata</span> {
-    <span class="kw">public int</span> Id { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public string</span> Key { <span class="kw">get</span>; <span class="kw">set</span>; }
-}
-
-<span class="comment">// Use OPENJSON in raw SQL</span>
-<span class="kw">var</span> metadata = <span class="kw">await</span>
-    context.Set&lt;<span class="type">JsonMetadata</span>&gt;()
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT j.value AS Id,</span>
-        <span class="str">j.[key] AS [Key]</span>
-        <span class="str">FROM Products p</span>
-        <span class="str">CROSS APPLY OPENJSON(p.MetadataJson)</span>
-        <span class="str">WITH (</span>
-        <span class="str">id INT '$.id',</span>
-        <span class="str">[key] NVARCHAR(100) '$.key'</span>
-        <span class="str">) j</span>
-        <span class="str">WHERE p.Id > {0}"</span>,
-        10)
-    .<span class="type">ToListAsync</span>();
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">PostgreSQL: Array Functions</label>
-          <div class="code-content">
-<span class="comment">-- Array aggregation (PostgreSQL)</span>
-<span class="kw">SELECT</span>
-    customer_id,
-    <span class="type">array_agg</span>(product_name)
-        <span class="kw">AS</span> products
-<span class="kw">FROM</span> orders
-<span class="kw">GROUP BY</span> customer_id;
-
-<span class="comment">-- Array operations</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> products
-<span class="kw">WHERE</span> <span class="str">'electronics'</span>
-    <span class="kw">= ANY</span>(categories);
-
-<span class="comment">-- Unnest arrays to rows</span>
-<span class="kw">SELECT</span> customer_id,
-    <span class="type">unnest</span>(tags) <span class="kw">AS</span> tag
-<span class="kw">FROM</span> customers;
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Using Array Functions in EF (PostgreSQL)</label>
-          <div class="code-content">
-<span class="comment">// Array aggregation</span>
-<span class="kw">var</span> result = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT customer_id,</span>
-        <span class="str">array_agg(product_name) AS products</span>
-        <span class="str">FROM orders</span>
-        <span class="str">GROUP BY customer_id"</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Unnest arrays</span>
-<span class="kw">var</span> tags = <span class="kw">await</span>
-    context.Set&lt;<span class="type">CustomerTags</span>&gt;()
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT customer_id,</span>
-        <span class="str">unnest(tags) AS tag</span>
-        <span class="str">FROM customers"</span>)
-    .<span class="type">ToListAsync</span>();
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">When LINQ Hits Its Limits</div>
-        <div class="insight-text">
-          Every database offers powerful, specialized functions. SQL Server has STRING_AGE, OPENJSON, FORMAT. PostgreSQL has array operations, range types, and JSON operators. MySQL has JSON functions and GROUP_CONCAT. LINQ cannot express most of these. Raw SQL is the direct path to database power.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 08 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">08</div>
-        <h2 class="section-title">Raw SQL with Stored Procedures</h2>
-      </div>
-
-      <div class="prose">
-        <p>Stored procedures are SQL programs stored in the database. They can encapsulate complex business logic, call other procedures, and return multiple result sets. EF can call stored procedures using raw SQL, though the syntax varies by database.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL: Create a Stored Procedure</label>
-          <div class="code-content">
-<span class="kw">CREATE PROCEDURE</span>
-    dbo.ProcessMonthlyOrders
-        @month <span class="kw">INT</span>,
-        @year <span class="kw">INT</span>,
-        @processedCount <span class="kw">INT</span> <span class="kw">OUTPUT</span>
-<span class="kw">AS</span>
-<span class="kw">BEGIN</span>
-    <span class="kw">UPDATE</span> Orders
-    <span class="kw">SET</span> Status = <span class="str">'Processed'</span>,
-        ProcessedDate = <span class="type">GETDATE</span>()
-    <span class="kw">WHERE</span> <span class="type">MONTH</span>(OrderDate) = @month
-        <span class="kw">AND</span> <span class="type">YEAR</span>(OrderDate) = @year
-        <span class="kw">AND</span> Status = <span class="str">'Pending'</span>;
-
-    <span class="kw">SET</span> @processedCount =
-        @@ROWCOUNT;
-
-    <span class="kw">SELECT</span> <span class="type">COUNT</span>(*)
-    <span class="kw">FROM</span> Orders
-    <span class="kw">WHERE</span> Status = <span class="str">'Processed'</span>;
-<span class="kw">END</span>;
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Call Stored Procedure from EF</label>
-          <div class="code-content">
-<span class="comment">// For stored procedures with output</span>
-<span class="kw">var</span> monthParam = <span class="kw">new</span>
-    <span class="type">SqlParameter</span>(<span class="str">"@month"</span>, 3);
-
-<span class="kw">var</span> yearParam = <span class="kw">new</span>
-    <span class="type">SqlParameter</span>(<span class="str">"@year"</span>, 2024);
-
-<span class="kw">var</span> countParam = <span class="kw">new</span>
-    <span class="type">SqlParameter</span> {
-        ParameterName = <span class="str">"@processedCount"</span>,
-        SqlDbType =
-            <span class="type">SqlDbType</span>.Int,
-        Direction =
-            <span class="type">ParameterDirection</span>
-            .Output
-    };
-
-<span class="kw">var</span> result = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">"EXEC dbo.ProcessMonthlyOrders "</span> +
-        <span class="str">"@month, @year, "</span> +
-        <span class="str">"@processedCount OUTPUT"</span>,
-        monthParam, yearParam, countParam)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Read output parameter</span>
-<span class="kw">var</span> processed =
-    (int)countParam.Value;
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Stored Procedure Considerations:</strong></p>
-        <ul style="margin-left: 1.5rem; color: var(--ink2);">
-          <li style="margin-bottom: 0.5rem;">Stored procedures are database-specific (T-SQL for SQL Server, PL/pgSQL for PostgreSQL)</li>
-          <li style="margin-bottom: 0.5rem;">Version control becomes harder (SQL in database, not in source code)</li>
-          <li style="margin-bottom: 0.5rem;">Calling syntax varies: SQL Server uses EXEC, PostgreSQL uses SELECT</li>
-          <li style="margin-bottom: 0.5rem;">Prefer stored procedures only if they already exist and are well-tested</li>
-          <li style="margin-bottom: 0.5rem;">For new code, prefer application-level logic in C# with raw SQL for the database operations</li>
-        </ul>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Stored Procedures Are Legacy</div>
-        <div class="insight-text">
-          Stored procedures were common in older architectures, but modern applications increasingly handle business logic at the application layer. EF can call them, but be cautious about overusing them. Keep SQL in source control alongside your C# code, not hidden in the database.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 09 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">09</div>
-        <h2 class="section-title">ExecuteUpdate and ExecuteDelete (EF Core 7+)</h2>
-      </div>
-
-      <div class="prose">
-        <p>EF Core 7 introduced <span style="font-family: JetBrains Mono;">ExecuteUpdateAsync()</span> and <span style="font-family: JetBrains Mono;">ExecuteDeleteAsync()</span>, which perform bulk operations without loading entities. These replace raw SQL for bulk updates/deletes in most cases, combining the safety of LINQ with the performance of raw SQL.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">BEFORE: Bulk Update with Raw SQL</label>
-          <div class="code-content">
-<span class="comment">// Old approach: ExecuteSqlRaw</span>
-<span class="kw">await</span> context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">@"UPDATE Products</span>
-        <span class="str">SET Price = Price * {0}</span>
-        <span class="str">WHERE Category = {1}"</span>,
-        1.10m, <span class="str">"Electronics"</span>);
-
-<span class="comment">// Problems:</span>
-<span class="comment">// 1. String-based SQL</span>
-<span class="comment">// 2. Manual parameter handling</span>
-<span class="comment">// 3. Less type-safe</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">AFTER: ExecuteUpdate (EF Core 7+)</label>
-          <div class="code-content">
-<span class="comment">// New approach: LINQ-based</span>
-<span class="kw">var</span> updatedCount = <span class="kw">await</span>
-    context.Products
-    .<span class="type">Where</span>(p =>
-        p.Category == <span class="str">"Electronics"</span>)
-    .<span class="type">ExecuteUpdateAsync</span>(s =>
-        s.<span class="type">SetProperty</span>(p =>
-            p.Price,
-            p => p.Price * 1.10m));
-
-<span class="comment">// Benefits:</span>
-<span class="comment">// 1. LINQ-based, type-safe</span>
-<span class="comment">// 2. Automatic parameterization</span>
-<span class="comment">// 3. No entity loading</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">ExecuteUpdate: Multiple Properties</label>
-          <div class="code-content">
-<span class="comment">// Update multiple columns</span>
-<span class="kw">var</span> count = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">Where</span>(o =>
-        o.CreatedDate <
-            <span class="type">DateTime</span>.Now.AddYears(-1))
-    .<span class="type">ExecuteUpdateAsync</span>(s =>
-        s.<span class="type">SetProperty</span>(
-            o => o.Status, <span class="str">"Archived"</span>)
-         .<span class="type">SetProperty</span>(
-            o => o.ArchivedDate,
-            <span class="type">DateTime</span>.Now));
-
-<span class="comment">// Generated SQL:</span>
-<span class="comment">// UPDATE Orders</span>
-<span class="comment">// SET Status = 'Archived',</span>
-<span class="comment">//     ArchivedDate = GETDATE()</span>
-<span class="comment">// WHERE CreatedDate < @p0</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">ExecuteDelete: Bulk Deletion</label>
-          <div class="code-content">
-<span class="comment">// Delete without loading</span>
-<span class="kw">var</span> deletedCount = <span class="kw">await</span>
-    context.LogEntries
-    .<span class="type">Where</span>(l =>
-        l.CreatedDate <
-            <span class="type">DateTime</span>.Now
-            .AddDays(-30))
-    .<span class="type">ExecuteDeleteAsync</span>();
-
-<span class="comment">// Generated SQL:</span>
-<span class="comment">// DELETE FROM LogEntries</span>
-<span class="comment">// WHERE CreatedDate < @p0</span>
-
-<span class="comment">// No change tracking overhead</span>
-<span class="comment">// Extremely efficient</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Computed Updates with ExecuteUpdate</label>
-          <div class="code-content">
-<span class="comment">// Use computed expressions</span>
-<span class="kw">var</span> count = <span class="kw">await</span>
-    context.OrderItems
-    .<span class="type">Where</span>(oi =>
-        oi.Quantity > 100)
-    .<span class="type">ExecuteUpdateAsync</span>(s =>
-        s.<span class="type">SetProperty</span>(
-            oi => oi.Discount,
-            oi => oi.Discount + 0.05m));
-
-<span class="comment">// Update based on condition</span>
-<span class="kw">var</span> count2 = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">Where</span>(c => c.IsActive)
-    .<span class="type">ExecuteUpdateAsync</span>(s =>
-        s.<span class="type">SetProperty</span>(
-            c => c.Status,
-            c => c.TotalOrders > 100
-                ? <span class="str">"Gold"</span>
-                : <span class="str">"Standard"</span>));
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Equivalent SQL with CASE</label>
-          <div class="code-content">
-<span class="comment">-- Computed update</span>
-<span class="kw">UPDATE</span> OrderItems
-<span class="kw">SET</span> Discount =
-    Discount + 0.05
-<span class="kw">WHERE</span> Quantity > 100;
-
-<span class="comment">-- Conditional update (CASE)</span>
-<span class="kw">UPDATE</span> Customers
-<span class="kw">SET</span> Status =
-    <span class="kw">CASE</span>
-        <span class="kw">WHEN</span> TotalOrders > 100
-            <span class="kw">THEN</span> <span class="str">'Gold'</span>
-        <span class="kw">ELSE</span> <span class="str">'Standard'</span>
-    <span class="kw">END</span>
-<span class="kw">WHERE</span> IsActive = 1;
-          </div>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">ExecuteUpdate/Delete Over Raw SQL</div>
-        <div class="insight-text">
-          Starting with EF Core 7, prefer <span style="font-family: JetBrains Mono;">ExecuteUpdateAsync()</span> and <span style="font-family: JetBrains Mono;">ExecuteDeleteAsync()</span> over raw SQL for bulk operations. They're LINQ-based (type-safe), automatically parameterized, and perform identically to raw SQL. Raw SQL is now mainly for complex queries, not bulk operations.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 07 (moved to 10) -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">10</div>
-        <h2 class="section-title">When to Use Raw SQL vs LINQ vs Stored Procedures</h2>
-      </div>
-
-      <div class="prose">
-        <p>You now know three tools: LINQ, raw SQL, and stored procedures. When should you use each? Here's a decision framework:</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Decision Framework</label>
-          <div class="code-content">
-<span class="comment">// 1. SIMPLE CRUD</span>
-<span class="comment">// Use: LINQ</span>
-<span class="kw">var</span> customer = <span class="kw">await</span>
-    context.Customers
-    .<span class="type">FirstOrDefaultAsync</span>(
-        c =&gt; c.Id == 1);
-
-customer.Name = <span class="str">"Updated"</span>;
-<span class="kw">await</span>
-    context.SaveChangesAsync();
-
-<span class="comment">// 2. COMPLEX QUERIES</span>
-<span class="comment">// (window functions, CTEs, etc)</span>
-<span class="comment">// Use: Raw SQL</span>
-<span class="kw">var</span> results = <span class="kw">await</span>
-    context.Orders
-    .<span class="type">FromSqlInterpolated</span>(
-        <span class="str">$"SELECT * FROM Orders "</span> +
-        <span class="str">$"WHERE rank OVER ..."</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// 3. BULK OPERATIONS</span>
-<span class="comment">// Use: ExecuteSqlRaw</span>
-<span class="kw">await</span> context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">"UPDATE ... WHERE ..."</span>);
-
-<span class="comment">// 4. STORED PROCEDURES</span>
-<span class="comment">// Use: Raw SQL if already exists</span>
-<span class="comment">// or FromSqlRaw()</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">SQL Approaches</label>
-          <div class="code-content">
-<span class="comment">-- Simple SELECT:</span>
-<span class="kw">SELECT</span> * <span class="kw">FROM</span> Customers
-<span class="kw">WHERE</span> Id = 1;
-
-<span class="comment">-- Complex query with window</span>
-<span class="comment">-- functions:</span>
-<span class="kw">SELECT</span> *,
-    <span class="type">ROW_NUMBER</span>() <span class="kw">OVER</span>
-        (<span class="kw">PARTITION BY</span> Category
-         <span class="kw">ORDER BY</span> Price)
-<span class="kw">FROM</span> Products;
-
-<span class="comment">-- Bulk update:</span>
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price *= 1.1
-<span class="kw">WHERE</span> Category=<span class="str">'Electronics'</span>;
-
-<span class="comment">-- Or use stored procedures</span>
-<span class="comment">-- for complex business logic</span>
-<span class="kw">EXEC</span> sp_ProcessOrders;
-          </div>
-        </div>
-      </div>
-
-      <div class="prose">
-        <p><strong>Quick Decision Table:</strong></p>
-        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; color: var(--ink2); font-size: 0.9rem;">
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Scenario</td>
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Tool</td>
-            <td style="padding: 0.75rem; font-weight: 600; color: var(--ink);">Why</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem;">Simple CRUD</td>
-            <td style="padding: 0.75rem;">LINQ</td>
-            <td style="padding: 0.75rem;">Automatic change tracking, type-safe, readable</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem;">Window functions, CTEs, complex aggregation</td>
-            <td style="padding: 0.75rem;">Raw SQL</td>
-            <td style="padding: 0.75rem;">LINQ can't express these; SQL is clearer</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--rule);">
-            <td style="padding: 0.75rem;">Bulk updates/deletes</td>
-            <td style="padding: 0.75rem;">ExecuteSqlRaw</td>
-            <td style="padding: 0.75rem;">Don't load entities; single statement</td>
-          </tr>
-          <tr>
-            <td style="padding: 0.75rem;">Existing stored procedures</td>
-            <td style="padding: 0.75rem;">Raw SQL or Stored Proc Extension</td>
-            <td style="padding: 0.75rem;">Use what already works; don't force LINQ</td>
-          </tr>
-        </table>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Mix and Match Strategically</div>
-        <div class="insight-text">
-          The beauty of EF Core is that you can mix LINQ, raw SQL, and stored procedures in the same application. Use LINQ for simple operations where change tracking is valuable. Use raw SQL for complex queries. Use stored procedures only if they already exist and are well-tested.
-        </div>
-      </insight>
-    </section>
-
-    <!-- Section 11 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">11</div>
-        <h2 class="section-title">Query Patterns: LINQ vs Raw SQL vs Stored Procedures</h2>
-      </div>
-
-      <div class="prose">
-        <p>Here are three common query patterns: a simple selection, a window function query, and a bulk operation. Each shows the LINQ approach, raw SQL approach, and (where applicable) stored procedure approach.</p>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 1: Simple Filter + Order (LINQ)</label>
-          <div class="code-content">
-<span class="comment">// BEST: LINQ for simple queries</span>
-<span class="kw">var</span> activeProducts = <span class="kw">await</span>
-    context.Products
-    .<span class="type">Where</span>(p => p.IsActive)
-    .<span class="type">OrderByDescending</span>(p =>
-        p.Price)
-    .<span class="type">Take</span>(20)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Generates efficient SQL</span>
-<span class="comment">// Full change tracking</span>
-<span class="comment">// Easy to read and maintain</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 1: Raw SQL Alternative</label>
-          <div class="code-content">
-<span class="comment">// ALTERNATIVE: Same query in SQL</span>
-<span class="kw">var</span> products = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT TOP 20 *</span>
-        <span class="str">FROM Products</span>
-        <span class="str">WHERE IsActive = 1</span>
-        <span class="str">ORDER BY Price DESC"</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// More control over SQL</span>
-<span class="comment">// But harder to compose</span>
-<span class="comment">// Prefer LINQ here</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Pattern 1: Generated SQL</label>
-          <div class="code-content">
-<span class="kw">SELECT</span> <span class="kw">TOP</span> 20 *
-<span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> IsActive = 1
-<span class="kw">ORDER BY</span> Price <span class="kw">DESC</span>;
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 2: Window Function (Raw SQL)</label>
-          <div class="code-content">
-<span class="comment">// LINQ cannot express</span>
-<span class="comment">// window functions</span>
-<span class="kw">var</span> rankedProducts =
-    <span class="kw">await</span> context.Products
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT *,</span>
-        <span class="str">ROW_NUMBER() OVER</span>
-        <span class="str">(PARTITION BY Category</span>
-        <span class="str">ORDER BY Price DESC)</span>
-        <span class="str">AS PriceRank</span>
-        <span class="str">FROM Products</span>
-        <span class="str">WHERE IsActive = 1"</span>)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// Raw SQL is only option here</span>
-<span class="comment">// LINQ can't translate this</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 2: With LINQ Composition</label>
-          <div class="code-content">
-<span class="comment">// Add LINQ filtering on top</span>
-<span class="kw">var</span> topRanked = <span class="kw">await</span>
-    context.Products
-    .<span class="type">FromSqlRaw</span>(
-        <span class="str">@"SELECT *,</span>
-        <span class="str">ROW_NUMBER() OVER</span>
-        <span class="str">(PARTITION BY Category</span>
-        <span class="str">ORDER BY Price DESC)</span>
-        <span class="str">AS PriceRank</span>
-        <span class="str">FROM Products"</span>)
-    .<span class="type">Where</span>(p => p.PriceRank <= 5)
-    .<span class="type">ToListAsync</span>();
-
-<span class="comment">// EF wraps SQL as subquery,</span>
-<span class="comment">// then applies WHERE</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Pattern 2: Window Function SQL</label>
-          <div class="code-content">
-<span class="kw">SELECT</span> *,
-    <span class="type">ROW_NUMBER</span>() <span class="kw">OVER</span> (
-        <span class="kw">PARTITION BY</span> Category
-        <span class="kw">ORDER BY</span> Price <span class="kw">DESC</span>
-    ) <span class="kw">AS</span> PriceRank
-<span class="kw">FROM</span> Products
-<span class="kw">WHERE</span> IsActive = 1;
-          </div>
-        </div>
-      </div>
-
-      <div class="comparison">
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 3: Bulk Update (ExecuteUpdate)</label>
-          <div class="code-content">
-<span class="comment">// BEST (EF Core 7+):</span>
-<span class="comment">// ExecuteUpdate for bulk ops</span>
-<span class="kw">var</span> count = <span class="kw">await</span>
-    context.Products
-    .<span class="type">Where</span>(p =>
-        p.Category == <span class="str">"Electronics"</span>)
-    .<span class="type">ExecuteUpdateAsync</span>(s =>
-        s.<span class="type">SetProperty</span>(
-            p => p.Price,
-            p => p.Price * 1.1m));
-
-<span class="comment">// Type-safe, LINQ-based</span>
-<span class="comment">// No entity loading</span>
-<span class="comment">// Extremely efficient</span>
-          </div>
-        </div>
-
-        <div class="comparison-block csharp-block">
-          <div class="comparison-label">Pattern 3: Raw SQL Alternative</label>
-          <div class="code-content">
-<span class="comment">// LEGACY: ExecuteSqlRaw</span>
-<span class="kw">await</span> context.Database
-    .<span class="type">ExecuteSqlRawAsync</span>(
-        <span class="str">@"UPDATE Products</span>
-        <span class="str">SET Price = Price * {0}</span>
-        <span class="str">WHERE Category = {1}"</span>,
-        1.1m, <span class="str">"Electronics"</span>);
-
-<span class="comment">// Works, but raw SQL</span>
-<span class="comment">// Manual parameters</span>
-<span class="comment">// Prefer ExecuteUpdate</span>
-          </div>
-        </div>
-
-        <div class="comparison-block sql-block">
-          <div class="comparison-label">Pattern 3: Bulk Update SQL</label>
-          <div class="code-content">
-<span class="kw">UPDATE</span> Products
-<span class="kw">SET</span> Price = Price * 1.1
-<span class="kw">WHERE</span> Category = <span class="str">'Electronics'</span>;
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 12 -->
-    <section class="section">
-      <div class="section-header">
-        <div class="section-number">12</div>
-        <h2 class="section-title">Performance Comparison: Raw SQL vs LINQ vs Stored Procedures</h2>
-      </div>
-
-      <div class="prose">
-        <p>Performance varies depending on query complexity. LINQ-generated SQL is usually optimal for simple queries. Raw SQL is faster for complex operations that LINQ generates inefficiently. Stored procedures offer no inherent performance advantage in modern databases with good query optimizers.</p>
-      </div>
-
-      <div class="code-single">
-        <div class="code-block csharp">
-          <span class="code-label">Performance Test: Three Approaches</span>
-          <pre><code>// Scenario: Get active customers and their order count
-
-// APPROACH 1: LINQ (Simplest, often optimal)
-var sw = Stopwatch.StartNew();
-var customers1 = await context.Customers
-  .Where(c => c.IsActive)
-  .Include(c => c.Orders)
-  .Select(c => new {
-    c.Id,
-    c.Name,
-    OrderCount = c.Orders.Count
-  })
-  .ToListAsync();
-sw.Stop();
-Console.WriteLine($"LINQ: {sw.ElapsedMilliseconds}ms");
-// Result: 45ms (depends on row count)
-
-// APPROACH 2: Raw SQL with LEFT JOIN
-sw.Restart();
-var customers2 = await context.Customers
-  .FromSqlRaw(@"
-    SELECT DISTINCT c.Id, c.Name,
-      COUNT(o.Id) AS OrderCount
-    FROM Customers c
-    LEFT JOIN Orders o ON c.Id = o.CustomerId
-    WHERE c.IsActive = 1
-    GROUP BY c.Id, c.Name")
-  .ToListAsync();
-sw.Stop();
-Console.WriteLine($"Raw SQL: {sw.ElapsedMilliseconds}ms");
-// Result: 38ms (often faster for aggregations)
-
-// APPROACH 3: Stored Procedure
-sw.Restart();
-var customers3 = await context.Customers
-  .FromSqlRaw("EXEC sp_GetActiveCustomersWithOrders")
-  .ToListAsync();
-sw.Stop();
-Console.WriteLine($"Stored Proc: {sw.ElapsedMilliseconds}ms");
-// Result: 42ms (usually not faster than raw SQL)
-
-// Analysis:
-// - Raw SQL wins by ~7ms (15% faster)
-// - This is significant at scale (millions of rows)
-// - But LINQ is more maintainable
-// - Use LINQ first; optimize with raw SQL if needed</code></pre>
-        </div>
-      </div>
-
-      <div class="code-single">
-        <div class="code-block csharp">
-          <span class="code-label">When Raw SQL Wins: Complex Aggregations</span>
-          <pre><code>// Scenario: Customer sales statistics by region
-
-// LINQ version (less efficient)
-var stats = await context.Orders
-  .Where(o => o.OrderDate >= startDate)
-  .GroupBy(o => o.Customer.Region)
-  .Select(g => new {
-    Region = g.Key,
-    TotalSales = g.Sum(o => o.Total),
-    AvgOrderValue = g.Average(o => o.Total),
-    OrderCount = g.Count(),
-    CustomerCount = g.Select(o => o.CustomerId).Distinct().Count()
-  })
-  .ToListAsync();
-// Result: 125ms
-// LINQ generates subqueries for distinct customer count
-
-// Raw SQL version (optimized)
-var stats2 = await context.Set<dynamic>()
-  .FromSqlRaw(@"
-    SELECT
-      c.Region,
-      SUM(o.Total) AS TotalSales,
-      AVG(o.Total) AS AvgOrderValue,
-      COUNT(o.Id) AS OrderCount,
-      COUNT(DISTINCT o.CustomerId) AS CustomerCount
-    FROM Orders o
-    JOIN Customers c ON o.CustomerId = c.Id
-    WHERE o.OrderDate >= @date
-    GROUP BY c.Region")
-  .ToListAsync();
-// Result: 85ms
-// SQL optimizer handles all aggregations in one pass
-// ~32% faster for this complex query
-
-// Key insight:
-// - LINQ good for simple operations
-// - Raw SQL better for multi-level aggregations
-// - Profile before optimizing</code></pre>
-        </div>
-      </div>
-
-      <div class="code-single">
-        <div class="code-block csharp">
-          <span class="code-label">Bulk Operations: ExecuteUpdate Wins</span>
-          <pre><code>// Scenario: Mark 100,000 old orders as archived
-
-// APPROACH 1: LINQ + SaveChanges (BAD)
-var cutoff = DateTime.Now.AddYears(-1);
-var oldOrders = await context.Orders
-  .Where(o => o.CreatedDate < cutoff)
-  .ToListAsync(); // Loads all 100k rows!
-
-foreach (var order in oldOrders)
-  order.Status = "Archived";
-
-await context.SaveChangesAsync();
-// Time: 8500ms (8.5 seconds)
-// Memory: 500+ MB
-// Change tracking overhead is killer
-
-// APPROACH 2: ExecuteUpdate (GOOD)
-var count = await context.Orders
-  .Where(o => o.CreatedDate < cutoff)
-  .ExecuteUpdateAsync(s =>
-    s.SetProperty(o => o.Status, "Archived"));
-// Time: 450ms
-// Memory: <1 MB
-// ~19x faster, orders of magnitude less memory
-
-// APPROACH 3: Raw SQL (equivalent)
-var count = await context.Database
-  .ExecuteSqlRawAsync(
-    @"UPDATE Orders SET Status = 'Archived'
-      WHERE CreatedDate < @cutoff",
-    new SqlParameter("@cutoff", cutoff));
-// Time: 450ms (same as ExecuteUpdate)
-// But ExecuteUpdate is more type-safe
-
-// Key insight:
-// - Never load large datasets just to update them
-// - ExecuteUpdate/ExecuteDelete are essential
-// - For bulk ops, raw SQL and ExecuteUpdate are equivalent</code></pre>
-        </div>
-      </div>
-
-      <div class="insight">
-        <div class="insight-title">Performance Rule of Thumb</div>
-        <div class="insight-text">
-          <strong>Start with LINQ.</strong> It's readable, maintainable, and generates good SQL. Profile your queries with a tool like SQL Profiler or Glimpse. If a query is slow, inspect the generated SQL. If LINQ generates a suboptimal query, switch to raw SQL. Stored procedures rarely offer performance advantages over well-optimized raw SQL. The modern database query optimizer is sophisticated; trust it.
-        </div>
-      </div>
-    </section>
-
-    <!-- Key Takeaways -->
-    <div class="key-takeaways">
-      <h3>Key Takeaways</h3>
-      <ul>
-        <li><strong>FromSqlRaw() executes SQL but returns IQueryable&lt;T&gt;.</strong> You can chain LINQ operators like .Where(), .Include(), and .OrderBy() on top. EF wraps your SQL as a subquery.</li>
-        <li><strong>FromSqlInterpolated() uses string interpolation to safely parameterize SQL.</strong> Variables become SQL parameters, not concatenated strings. Always use this for user input instead of FromSqlRaw() with concatenation.</li>
-        <li><strong>ExecuteSqlRaw() executes non-query commands: bulk updates, DDL, stored procedures.</strong> It returns the number of rows affected. Use for operations that don't need entity tracking.</li>
-        <li><strong>Raw SQL + LINQ composition is powerful.</strong> Start with complex SQL logic and add LINQ filtering on top. Your SQL must return all entity columns, properly named.</li>
-        <li><strong>Database views can be queried in EF with .ToView() and .HasNoKey().</strong> Views are read-only projections; TVFs are parameterized stored queries that EF can call.</li>
-        <li><strong>Use LINQ for simple CRUD, raw SQL for complex queries, ExecuteSqlRaw for bulk operations.</strong> Don't force all queries through LINQ if SQL is clearer and more efficient.</li>
-        <li><strong>Never concatenate user input directly into SQL.</strong> Always use parameterization with FromSqlInterpolated() or explicit parameters to prevent SQL injection.</li>
-      </ul>
-    </div>
-
-    <!-- Navigation -->
-    <div class="nav-buttons">
-      <a href="ch15-change-tracking.html" class="nav-button prev">← Change Tracking</a>
-      <a href="ch17-ef-performance.html" class="nav-button next">EF Performance →</a>
-    </div>
-  </main>
-
-  <footer>
-    <p>&copy; 2024 SQL to C# Book. <a href="index.html">Back to Index</a></p>
-  </footer>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

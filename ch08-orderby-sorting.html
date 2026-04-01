@@ -1,1957 +1,511 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 8: ORDER BY → .OrderBy() — Sorting — SQL to C#</title>
-<meta name="description" content="Master sorting with SQL ORDER BY and LINQ .OrderBy(). Learn multi-column sorting with ThenBy, performance implications, pagination, and NULL handling across databases.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 08: ORDER BY & Sorting — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-}
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  height: 54px;
-  display: flex;
-  align-items: center;
-  background: rgba(248,247,243,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--rule);
-}
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-.nav-brand {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--acc);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-.nav-pill {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  background: var(--acc);
-  color: var(--white);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
 
-.nav-links {
-  display: flex;
-  gap: 24px;
-  list-style: none;
-}
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink3);
-  text-decoration: none;
-  transition: color .2s;
-}
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-.nav-links a:hover { color: var(--acc); }
-
-.chapter-header {
-  padding: 60px 0 50px;
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: 50px;
-}
-
-.chapter-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-
-.chapter-header h1 {
-  font-size: clamp(32px, 4vw, 42px);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 15px;
-  color: var(--ink);
-}
-
-.chapter-desc {
-  font-family: 'Source Serif 4', serif;
-  font-size: 17px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.7;
-  max-width: 640px;
-}
-
-.in-this-chapter {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 60px;
-}
-
-.in-this-chapter h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.in-this-chapter ul {
-  list-style: none;
-  padding: 0;
-}
-
-.in-this-chapter li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 6px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.in-this-chapter li:before {
-  content: "→";
-  position: absolute;
-  left: 0;
-  color: var(--acc);
-  font-weight: 600;
-}
-
-.section {
-  margin-bottom: 70px;
-}
-
-.section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--acc);
-  text-transform: uppercase;
-  letter-spacing: .12em;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.section-num::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-
-.section h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--ink);
-  line-height: 1.15;
-}
-
-.section-text {
-  font-family: 'Source Serif 4', serif;
-  font-size: 16px;
-  font-weight: 300;
-  color: var(--ink2);
-  line-height: 1.8;
-  margin-bottom: 28px;
-  max-width: 750px;
-}
-
-.section-text p {
-  margin-bottom: 14px;
-}
-
-.code-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.triple-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 28px;
-}
-
-.code-block {
-  border-radius: 12px;
-  padding: 24px;
-  overflow-x: auto;
-}
-
-.code-block.sql {
-  background: var(--ink);
-  border: 1px solid #2a2824;
-}
-
-.code-block.csharp,
-.code-block.csharp-method,
-.code-block.csharp-query {
-  background: var(--blue-l);
-  border: 1px solid var(--blue-b);
-}
-
-.code-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.code-block.sql .code-label {
-  color: var(--acc-b);
-}
-
-.code-block.csharp .code-label,
-.code-block.csharp-method .code-label,
-.code-block.csharp-query .code-label {
-  color: var(--blue);
-}
-
-code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-  display: block;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.code-block.sql code {
-  color: #e8e4db;
-}
-
-.code-block.csharp code,
-.code-block.csharp-method code,
-.code-block.csharp-query code {
-  color: var(--ink);
-}
-
-.code-single {
-  margin-bottom: 28px;
-}
-
-.code-single .code-block {
-  max-width: 100%;
-}
-
-.key-insight {
-  border-left: 4px solid var(--acc);
-  background: var(--acc-l);
-  padding: 20px;
-  padding-left: 24px;
-  border-radius: 4px;
-  margin-bottom: 28px;
-}
-
-.key-insight strong {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-.key-insight p {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  margin: 0;
-  line-height: 1.7;
-}
-
-.key-takeaways {
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 30px;
-  margin: 80px 0;
-}
-
-.key-takeaways h3 {
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-
-.key-takeaways ul {
-  list-style: none;
-  padding: 0;
-}
-
-.key-takeaways li {
-  font-family: 'Source Serif 4', serif;
-  font-size: 15px;
-  color: var(--ink2);
-  padding: 8px 0;
-  padding-left: 20px;
-  position: relative;
-}
-
-.key-takeaways li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: var(--green);
-  font-weight: 700;
-}
-
-.chapter-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40px 0;
-  margin-top: 80px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.nav-item {
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item.prev {
-  align-items: flex-start;
-}
-
-.nav-item.next {
-  align-items: flex-end;
-}
-
-.nav-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--ink3);
-  font-weight: 600;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--acc);
-  transition: color .2s;
-}
-
-.nav-item:hover .nav-title {
-  color: var(--ink);
-}
-
-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--rule);
-  padding: 60px 0;
-  margin-top: 100px;
-}
-
-.footer-inner {
-  text-align: center;
-  font-family: 'Source Serif 4', serif;
-  font-size: 14px;
-  color: var(--ink3);
-}
-
-@media (max-width: 1024px) {
-  .triple-comparison {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .code-comparison,
-  .triple-comparison {
-    grid-template-columns: 1fr;
-  }
-
-  .chapter-nav {
-    flex-direction: column;
-    gap: 30px;
-  }
-
-  .nav-item.next {
-    align-items: flex-start;
-  }
-}
-</style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-
-<nav>
-  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
-    <a href="index.html" class="nav-brand">
-      SQL to C#
-      <span class="nav-pill">Ch 08</span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">← All Chapters</a></li>
-    </ul>
-  </div>
-</nav>
-
-<div class="wrap">
-  <header class="chapter-header">
-    <div class="chapter-num">Chapter 08</div>
-    <h1>ORDER BY → .OrderBy() — Sorting</h1>
-    <p class="chapter-desc">Master sorting with SQL ORDER BY and LINQ .OrderBy(). Learn multi-column sorting with ThenBy, computed columns, NULL handling differences across databases, pagination strategies, and why index-assisted sorts matter for performance.</p>
-  </header>
-
-  <div class="in-this-chapter">
-    <h3>In This Chapter</h3>
-    <ul>
-      <li>Basic sorting: ascending and descending order</li>
-      <li>Multi-column sorting with ThenBy and correct chaining</li>
-      <li>Sorting by computed expressions, not just columns</li>
-      <li>NULL behavior in sorting (database-dependent)</li>
-      <li>Pagination: OFFSET/FETCH and Skip/Take with performance considerations</li>
-      <li>Keyset pagination as a performance optimization</li>
-      <li>Performance analysis: index usage and sort cost</li>
-      <li>Sorting with Include and potential query bloat</li>
-    </ul>
-  </div>
-
-  <!-- SECTION 01: Basic Sorting -->
-  <section class="section">
-    <div class="section-num">01</div>
-    <h2>Basic Sorting with ASC and DESC</h2>
-
-    <p class="section-text">
-      ORDER BY specifies the sort order of result rows. By default, sorting is ascending (smallest to largest, A to Z). DESC reverses the order to descending. Both SQL and LINQ provide identical functionality with slightly different syntax. The generated SQL is indistinguishable.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL ORDER BY</span>
-        <pre><code>-- Ascending (default)
-SELECT * FROM Products
-ORDER BY Price;
-
--- Descending
-SELECT * FROM Products
-ORDER BY Price DESC;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>// Ascending (default)
-var ascending = products
-  .OrderBy(p => p.Price)
-  .ToList();
-
-// Descending
-var descending = products
-  .OrderByDescending(p => p.Price)
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>// Ascending
-var ascending = (from p in products
-                 orderby p.Price
-                 select p)
-  .ToList();
-
-// Descending
-var descending = (from p in products
-                  orderby p.Price descending
-                  select p)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Sorting different data types:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Various Types</span>
-        <pre><code>-- Alphabetical (strings)
-SELECT * FROM Customers
-ORDER BY Name;
-
--- Numeric (numbers)
-SELECT * FROM Orders
-ORDER BY Total DESC;
-
--- Chronological (dates)
-SELECT * FROM Events
-ORDER BY EventDate ASC;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Various Types</span>
-        <pre><code>// Alphabetical
-var byName = customers
-  .OrderBy(c => c.Name)
-  .ToList();
-
-// Numeric descending
-var byTotal = orders
-  .OrderByDescending(o => o.Total)
-  .ToList();
-
-// Chronological ascending
-var byDate = events
-  .OrderBy(e => e.EventDate)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Default Order Matters</strong>
-      <p>Without ORDER BY, result order is undefined. The database may return rows in any order. Always specify ORDER BY when result order matters. For consistency, prefer ascending order (the SQL default) unless descending is explicitly required.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 02: Multi-Column Sorting -->
-  <section class="section">
-    <div class="section-num">02</div>
-    <h2>Multi-Column Sorting with ThenBy</h2>
-
-    <p class="section-text">
-      Often you sort by multiple columns: first by category, then by price within each category. SQL uses multiple comma-separated columns. LINQ uses .OrderBy() followed by .ThenBy() for each additional sort level. A critical mistake in LINQ: calling .OrderBy() multiple times replaces the previous sort, not adds to it. Always use .ThenBy() for additional sort criteria.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL</span>
-        <pre><code>SELECT *
-FROM Products
-ORDER BY Category ASC, Price DESC,
-  Name ASC;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax (CORRECT)</span>
-        <pre><code>var result = products
-  .OrderBy(p => p.Category)
-  .ThenByDescending(p => p.Price)
-  .ThenBy(p => p.Name)
-  .ToList();
-
-// Key: use ThenBy, not multiple OrderBy</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from p in products
-              orderby p.Category,
-                      p.Price descending,
-                      p.Name
-              select p)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Common mistake: multiple OrderBy calls (WRONG):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">INCORRECT: Multiple OrderBy (Replaces)</span>
-        <pre><code>// BAD: Second OrderBy replaces the first!
-var result = products
-  .OrderBy(p => p.Category)  // Sort by category
-  .OrderBy(p => p.Price)     // REPLACES category sort!
-  .ToList();
-
-// Final result: sorted ONLY by Price
-// Category sort is lost</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">CORRECT: OrderBy + ThenBy (Chains)</span>
-        <pre><code>// GOOD: ThenBy adds a secondary sort
-var result = products
-  .OrderBy(p => p.Category)    // First sort
-  .ThenBy(p => p.Price)        // Then sort within category
-  .ToList();
-
-// Final result: sorted by category, then price
-// Both sorts are applied</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Complex multi-column scenarios:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Multi-Level Sorting</span>
-        <pre><code>var result = context.Orders
-  .OrderBy(o => o.CustomerId)
-  .ThenByDescending(o => o.OrderDate)
-  .ThenBy(o => o.Id)
-  .ToList();
-
-// SQL equivalent:
-// ORDER BY CustomerId ASC, OrderDate DESC, Id ASC
-
-// Real-world example: sales report
-var salesReport = context.Transactions
-  .Where(t => t.Date >= startDate)
-  .OrderBy(t => t.SalesRep)      // Salesperson
-  .ThenByDescending(t => t.Amount) // Largest first
-  .ThenBy(t => t.Date)            // Then chronological
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>ThenBy, Not OrderBy (Critical)</strong>
-      <p>This is a frequent source of bugs: using .OrderBy() twice replaces the first sort. Always use .ThenBy() for additional sort criteria. Method chaining is order-sensitive: each .ThenBy() adds a new sort tier.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 03: Sorting by Computed Values -->
-  <section class="section">
-    <div class="section-num">03</div>
-    <h2>Sorting by Computed Expressions</h2>
-
-    <p class="section-text">
-      You often need to sort by a computed value, not a stored column. SQL uses expressions in ORDER BY. LINQ accepts any lambda expression. Entity Framework translates these to SQL equivalents at the database level, which is far more efficient than sorting in C#.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL</span>
-        <pre><code>SELECT *
-FROM OrderItems
-ORDER BY Quantity * UnitPrice DESC;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var result = items
-  .OrderByDescending(oi =>
-    oi.Quantity * oi.UnitPrice)
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var result = (from oi in items
-              orderby oi.Quantity
-                * oi.UnitPrice descending
-              select oi)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Complex computed sorts:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Complex Expression</span>
-        <pre><code>SELECT *
-FROM Customers
-ORDER BY
-  CASE
-    WHEN Status = 'VIP' THEN 1
-    WHEN Status = 'Premium' THEN 2
-    ELSE 3
-  END,
-  TotalSpent DESC;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C# Complex Expression</span>
-        <pre><code>var result = customers
-  .OrderBy(c => c.Status == "VIP" ? 1
-    : c.Status == "Premium" ? 2 : 3)
-  .ThenByDescending(c => c.TotalSpent)
-  .ToList();
-
-// EF translates the ternary to CASE in SQL</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Computed Sorts at the Database</strong>
-      <p>Entity Framework translates computed sort expressions to SQL, meaning the database performs the sorting. This is far faster than fetching all rows and sorting in C#. Keep your lambda expressions simple (comparisons, arithmetic, string methods) to ensure they translate to SQL. Test with .ToQueryString() to verify.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 04: NULL Handling in Sorting -->
-  <section class="section">
-    <div class="section-num">04</div>
-    <h2>NULL Handling in Sorting</h2>
-
-    <p class="section-text">
-      NULL values complicate sorting. Different databases handle NULLs differently: SQL Server puts NULLs first in ascending order; PostgreSQL puts them last. This inconsistency can lead to surprising result variations across databases. C# can handle NULL explicitly using null coalescing and conditional sorting.
-    </p>
-
-    <p class="section-text">
-      Database-specific NULL behavior:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block sql">
-        <span class="code-label">SQL NULL Ordering (Database Dependent)</span>
-        <pre><code>-- SQL Server: NULLs first in ascending
-SELECT * FROM Customers
-ORDER BY MiddleName ASC;
--- Result: [NULL, NULL, ..., "Alice", "Bob", ...]
-
--- PostgreSQL: NULLs last in ascending
-SELECT * FROM Customers
-ORDER BY MiddleName ASC;
--- Result: ["Alice", "Bob", ..., NULL, NULL, ...]
-
--- To force consistent behavior:
--- SQL Server: make NULLs last
-SELECT * FROM Customers
-ORDER BY CASE WHEN MiddleName IS NULL THEN 1
-             ELSE 0 END, MiddleName ASC;
-
--- PostgreSQL: make NULLs first
-SELECT * FROM Customers
-ORDER BY MiddleName IS NULL DESC, MiddleName ASC;</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Handling NULLs in C#:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">C# NULL Handling (Database Independent)</span>
-        <pre><code>// Option 1: Sort NULLs to the end
-var result = customers
-  .OrderBy(c => c.MiddleName == null ? 1 : 0)
-  .ThenBy(c => c.MiddleName)
-  .ToList();
-
-// Option 2: Sort NULLs to the beginning
-var result2 = customers
-  .OrderBy(c => c.MiddleName == null ? 0 : 1)
-  .ThenBy(c => c.MiddleName)
-  .ToList();
-
-// Option 3: Replace NULL with default value
-var result3 = customers
-  .OrderBy(c => c.MiddleName ?? "")
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block sql">
-        <span class="code-label">Generated SQL (Option 1)</span>
-        <pre><code>-- EF generates CASE to handle NULL consistently
-SELECT *
-FROM Customers AS c
-ORDER BY
-  CASE WHEN c.MiddleName IS NULL THEN 1
-       ELSE 0 END,
-  c.MiddleName ASC;</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>NULL Sorting Is Database-Specific</strong>
-      <p>If result order consistency matters across databases (SQL Server, PostgreSQL, MySQL), handle NULLs explicitly in C#. Use conditional sorting to place NULLs first or last as desired. Test on your target database to ensure expected behavior.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 05: Pagination with Skip and Take -->
-  <section class="section">
-    <div class="section-num">05</div>
-    <h2>Pagination: OFFSET/FETCH and Skip/Take</h2>
-
-    <p class="section-text">
-      Large result sets require pagination. SQL's OFFSET and FETCH (or LIMIT in other databases) retrieve a specific range of rows. LINQ provides .Skip() and .Take() for the same purpose. Both must follow ORDER BY for consistent results. However, both have performance implications on large datasets that must be understood.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL OFFSET/FETCH</span>
-        <pre><code>-- SQL Server 2012+
-SELECT *
-FROM Products
-ORDER BY Id
-OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY;
-
--- MySQL/PostgreSQL
-SELECT *
-FROM Products
-ORDER BY Id
-LIMIT 10 OFFSET 20;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var pageSize = 10;
-var pageNumber = 2; // 0-indexed
-
-var result = products
-  .OrderBy(p => p.Id)
-  .Skip((pageNumber - 1) * pageSize)
-  .Take(pageSize)
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var pageSize = 10;
-var pageNumber = 2;
-
-var result = (from p in products
-              orderby p.Id
-              select p)
-  .Skip((pageNumber - 1) * pageSize)
-  .Take(pageSize)
-  .ToList();</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Real-world pagination implementation:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Pagination Pattern</span>
-        <pre><code>public class PagedResult<T>
-{
-  public List<T> Items { get; set; }
-  public int TotalCount { get; set; }
-  public int PageNumber { get; set; }
-  public int PageSize { get; set; }
-  public int TotalPages =>
-    (TotalCount + PageSize - 1) / PageSize;
-}
-
-public PagedResult<ProductDto> GetProducts(
-  int pageNumber = 1, int pageSize = 10)
-{
-  var query = context.Products.AsQueryable();
-
-  // Get total before pagination
-  var totalCount = query.Count();
-
-  // Apply pagination
-  var items = query
-    .OrderBy(p => p.Id)
-    .Skip((pageNumber - 1) * pageSize)
-    .Take(pageSize)
-    .Select(p => new ProductDto {
-      Id = p.Id,
-      Name = p.Name,
-      Price = p.Price
-    })
-    .ToList();
-
-  return new PagedResult<ProductDto> {
-    Items = items,
-    TotalCount = totalCount,
-    PageNumber = pageNumber,
-    PageSize = pageSize
-  };
-}</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Performance problem: OFFSET on large pages:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Performance Problem with OFFSET</span>
-        <pre><code>// Problem: Getting page 1000 of 100 items per page
-// OFFSET 99,900 ROWS
-var items = products
-  .OrderBy(p => p.Id)
-  .Skip(99_900)
-  .Take(100)
-  .ToList();
-
-// The database must:
-// 1. Sort all rows
-// 2. Skip first 99,900 (still reads them!)
-// 3. Return next 100
-// This is slow even with indexes
-
-// Solution: Keyset pagination (see next section)</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>OFFSET/FETCH Performance Degradation</strong>
-      <p>OFFSET must skip N rows, which the database must still read/evaluate. Page 1000 of 100 items requires skipping 99,900 rows. This gets exponentially slower as you go deeper. For large datasets and user pagination, use keyset pagination instead.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 06: Keyset Pagination -->
-  <section class="section">
-    <div class="section-num">06</div>
-    <h2>Keyset Pagination for Large Datasets</h2>
-
-    <p class="section-text">
-      For large result sets, keyset (or cursor) pagination is far more efficient than OFFSET. Instead of skipping rows, you remember the last key from the previous page and request rows after that key. This uses indexes efficiently and maintains consistent performance regardless of page depth.
-    </p>
-
-    <p class="section-text">
-      Keyset pagination pattern:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Keyset Pagination Implementation</span>
-        <pre><code>public class KeysetPagedResult<T>
-{
-  public List<T> Items { get; set; }
-  public int LastId { get; set; } // Cursor for next page
-  public bool HasMore { get; set; }
-}
-
-// First page
-public KeysetPagedResult<ProductDto> GetProducts(
-  int pageSize = 10,
-  int? lastId = null)
-{
-  var query = context.Products.AsQueryable();
-
-  // If we have a cursor, start after it
-  if (lastId.HasValue)
-  {
-    query = query.Where(p => p.Id > lastId.Value);
-  }
-
-  // Fetch pageSize + 1 to detect if there are more
-  var items = query
-    .OrderBy(p => p.Id)
-    .Take(pageSize + 1)
-    .Select(p => new { p.Id, p.Name, p.Price })
-    .ToList();
-
-  var hasMore = items.Count > pageSize;
-  if (hasMore)
-  {
-    items = items.Take(pageSize).ToList();
-  }
-
-  return new KeysetPagedResult<ProductDto> {
-    Items = items.Select(i => new ProductDto {
-      Id = i.Id,
-      Name = i.Name,
-      Price = i.Price
-    }).ToList(),
-    LastId = items.Last().Id,
-    HasMore = hasMore
-  };
-}
-
-// Usage:
-var page1 = GetProducts(pageSize: 10);
-// Send user to page 2 with LastId = page1.LastId
-var page2 = GetProducts(pageSize: 10, lastId: page1.LastId);</code></pre>
-      </div>
-    </div>
-
-    <p class="statement">
-      Comparing approaches:
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">OFFSET vs Keyset: Performance Comparison</span>
-        <pre><code>// OFFSET approach: Gets slower with each page
-var page = 100;
-var pageSize = 10;
-var items = products
-  .OrderBy(p => p.Id)
-  .Skip((page - 1) * pageSize)  // Skip 990 rows
-  .Take(pageSize)
-  .ToList();
-// Cost: O(skip + take) = O(1000) per request
-
-// Keyset approach: Consistent performance
-var items = products
-  .Where(p => p.Id > lastId)
-  .OrderBy(p => p.Id)
-  .Take(pageSize)
-  .ToList();
-// Cost: O(index seek + take) = O(10) always
-// Uses index efficiently, no skip needed</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Keyset Pagination > OFFSET for Scale</strong>
-      <p>For user-facing pagination on large tables (millions of rows), use keyset pagination. It maintains constant performance regardless of page depth. OFFSET is fine for small datasets or admin interfaces with limited page depth. For infinite scroll patterns, keyset is essential.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 07: Index Usage and Sort Performance -->
-  <section class="section">
-    <div class="section-num">07</div>
-    <h2>Index Usage and Sort Performance</h2>
-
-    <p class="section-text">
-      ORDER BY performance depends critically on indexes. A sort on an indexed column uses the index to retrieve rows in sorted order (cost: O(log N) seek + O(rows) scan). A sort on a non-indexed column requires a full table scan and in-memory sort using tempdb (cost: O(N log N) sort). Understanding this difference is essential for writing performant queries.
-    </p>
-
-    <p class="section-text">
-      Index-assisted sort (fast):
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Index-Assisted Sort Performance</span>
-        <pre><code>// Assuming index on Products.Category
-var result = context.Products
-  .OrderBy(p => p.Category)
-  .ToList();
-
-// Generated SQL:
-// SELECT *
-// FROM Products
-// ORDER BY Category
-//
-// Execution plan:
-// 1. Index seek on Category index (fast O(log N))
-// 2. Ordered scan of index (returns rows in order)
-// 3. Total cost: O(N) - very efficient
-//
-// This is fast even with millions of rows
-// because the index already contains sorted keys
-      </div>
-    </div>
-
-    <p class="section-text">
-      Non-indexed sort (slow):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">Non-Indexed Sort (Full Scan Required)</span>
-        <pre><code>// No index on Products.Description
-var result = context.Products
-  .OrderBy(p => p.Description)
-  .ToList();
-
-// Generated SQL:
-// SELECT *
-// FROM Products
-// ORDER BY Description
-//
-// Execution plan:
-// 1. Full table scan (read all rows into memory)
-// 2. Sort in memory/tempdb (O(N log N))
-// 3. Return sorted results
-//
-// This is slow with millions of rows
-// because no index exists to help ordering
-      </div>
-      <div class="code-block sql">
-        <span class="code-label">Index Impact on Sort Performance</span>
-        <pre><code>-- Create indexes to optimize sorts
-CREATE INDEX idx_product_category
-ON Products(Category);
-
-CREATE INDEX idx_order_date
-ON Orders(OrderDate DESC);
-
--- These indexes make sorting by Category
--- and OrderDate extremely fast
-
--- Complex index for multi-column sort
-CREATE INDEX idx_customer_status_spent
-ON Customers(Status, TotalSpent DESC);
-
--- This index accelerates:
--- ORDER BY Status, TotalSpent DESC
--- Because it's already ordered that way
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Sort Performance Depends on Indexes</strong>
-      <p>Sorts on indexed columns are extremely fast (index provides pre-sorted data). Sorts on non-indexed columns require full scans and expensive in-memory sorting. When a query consistently sorts by a column, create an index on that column. For multi-column sorts, create a composite index matching the sort order. Query performance analysis tools (SQL Profiler, Query Execution Plans) reveal whether an index-assisted sort is being used.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 08: Database Sort Algorithms and Optimization -->
-  <section class="section">
-    <div class="section-num">08</div>
-    <h2>Database Sort Algorithms and Optimization</h2>
-
-    <p class="section-text">
-      Modern databases use sophisticated algorithms to sort data efficiently. The two main approaches are in-memory sorts (quicksort, merge sort) and index-assisted sorts. Understanding which algorithm your database uses helps explain performance characteristics and guides optimization decisions.
-    </p>
-
-    <p class="section-text">
-      For in-memory sorting on non-indexed columns, databases typically use merge sort, which guarantees O(N log N) performance. Quicksort is faster on average but has O(N²) worst-case behavior, which databases avoid. When sorting on indexed columns, the database simply traverses the index in order, achieving O(N) performance because the data is already sorted.
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Understanding Sort Strategy Selection</span>
-        <pre><code>// Query 1: Indexed column sort (FAST - Index Scan)
-var sorted = context.Products
-  .OrderBy(p => p.Id)  // Id has primary key index
-  .ToList();
-// Execution plan: Index Seek → Index Scan
-// Cost: O(N) - traverses index in order
-// Time: ~10ms for 100k rows
-
-// Query 2: Non-indexed column sort (SLOW - Full Scan + Sort)
-var sorted2 = context.Products
-  .OrderBy(p => p.Description)  // No index
-  .ToList();
-// Execution plan: Table Scan → Sort (Merge Sort in tempdb)
-// Cost: O(N log N) merge sort in memory/tempdb
-// Time: ~500ms for 100k rows
-// ~50x slower because of full table scan + sorting
-
-// Query 3: Composite index sort (VERY FAST)
-var sorted3 = context.Orders
-  .OrderBy(o => o.CustomerId)
-  .ThenBy(o => o.OrderDate)
-  .ToList();
-// If index on (CustomerId, OrderDate) exists:
-// Execution plan: Index Seek → Index Scan (already in order)
-// Cost: O(N) - index naturally provides both sort orders
-// Time: ~5ms for 100k rows
-
-// Rule: Index order matters!
-// Index on (A, B) helps:
-// - ORDER BY A, B (matches exactly)
-// - ORDER BY A (prefix matches)
-// But NOT:
-// - ORDER BY B (wrong order)
-// - ORDER BY A DESC, B ASC (mixed direction)</code></pre>
-      </div>
-    </div>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL: Analyze Execution Plan</span>
-        <pre><code>-- Check if sort uses index or tempdb
-SET STATISTICS IO ON;
-SET STATISTICS TIME ON;
-
--- This uses index (fast)
-SELECT * FROM Products
-ORDER BY Id;
--- Output: 'Scan count 1' = index scan only
-
--- This uses tempdb (slow)
-SELECT * FROM Products
-ORDER BY Description;
--- Output: 'Sort with Advanced Scan'
--- Shows merge sort happening in tempdb
-
--- Create index to avoid sort
-CREATE INDEX idx_description
-ON Products(Description);
-
--- Now this query is fast (index scan instead of sort)
-SELECT * FROM Products
-ORDER BY Description;</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C#: Verify Generated SQL Strategy</span>
-        <pre><code>// See the generated SQL execution strategy
-var query = context.Products
-  .OrderBy(p => p.Description);
-
-// In EF Core, call ToQueryString() to see SQL
-string sql = query.ToQueryString();
-Console.WriteLine(sql);
-// Outputs:
-// SELECT * FROM [Products] AS [p]
-// ORDER BY [p].[Description]
-
-// Then run in SQL Profiler to see execution plan
-// You'll notice:
-// - Full Table Scan (no index)
-// - Sort operator using tempdb
-// - Performance: slow for large tables
-
-// Solution: Create the index, then re-run
-// Query will now use Index Scan instead
-// Same LINQ code, but vastly faster</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>The Sort Algorithm Trade-off</strong>
-      <p>Indexes avoid sorting algorithms entirely (data is pre-sorted). Without indexes, databases must use merge sort in tempdb, which works but is slow. For frequently sorted columns, create indexes. The index creation cost (one-time, offline) is worth the query performance gain (every execution, online).</p>
-    </div>
-  </section>
-
-  <!-- SECTION 09: Multi-Column Sorting with Mixed Directions -->
-  <section class="section">
-    <div class="section-num">09</div>
-    <h2>Multi-Column Sorting with Mixed Directions</h2>
-
-    <p class="section-text">
-      Sorting by multiple columns with different directions (ascending on one, descending on another) is common. SQL handles this naturally, but LINQ requires careful method chaining. Additionally, indexes can only assist if the index itself has matching sort directions.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL Mixed Directions</span>
-        <pre><code>-- Sort ascending on one column,
--- descending on another
-SELECT *
-FROM Orders
-ORDER BY CustomerId ASC,
-         OrderDate DESC,
-         Total ASC;</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax</span>
-        <pre><code>var orders = context.Orders
-  .OrderBy(o => o.CustomerId)      // ASC
-  .ThenByDescending(o => o.OrderDate)  // DESC
-  .ThenBy(o => o.Total)            // ASC
-  .ToList();
-
-// Chaining is crucial!
-// Each ThenBy() adds a tier
-// Order matters</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax</span>
-        <pre><code>var orders = (from o in context.Orders
-              orderby o.CustomerId,
-                      o.OrderDate descending,
-                      o.Total
-              select o)
-  .ToList();
-
-// Query syntax is more readable
-// for complex multi-column sorts</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      To optimize multi-column sorts with mixed directions, create a composite index with matching directions:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL: Composite Index with Directions</span>
-        <pre><code>-- Create index matching sort order
-CREATE INDEX idx_order_sort
-ON Orders(CustomerId ASC, OrderDate DESC, Total ASC);
-
--- This index makes the query extremely fast
--- The index naturally provides the sort order
--- No merge sort needed
-SELECT *
-FROM Orders
-ORDER BY CustomerId ASC,
-         OrderDate DESC,
-         Total ASC;
-
--- Alternative (SQL Server):
--- Use DESC direction in index creation
-CREATE INDEX idx_order_sort
-ON Orders(CustomerId, OrderDate DESC, Total);</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">C#: When Index Helps</span>
-        <pre><code>// With the composite index above:
-var orders = context.Orders
-  .OrderBy(o => o.CustomerId)
-  .ThenByDescending(o => o.OrderDate)
-  .ThenBy(o => o.Total)
-  .ToList();
-
-// Execution plan:
-// Index Seek (fast, no sort!)
-// Time: ~5ms for 100k rows
-
-// Without the index:
-// Table Scan → Sort (merge sort)
-// Time: ~500ms
-// ~100x slower
-
-// Lesson: Match index to sort order exactly</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Index Direction Matters for Multi-Column Sorts</strong>
-      <p>A composite index on (A ASC, B DESC) helps ORDER BY A, B DESC but NOT ORDER BY A DESC, B ASC. SQL databases respect index direction. When you consistently sort with mixed directions, create a composite index with matching directions. This is a database-specific optimization (different syntax for SQL Server, PostgreSQL, MySQL).</p>
-    </div>
-  </section>
-
-  <!-- SECTION 10: Custom IComparer Implementations -->
-  <section class="section">
-    <div class="section-num">10</div>
-    <h2>Custom Sorting with IComparer</h2>
-
-    <p class="section-text">
-      Sometimes you need sorting logic that's too complex for SQL. LINQ in C# allows custom IComparer implementations for in-memory sorting. Custom comparers let you define business-specific sort rules that databases don't understand. However, custom sorting happens in C#, not at the database level, so it's slower for large datasets.
-    </p>
-
-    <p class="section-text">
-      Use custom IComparer only after fetching from the database, never on IQueryable. Applying custom sorts to IQueryable will throw an error because the database can't execute C# logic.
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Custom IComparer Example</span>
-        <pre><code>// Custom comparer: Sort by length of name, then alphabetically
-public class CustomNameComparer : IComparer<Product>
-{
-  public int Compare(Product a, Product b)
-  {
-    // First: compare by name length
-    int lengthCompare = a.Name.Length.CompareTo(b.Name.Length);
-    if (lengthCompare != 0)
-      return lengthCompare;
-
-    // If same length: compare alphabetically
-    return a.Name.CompareTo(b.Name);
-  }
-}
-
-// Use the custom comparer
-var products = await context.Products
-  .Where(p => p.IsActive)
-  .ToListAsync(); // Fetch from DB first!
-
-// NOW apply custom sort (in memory)
-var sorted = products
-  .OrderBy(p => p, new CustomNameComparer())
-  .ToList();
-
-// Result: Products sorted by name length,
-// then alphabetically within each length
-
-// Example:
-// "Cat"       (3 chars)
-// "Dog"       (3 chars, alphabetically after Cat)
-// "Elephant"  (8 chars)
-// "Tiger"     (5 chars)</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      Another common use: business-specific sort orders (e.g., status priorities):
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">Status Priority Comparer</span>
-        <pre><code>// Custom: Sort orders by status priority
-public class StatusPriorityComparer
-  : IComparer<Order>
-{
-  private static readonly Dictionary<string, int>
-    StatusPriority = new()
-    {
-      { "Urgent", 1 },
-      { "High", 2 },
-      { "Normal", 3 },
-      { "Low", 4 }
-    };
-
-  public int Compare(Order a, Order b)
-  {
-    var priorityA =
-      StatusPriority.GetValueOrDefault(
-        a.Status, 99);
-    var priorityB =
-      StatusPriority.GetValueOrDefault(
-        b.Status, 99);
-
-    return priorityA.CompareTo(priorityB);
-  }
-}
-
-// Usage
-var orders = await context.Orders
-  .ToListAsync();
-var prioritized = orders
-  .OrderBy(o => o,
-    new StatusPriorityComparer())
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">Alternative: LINQ OrderBy with Priority</span>
-        <pre><code>// Alternative without IComparer:
-// Use OrderBy with a computable value
-var orders = await context.Orders
-  .ToListAsync();
-
-var prioritized = orders
-  .OrderBy(o => o.Status switch
-  {
-    "Urgent" => 1,
-    "High" => 2,
-    "Normal" => 3,
-    "Low" => 4,
-    _ => 99
-  })
-  .ToList();
-
-// Simpler for most cases
-// Avoids IComparer class</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Custom Comparers: Last Resort</strong>
-      <p>Custom IComparer implementations are powerful but slow—they evaluate entirely in C# after data is fetched. Use them only when SQL cannot express the sort logic. For business priorities or custom rules, use .OrderBy() with a switch expression or computed property. Reserve IComparer for truly complex logic that requires state or recursive evaluation.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 11: NULL Handling in Sorting (Expanded) -->
-  <section class="section">
-    <div class="section-num">11</div>
-    <h2>NULL Handling: NULLS FIRST/LAST in SQL vs C#</h2>
-
-    <p class="section-text">
-      Different databases handle NULLs in sorting differently. SQL Server puts NULLs first in ascending order. PostgreSQL puts them last. This database-specific behavior can surprise you when switching databases. C# offers explicit control over NULL placement using conditional sorting.
-    </p>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL: Explicit NULL Control</span>
-        <pre><code>-- SQL Server: NULLs appear first by default
-SELECT * FROM Customers
-ORDER BY MiddleName ASC;
--- Result: [NULL, NULL, Alice, Bob]
-
--- Force NULLs last in SQL Server
-SELECT * FROM Customers
-ORDER BY CASE WHEN MiddleName IS NULL
-             THEN 1 ELSE 0 END,
-         MiddleName ASC;
--- Result: [Alice, Bob, NULL, NULL]
-
--- PostgreSQL: NULLS LAST is explicit
-SELECT * FROM Customers
-ORDER BY MiddleName ASC NULLS LAST;
--- Result: [Alice, Bob, NULL, NULL]</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">Method Syntax: NULL Control</span>
-        <pre><code>// C#: Make NULLs explicit
-// Option 1: NULLs to end
-var result = customers
-  .OrderBy(c =>
-    c.MiddleName == null ? 1 : 0)
-  .ThenBy(c => c.MiddleName)
-  .ToList();
-
-// Option 2: NULLs to beginning
-var result2 = customers
-  .OrderBy(c =>
-    c.MiddleName == null ? 0 : 1)
-  .ThenBy(c => c.MiddleName)
-  .ToList();
-
-// Option 3: Treat NULL as default
-var result3 = customers
-  .OrderBy(c =>
-    c.MiddleName ?? "")
-  .ToList();</code></pre>
-      </div>
-      <div class="code-block csharp-query">
-        <span class="code-label">Query Syntax: NULL Control</span>
-        <pre><code>// Query syntax with explicit NULL handling
-var result = (from c in customers
-              orderby (c.MiddleName == null
-                ? 1 : 0),
-                      c.MiddleName
-              select c)
-  .ToList();
-
-// This generates:
-// ORDER BY CASE
-//   WHEN MiddleName IS NULL THEN 1
-//   ELSE 0 END,
-//   MiddleName ASC</code></pre>
-      </div>
-    </div>
-
-    <p class="section-text">
-      For cross-database consistency, always handle NULLs explicitly in C# rather than relying on database defaults:
-    </p>
-
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">Database-Independent NULL Handling</span>
-        <pre><code>// Create a reusable extension method
-public static class SortExtensions
-{
-  public static IOrderedQueryable<T>
-    OrderByNullSafe<T, TKey>(
-      this IQueryable<T> source,
-      Expression<Func<T, TKey?>> keySelector,
-      bool nullsLast = true)
-    where TKey : struct
-  {
-    return nullsLast
-      ? source
-        .OrderBy(x => keySelector.Compile()(x)
-          == null ? 1 : 0)
-        .ThenBy(keySelector)
-      : source
-        .OrderBy(x => keySelector.Compile()(x)
-          == null ? 0 : 1)
-        .ThenBy(keySelector);
-  }
-}
-
-// Usage - works identically on SQL Server, PostgreSQL
-var customers = context.Customers
-  .OrderByNullSafe(c => c.BirthDate, nullsLast: true)
-  .ToList();
-
-// Result is consistent regardless of database</code></pre>
-      </div>
-      <div class="code-block sql">
-        <span class="code-label">Database NULL Comparison</span>
-        <pre><code>-- SQL Server (default: NULLS first)
-SELECT * FROM Customers
-ORDER BY BirthDate ASC;
--- NULLs appear first
-
--- PostgreSQL (default: NULLS last)
-SELECT * FROM Customers
-ORDER BY BirthDate ASC;
--- NULLs appear last
-
--- MySQL (default: NULLS first)
-SELECT * FROM Customers
-ORDER BY BirthDate ASC;
--- NULLs appear first
-
--- For consistency, explicitly specify:
--- SQL Server
-ORDER BY CASE WHEN BirthDate IS NULL THEN 1
-             ELSE 0 END, BirthDate ASC
-
--- PostgreSQL
-ORDER BY BirthDate ASC NULLS LAST
-
--- MySQL (use ISNULL or IF)
-ORDER BY IF(BirthDate IS NULL, 1, 0),
-         BirthDate ASC</code></pre>
-      </div>
-    </div>
-
-    <div class="key-insight">
-      <strong>Never Rely on NULL Defaults</strong>
-      <p>Database NULL behavior is inconsistent across vendors. Always handle NULLs explicitly in C# using conditional ordering or coalescing. This ensures result consistency across SQL Server, PostgreSQL, MySQL, and other databases. It's a small addition to your code that prevents surprises in production.</p>
-    </div>
-  </section>
-
-  <!-- SECTION 12: Natural Sorting -->
-  <section class="section">
-    <div class="section-num">12</div>
-    <h2>Natural Sorting Patterns</h2>
-
-    <p class="section-text">
-      Standard alphabetical sorting (A-Z) is called "lexicographic" sorting. It works for most cases but fails for mixed alphanumeric strings. For example, lexicographic sorting produces: ["File1", "File10", "File2"], which is wrong. "Natural" sorting recognizes numeric portions and produces: ["File1", "File2", "File10"]. SQL databases don't have built-in natural sort support, so this logic lives in C#.
-    </p>
-
-    <p class="section-text">
-      Natural sorting requires fetching data into C# and applying custom logic (IComparer or regex-based sorting). It's not database-efficient for large datasets, so consider whether the client needs it or if the display layer can handle it.
-    </p>
-
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Natural Sort Implementation with IComparer</span>
-        <pre><code>// Natural sort comparer for human-friendly ordering
-public class NaturalComparer : IComparer<string>
-{
-  private static readonly Regex NumberRegex =
-    new Regex(@"(\d+)", RegexOptions.Compiled);
-
-  public int Compare(string a, string b)
-  {
-    if (a == b) return 0;
-    if (a == null) return -1;
-    if (b == null) return 1;
-
-    var aParts = NumberRegex.Split(a);
-    var bParts = NumberRegex.Split(b);
-
-    int minLength = Math.Min(
-      aParts.Length, bParts.Length);
-
-    for (int i = 0; i < minLength; i++)
-    {
-      // Try parsing as number
-      if (int.TryParse(aParts[i], out int aNum) &&
-          int.TryParse(bParts[i], out int bNum))
-      {
-        int numCompare = aNum.CompareTo(bNum);
-        if (numCompare != 0)
-          return numCompare;
-      }
-      else
-      {
-        // Lexicographic comparison
-        int lexCompare = aParts[i]
-          .CompareTo(bParts[i]);
-        if (lexCompare != 0)
-          return lexCompare;
-      }
-    }
-
-    return aParts.Length.CompareTo(
-      bParts.Length);
-  }
-}
-
-// Usage
-var filenames = new[] {
-  "File10.txt",
-  "File2.txt",
-  "File1.txt",
-  "Document5.docx",
-  "Document20.docx"
-};
-
-var sorted = filenames
-  .OrderBy(f => f,
-    new NaturalComparer())
-  .ToArray();
-
-// Result:
-// Document5.docx
-// Document20.docx
-// File1.txt
-// File2.txt
-// File10.txt</code></pre>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 08</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
+
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 08</div>
+            <h1>ORDER BY & Sorting</h1>
+            <p class="chapter-intro">You need results in a specific sequence. SQL uses ORDER BY, C# uses .OrderBy() and .OrderByDescending(). Both control the sequence of results — whether you're showing customers alphabetically or orders newest-first.</p>
         </div>
-    </div>
 
-    <p class="section-text">
-      For database queries, natural sorting is expensive. Consider loading a subset of data:
-    </p>
+        <!-- 01: Show Customers A to Z — Basic ASC/DESC -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Customers A to Z"</h2>
 
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">Natural Sort on Query Results (Small Dataset)</span>
-        <pre><code>// Good: Natural sort on small results
-var products = await context.Products
-  .Where(p => p.Category == "Electronics")
-  .Take(100)  // Limit to 100 items
-  .ToListAsync();
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Display all customers sorted alphabetically by name. Also need newest orders first, sorted by order date descending.
+            </div>
 
-// Now safe to apply natural sort in C#
-var sorted = products
-  .OrderBy(p => p.Name,
-    new NaturalComparer())
-  .ToList();
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    ORDER BY sorts results. Default is ASC (ascending: A-Z, low-to-high). Add DESC for descending (Z-A, high-to-low). ORDER BY Name ASC sorts names alphabetically. ORDER BY OrderDate DESC shows newest first.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    In LINQ, I use .OrderBy() for ascending and .OrderByDescending() for descending. Both take a lambda selecting the column to sort by. EF translates to SQL ORDER BY automatically.
+                </div>
+            </div>
 
-// Time: Fast (only 100 items sorted)</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">AVOID: Natural Sort on Large Dataset</span>
-        <pre><code>// Bad: Loading millions for natural sort
-var allProducts = await context.Products
-  .ToListAsync(); // Loads ALL rows!
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Alphabetically A to Z
+SELECT * FROM Customers
+ORDER BY Name ASC;
 
-var sorted = allProducts
-  .OrderBy(p => p.Name,
-    new NaturalComparer())
-  .ToList();
+-- Newest orders first
+SELECT * FROM Orders
+ORDER BY OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Alphabetically
+var customers = await db.Customers
+    .AsNoTracking()
+    .OrderBy(c =&gt; c.Name)
+    .ToListAsync(ct);
 
-// Time: Very slow (millions sorted in C#)
-// Memory: Extremely high
-// AVOID THIS PATTERN</code></pre>
-      </div>
-    </div>
+// Newest first
+var orders = await db.Orders
+    .AsNoTracking()
+    .OrderByDescending(o =&gt; o.OrderDate)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Alphabetically
+var customers = await (
+    from c in db.Customers.AsNoTracking()
+    orderby c.Name
+    select c
+).ToListAsync(ct);
 
-    <div class="key-insight">
-      <strong>Natural Sorting Is Client-Side</strong>
-      <p>Databases have no natural sort concept. Natural sorting must happen in C# using custom IComparer logic. This is fine for small result sets (pagination, autocomplete) but not for large datasets. If you need natural sorting on millions of rows, consider whether it's necessary or if display-layer formatting suffices.</p>
-    </div>
-  </section>
+// Newest first
+var orders = await (
+    from o in db.Orders.AsNoTracking()
+    orderby o.OrderDate descending
+    select o
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-  <!-- SECTION 13: Sorting with Include and Query Performance -->
-  <section class="section">
-    <div class="section-num">13</div>
-    <h2>Sorting with Include and Query Bloat</h2>
+        <!-- 02: Sort by Category, Then by Price — Multi-Column -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Sort by Category, Then by Price"</h2>
 
-    <p class="section-text">
-      When using Include() to eagerly load related entities, ORDER BY can cause unexpected query bloat. The database must return related data alongside sorted rows, which can multiply the result set size. For example, sorting customers with orders includes all orders in the result, potentially returning the same customer data multiple times.
-    </p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Product catalog should group by category name, then sorted by price within each category (highest price first).
+            </div>
 
-    <p class="section-text">
-      Understanding the interaction between sorting, including, and result multiplication is crucial for performance optimization. Sometimes, it's faster to sort before including, or to use explicit loading instead of eager loading.
-    </p>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    ORDER BY with multiple columns: first column is primary sort, second is secondary (tie-breaker). ORDER BY Category ASC, Price DESC groups by category, then sorts price high-to-low within each.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Chain .OrderBy() with .ThenBy() or .ThenByDescending(). First call is primary, each Then* is a tie-breaker. The order of method calls determines sort priority.
+                </div>
+            </div>
 
-    <div class="code-comparison">
-      <div class="code-block csharp">
-        <span class="code-label">Inefficient: Sort After Include</span>
-        <pre><code>// Problem: Include multiplies rows
-var customers = await context.Customers
-  .Include(c => c.Orders)  // Eager load orders
-  .OrderBy(c => c.Name)    // Sort by customer name
-  .ToListAsync();
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT * FROM Products
+ORDER BY Category ASC,
+         Price DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>var products = await db.Products
+    .AsNoTracking()
+    .OrderBy(p =&gt; p.Category)
+    .ThenByDescending(p =&gt; p.Price)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query</div>
+                    <div class="code-block csharp-block">
+                        <pre>var products = await (
+    from p in db.Products
+           .AsNoTracking()
+    orderby p.Category,
+            p.Price descending
+    select p
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-// Generated SQL:
-// SELECT c.*, o.*
-// FROM Customers c
-// LEFT JOIN Orders o ON c.Id = o.CustomerId
-// ORDER BY c.Name
-//
-// Problem:
-// If customer has 5 orders, that customer
-// appears 5 times in the result set
-// The database returns 5 rows for that 1 customer
-// Then EF client-side deduplicates
-// Wasteful!
+        <!-- 03: Show Computed Rankings — Sorting by Expressions -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Computed Rankings"</h2>
 
-// Example:
-// 1000 customers, 2 orders each
-// Database returns 2000 rows
-// EF collapses to 1000 customer objects
-// ~2x data transfer</code></pre>
-      </div>
-      <div class="code-block csharp">
-        <span class="code-label">Better: Sort Before Include</span>
-        <pre><code>// Solution: Defer Include
-var customerIds = await context.Customers
-  .OrderBy(c => c.Name)
-  .Select(c => c.Id)
-  .ToListAsync();
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Sort customers by total spending (computed from their orders), not a stored column. Highest spenders first.
+            </div>
 
-var customers = await context.Customers
-  .Where(c => customerIds.Contains(c.Id))
-  .Include(c => c.Orders)
-  .ToListAsync();
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    ORDER BY can sort by computed expressions. Use (SELECT SUM(Total) FROM Orders WHERE CustomerId = c.Id) DESC to sort by computed total. This is evaluated at query time.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    After loading customers, I can sort by a nested aggregate: .OrderByDescending(c =&gt; c.Orders.Sum(o =&gt; o.Total)). EF translates the sum to a subquery in SQL.
+                </div>
+            </div>
 
-// Benefits:
-// - First query sorts only customer rows
-// - Second query includes orders
-// - No result set multiplication during sort
-// - Cleaner SQL execution
-
-// OR, if you don't need orders sorted:
-var customers = await context.Customers
-  .OrderBy(c => c.Name)
-  .ToListAsync();
-
-// Lazy load orders later if needed
-foreach (var customer in customers)
-{
-  var orders = await context.Entry(customer)
-    .Collection(c => c.Orders)
-    .LoadAsync();
-}</code></pre>
-      </div>
-    </div>
-
-    <div class="triple-comparison">
-      <div class="code-block sql">
-        <span class="code-label">SQL: Order by Customer</span>
-        <pre><code>-- Multiplies rows:
--- 1000 customers * 2 orders = 2000 rows
-SELECT c.*, o.*
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Correlated Subquery</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT c.*
 FROM Customers c
-LEFT JOIN Orders o
-  ON c.Id = o.CustomerId
-ORDER BY c.Name;
+ORDER BY (
+    SELECT SUM(o.Total)
+    FROM Orders o
+    WHERE o.CustomerId = c.Id
+) DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await db.Customers
+    .AsNoTracking()
+    .OrderByDescending(c =&gt;
+        c.Orders.Sum(o =&gt; o.Total)
+    )
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
--- Result set: 2000 rows</code></pre>
-      </div>
-      <div class="code-block csharp-method">
-        <span class="code-label">EF: Efficient Approach</span>
-        <pre><code>// Load and sort customers first
-var customers = await context.Customers
-  .OrderBy(c => c.Name)
-  .ToListAsync();
+        <!-- 04: Put Unassigned Items at the End — NULL Handling -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Put Unassigned Items at the End"</h2>
 
-// Then load orders
-await context.Orders
-  .Where(o => customers
-    .Select(c => c.Id)
-    .Contains(o.CustomerId))
-  .LoadAsync();
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Products without a category should appear last in the sorted list, not first. Category assignments first, unassigned last.
+            </div>
 
-// Two queries, clean separation</code></pre>
-      </div>
-      <div class="code-block sql">
-        <span class="code-label">SQL: Generated (Optimized)</span>
-        <pre><code>-- Query 1: Sort and load customers
-SELECT c.*
-FROM Customers c
-ORDER BY c.Name;
--- Result: 1000 rows
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    NULL sorts first (ascending) or last (descending) depending on dialect. To force control, use CASE WHEN: CASE WHEN CategoryId IS NULL THEN 1 ELSE 0 END sorts assigned (0) first, NULL (1) last.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I can use .OrderBy(p =&gt; p.CategoryId == null) which sorts false (assigned) first, then true (null) last. Then chain .ThenBy(p =&gt; p.CategoryId) for the actual sort.
+                </div>
+            </div>
 
--- Query 2: Load orders for those customers
-SELECT o.*
-FROM Orders o
-WHERE o.CustomerId IN (...)
--- Result: 2000 rows
--- Total: 3000 rows instead of 2000</code></pre>
-      </div>
-    </div>
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — CASE for NULL Control</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT * FROM Products
+ORDER BY CASE
+    WHEN CategoryId IS NULL THEN 1
+    ELSE 0
+    END,
+    CategoryId;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ — Null-Aware Sort</div>
+                    <div class="code-block csharp-block">
+                        <pre>var products = await db.Products
+    .AsNoTracking()
+    .OrderBy(p =&gt;
+        p.CategoryId == null)
+    .ThenBy(p =&gt; p.CategoryId)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <div class="code-single">
-      <div class="code-block csharp">
-        <span class="code-label">Performance Comparison: Include vs Lazy Load</span>
-        <pre><code>// Scenario: Get 1000 customers with their orders, sorted by name
+        <!-- 05: Show Page 3 of Results — Pagination: OFFSET/FETCH -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Page 3 of Results"</h2>
 
-// APPROACH 1: Eager load with Include (BAD for sort)
-var sw = Stopwatch.StartNew();
-var customers1 = await context.Customers
-  .Include(c => c.Orders)
-  .OrderBy(c => c.Name)
-  .ToListAsync();
-sw.Stop();
-Console.WriteLine($"Eager + Sort: {sw.ElapsedMilliseconds}ms");
-// Result: 850ms
-// SQL: JOIN multiplies rows, large result set
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Product listing displays 20 items per page. User clicks page 3, so skip the first 40 items and fetch the next 20.
+            </div>
 
-// APPROACH 2: Sort first, then include (BETTER)
-sw.Restart();
-var customerIds = await context.Customers
-  .OrderBy(c => c.Name)
-  .Select(c => c.Id)
-  .ToListAsync();
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    OFFSET/FETCH: OFFSET 40 ROWS FETCH NEXT 20 ROWS ONLY. Or in MySQL/PostgreSQL: LIMIT 20 OFFSET 40. For better performance on large offsets, keyset pagination (WHERE Id &gt; @lastId) is faster than scanning.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use .Skip(40).Take(20) — EF translates to OFFSET/FETCH. For pagination, skip = (pageNumber - 1) * pageSize. For large offsets, implement keyset (cursor-based) pagination with WHERE Id &gt; lastId.
+                </div>
+            </div>
 
-var customers2 = await context.Customers
-  .Where(c => customerIds.Contains(c.Id))
-  .Include(c => c.Orders)
-  .ToListAsync();
-sw.Stop();
-Console.WriteLine($"Sort + Include: {sw.ElapsedMilliseconds}ms");
-// Result: 320ms (~2.6x faster)
-// Two clean queries, no row multiplication
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL — OFFSET/FETCH</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Page 3: skip 40, take 20
+SELECT * FROM Products
+ORDER BY CreatedAt DESC
+OFFSET 40 ROWS
+FETCH NEXT 20 ROWS ONLY;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method</div>
+                    <div class="code-block csharp-block">
+                        <pre>var pageSize = 20;
+var pageNum = 3;
+var skip = (pageNum - 1) * pageSize;
 
-// APPROACH 3: Lazy load (simple but slower iteration)
-sw.Restart();
-var customers3 = await context.Customers
-  .OrderBy(c => c.Name)
-  .ToListAsync();
+var products = await db.Products
+    .AsNoTracking()
+    .OrderByDescending(p =&gt;
+        p.CreatedAt)
+    .Skip(skip)
+    .Take(pageSize)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query</div>
+                    <div class="code-block csharp-block">
+                        <pre>var pageSize = 20;
+var pageNum = 3;
+var skip = (pageNum - 1) * pageSize;
 
-foreach (var customer in customers3)
+var products = await (
+    from p in db.Products
+           .AsNoTracking()
+    orderby p.CreatedAt descending
+    select p
+).Skip(skip)
+ .Take(pageSize)
+ .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Keyset Pagination (Faster for Large Offsets)</div>
+                <div class="code-block csharp-block">
+                    <pre>public async Task&lt;List&lt;ProductDTO&gt;&gt; GetProductsKeyset(
+    int? lastProductId = null,
+    int pageSize = 20,
+    CancellationToken ct = default)
 {
-  await context.Entry(customer)
-    .Collection(c => c.Orders)
-    .LoadAsync();
-}
-sw.Stop();
-Console.WriteLine($"Sort + Lazy Load: {sw.ElapsedMilliseconds}ms");
-// Result: 1200ms (N+1 queries)
-// Simple but slower for iteration
+    IQueryable&lt;Product&gt; query = db.Products
+        .AsNoTracking()
+        .OrderByDescending(p =&gt; p.CreatedAt);
 
-// Key insight:
-// - Eager load + sort = multiplied rows
-// - Sort + eager load = cleaner queries
-// - Structure queries carefully around sorting</code></pre>
-      </div>
-    </div>
+    if (lastProductId.HasValue)
+        query = query.Where(p =&gt; p.Id &gt; lastProductId.Value);
 
-    <div class="key-insight">
-      <strong>Sort Before Including Related Data</strong>
-      <p>When you Include() related entities, the database returns rows for each combination of parent and child. Sorting then multiplies the result set. Sort at the parent level first, then include related data. This avoids unnecessary data transfer and lets the database optimizer use better execution plans.</p>
-    </div>
-  </section>
+    return await query
+        .Take(pageSize)
+        .Select(p =&gt; new ProductDTO {
+            Id = p.Id,
+            Name = p.Name,
+            CreatedAt = p.CreatedAt
+        })
+        .ToListAsync(ct);
+}</pre>
+                    </div>
+            </div>
+        </section>
 
-  <!-- KEY TAKEAWAYS -->
-  <div class="key-takeaways">
-    <h3>Key Takeaways</h3>
-    <ul>
-      <li>ORDER BY specifies result order. Without it, order is undefined. Always use ORDER BY when result order matters.</li>
-      <li>Ascending is the default; DESC reverses order. LINQ methods: .OrderBy() for ascending, .OrderByDescending() for descending.</li>
-      <li>For multiple sort criteria, chain .ThenBy() and .ThenByDescending(). Multiple .OrderBy() calls replace rather than chain.</li>
-      <li>Sort by computed expressions (Price * Quantity), not just columns. Entity Framework translates these to SQL equivalents at the database.</li>
-      <li>NULL handling in sorting varies by database. SQL Server puts NULLs first, PostgreSQL puts them last. Use conditional sorting in C# for consistency.</li>
-      <li>OFFSET/FETCH (Skip/Take) retrieves a range of rows. Must follow ORDER BY for consistent results. Always specify ORDER BY in pagination queries.</li>
-      <li>OFFSET performance degrades with large skip values. Page 1000 requires skipping 99,900 rows, which is slow. Use keyset pagination for large datasets.</li>
-      <li>Keyset pagination is more efficient than OFFSET for large result sets. Use a cursor (last key) to request rows after it, maintaining constant performance regardless of page depth.</li>
-      <li>For small datasets or admin interfaces, OFFSET is fine. For user-facing pagination on millions of rows, use keyset pagination.</li>
-      <li>Always apply ORDER BY before OFFSET/FETCH or Skip/Take to ensure consistent, predictable results.</li>
-    </ul>
-  </div>
+        <!-- 06: Sort Performance and Indexes -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Sort Performance and Indexes</h2>
 
-  <!-- CHAPTER NAV -->
-  <div class="chapter-nav">
-    <a href="ch07-groupby-aggregation.html" class="nav-item prev">
-      <span class="nav-label">Previous Chapter</span>
-      <span class="nav-title">GROUP BY → .GroupBy() — Aggregation</span>
-    </a>
-    <a href="ch09-joins.html" class="nav-item next">
-      <span class="nav-label">Next Chapter</span>
-      <span class="nav-title">JOINs and Relationships</span>
-    </a>
-  </div>
-</div>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Some sorts are lightning-fast, others are slow. Understand which columns to index for common sort patterns.
+            </div>
 
-<footer>
-  <div class="wrap">
-    <p class="footer-inner">SQL to C#: A practical guide to translating database logic into modern C# LINQ patterns.</p>
-  </div>
-</footer>
+            <table>
+                <thead><tr><th>Sort Type</th><th>Performance</th><th>Reason</th></tr></thead>
+                <tbody>
+                    <tr><td><code>ORDER BY Id</code></td><td><span class="csharp-type">✓ Fast</span></td><td>Primary key always indexed</td></tr>
+                    <tr><td><code>ORDER BY CreatedAt</code></td><td><span class="csharp-type">✓ Fast</span></td><td>If index exists on CreatedAt</td></tr>
+                    <tr><td><code>ORDER BY Status, CreatedAt</code></td><td><span class="csharp-type">✓ Fast</span></td><td>Composite index on (Status, CreatedAt)</td></tr>
+                    <tr><td><code>ORDER BY Name.ToUpper()</code></td><td><span class="sql-type">✗ Slow</span></td><td>Function prevents index use; full scan</td></tr>
+                    <tr><td><code>ORDER BY Price * Quantity</code></td><td><span class="sql-type">✗ Slow</span></td><td>Computed expression; in-memory sort</td></tr>
+                    <tr><td><code>ORDER BY (SELECT SUM(...))</code></td><td><span class="sql-type">✗ Slow</span></td><td>Subquery evaluated per row</td></tr>
+                </tbody>
+            </table>
 
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Create Indexes</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Single-column index
+CREATE INDEX IX_Products_CreatedAt
+    ON Products(CreatedAt);
+
+-- Composite index
+CREATE INDEX IX_Orders_StatusDate
+    ON Orders(Status, CreatedAt DESC);
+
+-- Filtered index (only active)
+CREATE INDEX IX_Products_Active_Name
+    ON Products(Name)
+    WHERE IsActive = 1;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">EF — Fluent API Configuration</div>
+                    <div class="code-block ef-block">
+                        <pre>modelBuilder.Entity&lt;Product&gt;(e =&gt;
+{
+    e.HasIndex(p =&gt; p.CreatedAt);
+
+    e.HasIndex(p =&gt; new {
+        p.Status,
+        p.CreatedAt
+    }).IsDescending(false, true);
+
+    e.HasIndex(p =&gt; p.Name)
+     .HasFilter("[IsActive] = 1");
+});</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch07-groupby-aggregation.html">
+                <span class="nav-item-label">&larr; Previous Chapter</span>
+                <span class="nav-item-title">GROUP BY & Aggregation</span>
+            </a>
+            <a class="nav-item" href="ch09-joins.html">
+                <span class="nav-item-label">Next Chapter &rarr;</span>
+                <span class="nav-item-title">JOINs</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

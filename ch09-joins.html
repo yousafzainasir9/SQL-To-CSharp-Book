@@ -1,52 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 9: JOINs → .Join() & Navigation Properties — SQL to C#</title>
-<meta name="description" content="Master SQL JOINs with LINQ. Learn INNER, LEFT, CROSS joins with method syntax, query syntax, and Entity Framework navigation properties. Comprehensive comparison of all join types.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 09: JOINs — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-:root {
-  --bg: #f8f7f3;
-  --bg2: #f0ede6;
-  --bg3: #e8e4db;
-  --white: #ffffff;
-  --ink: #1c1a17;
-  --ink2: #3d3a34;
-  --ink3: #6b6760;
-  --ink4: #a8a49e;
-  --rule: #dedad3;
-  --acc: #c96b1e;
-  --acc-l: #fdf3eb;
-  --acc-b: #f5c99a;
-  --green: #1d6b45;
-  --green-l: #edf8f2;
-  --green-b: #9fd9bc;
-  --blue: #1a4f8a;
-  --blue-l: #edf2fb;
-  --blue-b: #afc8ef;
-}
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-body {
-  font-family: 'Outfit', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-.wrap {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
+
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 09</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
+
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 09</div>
+            <h1>JOINs</h1>
+            <p class="chapter-intro">You get a requirement: "Show each order with the customer who placed it." SQL developers write JOIN. C# developers use .Include() (navigation properties) or .Join() (explicit). Both combine data from related tables.</p>
+        </div>
+
+        <!-- 01: INNER JOIN -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Orders with Customer Names"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Order list needs customer name next to each order. Users must see "Order #1001 from Alice" not "Order #1001 from CustomerId 5".
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    INNER JOIN: keep only orders that have a matching customer. SELECT o.*, c.Name FROM Orders o INNER JOIN Customers c ON o.CustomerId = c.Id. Only rows where both sides match.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Either use .Include(o =&gt; o.Customer) to load the navigation property, or explicit .Join() for more control. Include is simpler when FK relationships exist.
+                </div>
+            </div>
+
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL INNER JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT o.Id, o.OrderDate, o.Total,
+       c.Name, c.Email
+FROM Orders o
+INNER JOIN Customers c
+  ON o.CustomerId = c.Id
+ORDER BY o.OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ .Include()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await db.Orders
+    .AsNoTracking()
+    .Include(o =&gt; o.Customer)
+    .OrderByDescending(o =&gt; o.OrderDate)
+    .ToListAsync(ct);
+
+foreach (var o in orders)
+    Console.WriteLine(
+        $"{o.Id} - {o.Customer.Name}");</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ .Join()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await (
+    from o in db.Orders.AsNoTracking()
+    join c in db.Customers
+        on o.CustomerId equals c.Id
+    orderby o.OrderDate descending
+    select new {
+        o.Id, o.OrderDate, o.Total,
+        c.Name, c.Email
+    }
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — Multi-mapping with splitOn</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(cs);
+var sql = @"
+    SELECT o.Id, o.OrderDate, o.Total,
+           c.Id, c.Name, c.Email
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerId = c.Id
+    ORDER BY o.OrderDate DESC";
+
+var orders = await conn.QueryAsync&lt;OrderDto, CustomerDto, OrderDto&gt;(
+    sql,
+    (order, customer) =&gt; { order.Customer = customer; return order; },
+    splitOn: "Id");</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: LEFT JOIN -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show All Customers, Even Without Orders"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer report includes everyone — customers with 0 orders show as "No orders" instead of disappearing entirely.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    LEFT JOIN: keep all left rows even without a match. SELECT c.Name, COUNT(o.Id) FROM Customers c LEFT JOIN Orders o ON c.Id = o.CustomerId GROUP BY c.Id, c.Name. The COUNT gives 0 for no orders.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    LINQ doesn't have Left Join natively. Use GroupJoin instead: group orders by customer, then SelectMany with DefaultIfEmpty to keep customers with no matches.
+                </div>
+            </div>
+
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL LEFT JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT c.Id, c.Name,
+       COUNT(o.Id) AS OrderCount
+FROM Customers c
+LEFT JOIN Orders o
+  ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name
+ORDER BY c.Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ GroupJoin</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await (
+    from c in db.Customers.AsNoTracking()
+    join o in db.Orders on c.Id equals o.CustomerId
+        into orderGroup
+    select new {
+        c.Id, c.Name,
+        OrderCount = orderGroup.Count()
+    }
+    orderby c.Name
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query join...into</div>
+                    <div class="code-block csharp-block">
+                        <pre>var customers = await (
+    from c in db.Customers.AsNoTracking()
+    join o in db.Orders
+        on c.Id equals o.CustomerId into grp
+    select new {
+        c.Id, c.Name,
+        OrderCount = grp.Count(),
+        Orders = grp.ToList()
+    }
+    orderby c.Name
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03: CROSS JOIN -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Compare Every Product Against Every Category"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Generate a matrix of all products times all categories for a comparison report. We need all possible combinations even if product-category pairs don't normally match.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    CROSS JOIN: every row from A paired with every row from B. No ON clause. SELECT p.Name, cat.Name FROM Products p CROSS JOIN Categories cat. If 100 products and 10 categories, result is 1000 rows.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .SelectMany() with two collections creates a Cartesian product. For each product, select it paired with every category.
+                </div>
+            </div>
+
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL CROSS JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT p.Id, p.Name,
+       cat.Id, cat.Name
+FROM Products p
+CROSS JOIN Categories cat
+ORDER BY p.Name, cat.Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ SelectMany</div>
+                    <div class="code-block csharp-block">
+                        <pre>var matrix = await db.Products
+    .AsNoTracking()
+    .SelectMany(
+        p =&gt; db.Categories,
+        (p, cat) =&gt; new {
+            p.Id, p.Name,
+            cat.Id, cat.Name
+        }
+    )
+    .OrderBy(x =&gt; x.Name)
+    .ThenBy(x =&gt; x.Name)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Query from...from</div>
+                    <div class="code-block csharp-block">
+                        <pre>var matrix = await (
+    from p in db.Products.AsNoTracking()
+    from cat in db.Categories.AsNoTracking()
+    orderby p.Name, cat.Name
+    select new {
+        p.Id, p.Name,
+        cat.Id, cat.Name
+    }
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Multi-Table JOINs -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Order Details with Product and Category"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Invoice page needs Order → OrderItems → Product → Category all in one query. Show: "Order #1001: Widget (Electronics) $50".
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Chain multiple JOINs. Orders JOIN OrderItems JOIN Products JOIN Categories. Four tables connected sequentially. Each ON links one FK to the next PK.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Include().ThenInclude() for nested loading. First load Order with Customer, then for each OrderItem load Product, then for Product load Category.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Multiple JOINs</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT o.Id, o.OrderDate,
+       oi.Quantity, oi.UnitPrice,
+       p.Name AS ProductName,
+       cat.Name AS CategoryName
+FROM Orders o
+INNER JOIN OrderItems oi
+  ON o.Id = oi.OrderId
+INNER JOIN Products p
+  ON oi.ProductId = p.Id
+INNER JOIN Categories cat
+  ON p.CategoryId = cat.Id
+ORDER BY o.OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Include Chain</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await db.Orders
+    .AsNoTracking()
+    .Include(o =&gt; o.OrderItems)
+        .ThenInclude(oi =&gt; oi.Product)
+            .ThenInclude(p =&gt; p.Category)
+    .OrderByDescending(o =&gt; o.OrderDate)
+    .ToListAsync(ct);
+
+foreach (var order in orders)
+  foreach (var item in order.OrderItems)
+    Console.WriteLine(
+      $"{item.Product.Name} " +
+      $"({item.Product.Category.Name})");</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — Multi-mapping with Multiple splitOn</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(cs);
+var sql = @"
+    SELECT o.Id, o.OrderDate,
+           oi.Id, oi.OrderId, oi.ProductId, oi.Quantity, oi.UnitPrice,
+           p.Id, p.Name, p.CategoryId,
+           cat.Id, cat.Name
+    FROM Orders o
+    INNER JOIN OrderItems oi ON o.Id = oi.OrderId
+    INNER JOIN Products p ON oi.ProductId = p.Id
+    INNER JOIN Categories cat ON p.CategoryId = cat.Id
+    ORDER BY o.OrderDate DESC";
+
+var orders = await conn.QueryAsync&lt;OrderDto, OrderItemDto, ProductDto, CategoryDto, OrderDto&gt;(
+    sql,
+    (order, item, product, category) =&gt;
+    {
+        product.Category = category;
+        item.Product = product;
+        order.OrderItems.Add(item);
+        return order;
+    },
+    splitOn: "Id");</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Self-JOIN -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Each Employee with Their Manager"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Org chart — each employee shows their manager's name. "Alice reports to Bob" where Bob is also an Employee.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Self JOIN: same table twice with aliases. Employees e JOIN Employees m ON e.ManagerId = m.Id. The left side is the employee, right side is their manager (also an employee).
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Self-referencing navigation property: Employee has Manager property pointing to another Employee. .Include(e =&gt; e.Manager) loads it. Or use explicit .Join() with same table twice.
+                </div>
+            </div>
+
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL Self-JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT e.Id, e.Name,
+       m.Id AS ManagerId,
+       m.Name AS ManagerName
+FROM Employees e
+LEFT JOIN Employees m
+  ON e.ManagerId = m.Id
+ORDER BY e.Name;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ .Include()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var employees = await db.Employees
+    .AsNoTracking()
+    .Include(e =&gt; e.Manager)
+    .OrderBy(e =&gt; e.Name)
+    .ToListAsync(ct);
+
+foreach (var emp in employees)
+{
+    var mgr = emp.Manager?.Name ?? "No manager";
+    Console.WriteLine($"{emp.Name} → {mgr}");
+}</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Explicit .Join()</div>
+                    <div class="code-block csharp-block">
+                        <pre>var employees = await (
+    from e in db.Employees.AsNoTracking()
+    join m in db.Employees
+        on e.ManagerId equals m.Id
+        into mgr
+    select new {
+        e.Id, e.Name,
+        ManagerName = mgr
+            .FirstOrDefault()!.Name
+    }
+    orderby e.Name
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: Composite Key JOIN -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Join on Multiple Columns"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Multi-tenant system: match records by both TenantId AND ProductId. A product belongs to a tenant and must match both columns to avoid leaking data across tenants.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    ON clause with AND: ON a.TenantId = b.TenantId AND a.ProductId = b.ProductId. Both conditions must match simultaneously.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    .Join() with anonymous key object: new { o.TenantId, o.ProductId } on both sides. Or in query syntax: join...on multiple properties with equals.
+                </div>
+            </div>
+
+            <div class="triple-comparison">
+                <div>
+                    <div class="code-label">SQL — Composite Key</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT o.Id, o.Quantity,
+       pi.Price
+FROM Orders o
+INNER JOIN PriceInventory pi
+  ON o.TenantId = pi.TenantId
+  AND o.ProductId = pi.ProductId
+ORDER BY o.Id;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ Method — Composite</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await (
+    from o in db.Orders.AsNoTracking()
+    join pi in db.PriceInventory
+        on new { o.TenantId, o.ProductId }
+        equals new { pi.TenantId, pi.ProductId }
+    select new {
+        o.Id, o.Quantity, pi.Price
+    }
+    orderby o.Id
+).ToListAsync(ct);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ .Join() — Composite</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await db.Orders
+    .AsNoTracking()
+    .Join(
+        db.PriceInventory,
+        o =&gt; new { o.TenantId, o.ProductId },
+        pi =&gt; new { pi.TenantId, pi.ProductId },
+        (o, pi) =&gt; new {
+            o.Id, o.Quantity, pi.Price
+        }
+    )
+    .OrderBy(x =&gt; x.Id)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 07: When to Use Each -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">07</span><div class="sec-rule"></div></div>
+            <h2>Navigation Properties vs Explicit Joins</h2>
+
+            <div class="requirement">
+                <strong>The Question</strong><br>
+                Should I use .Include() or .Join()? When should I use Dapper instead?
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Use Navigation (.Include)</th>
+                        <th>Use Explicit (.Join)</th>
+                        <th>Use Dapper</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>FK relationship exists in model</td>
+                        <td>✓ Yes — simplest</td>
+                        <td>— Not needed</td>
+                        <td>— Overkill</td>
+                    </tr>
+                    <tr>
+                        <td>Joining unrelated tables</td>
+                        <td>✗ No relationship</td>
+                        <td>✓ Yes — only option in EF</td>
+                        <td>✓ Preferred</td>
+                    </tr>
+                    <tr>
+                        <td>Complex join conditions</td>
+                        <td>✗ Can't express</td>
+                        <td>✓ Full LINQ power</td>
+                        <td>✓ Full SQL power</td>
+                    </tr>
+                    <tr>
+                        <td>Performance critical</td>
+                        <td>— May load too much</td>
+                        <td>✓ Project only needed columns</td>
+                        <td>✓ Direct SQL control</td>
+                    </tr>
+                    <tr>
+                        <td>Need raw SQL control</td>
+                        <td>✗ EF translates</td>
+                        <td>✗ EF translates</td>
+                        <td>✓ You write SQL</td>
+                    </tr>
+                    <tr>
+                        <td>Left/Right/Full outer join</td>
+                        <td>— .Include() is inner</td>
+                        <td>✓ Use GroupJoin + DefaultIfEmpty</td>
+                        <td>✓ Any join type</td>
+                    </tr>
+                    <tr>
+                        <td>Large result set</td>
+                        <td>— EF translates poorly</td>
+                        <td>✓ Better translation</td>
+                        <td>✓ Best control</td>
+                    </tr>
+                    <tr>
+                        <td>Already have SQL</td>
+                        <td>— Must rewrite</td>
+                        <td>✗ Must rewrite</td>
+                        <td>✓ Use as-is</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Rule</strong>
+                    Use the JOIN that matches your requirement: INNER (both match), LEFT (keep left), RIGHT (keep right), CROSS (all combinations). Write custom SQL when EF/LINQ falls short.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Rule</strong>
+                    Start with .Include() if relationships exist — it's readable and usually correct. Move to .Join() for control. Use Dapper when you need raw SQL or performance optimization.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Example: When to Reach for Dapper</div>
+                <div class="code-block dapper-block">
+                    <pre>// Complex SQL that EF can't translate well
+await using var conn = new SqlConnection(cs);
+var results = await conn.QueryAsync&lt;OrderSummaryDto&gt;(@"
+    SELECT o.Id, o.OrderDate,
+           STRING_AGG(p.Name, ', ') AS ProductNames,
+           SUM(oi.Quantity * oi.UnitPrice) AS Total
+    FROM Orders o
+    INNER JOIN OrderItems oi ON o.Id = oi.OrderId
+    INNER JOIN Products p ON oi.ProductId = p.Id
+    GROUP BY o.Id, o.OrderDate
+    HAVING SUM(oi.Quantity * oi.UnitPrice) &gt; @MinTotal
+    ORDER BY o.OrderDate DESC",
+    new { MinTotal = 1000m },
+    commandTimeout: 30);</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch08-orderby-sorting.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">ORDER BY &amp; Sorting</span>
+            </a>
+            <a class="nav-item" href="ch10-subqueries.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Subqueries</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
+</body>
+</html>
 
 nav {
   position: sticky;
@@ -504,9 +1137,8 @@ footer {
   <h2>INNER JOIN: .Join() & Explicit Relationships</h2>
 
   <div class="section-text">
-    <p>An INNER JOIN returns only rows where both tables have matching values. In LINQ, this is the most explicit join type. You can write INNER JOINs three ways: with the .Join() method, with query syntax from/join, or by navigating properties in Entity Framework. Each approach has different readability and performance characteristics.</p>
-    <p>The .Join() method is closest to SQL's mechanical behavior. It takes four parameters: the outer collection, the outer key selector, the inner key selector, and a result selector. Query syntax, by contrast, reads more naturally and often produces cleaner code for developers transitioning from SQL.</p>
-  </div>
+                <p>An INNER JOIN returns only rows where both tables have matching values. In LINQ, this is the most explicit join type.</p>
+            </div>
 
   <div class="triple-comparison">
     <div class="code-block sql">
@@ -563,8 +1195,8 @@ ORDER BY c.CustomerId;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>In Entity Framework, navigation properties make explicit joins unnecessary. If Customer has an Orders collection, you can simply iterate or filter through it. However, understanding explicit joins remains critical when working with disconnected objects or when your model doesn't expose a navigation property. The .Join() method is also useful when you need to join on conditions not represented in the model.</p>
-  </div>
+                <p>In Entity Framework, navigation properties make explicit joins unnecessary. If Customer has an Orders collection, you can simply iterate or filter through it.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
@@ -608,8 +1240,8 @@ var result = (
   </div>
 
   <div class="section-text">
-    <p>When using Entity Framework, prefer navigation properties and Include() over explicit .Join() calls. The Include pattern generates more efficient SQL and is more maintainable. The compiler translates Include().ThenInclude() chains into optimized LEFT JOINs. Use explicit .Join() when you're working with disconnected DbContexts or when you need fine-grained control over the join semantics that navigation properties don't support.</p>
-  </div>
+                <p>When using Entity Framework, prefer navigation properties and Include() over explicit .Join() calls.</p>
+            </div>
 </div>
 
 <div class="section">
@@ -617,9 +1249,8 @@ var result = (
   <h2>LEFT JOIN: GroupJoin & Query Syntax Superiority</h2>
 
   <div class="section-text">
-    <p>A LEFT JOIN returns all rows from the left table plus matching rows from the right table. In SQL, this is straightforward with the LEFT JOIN keyword. In LINQ method syntax, it's cumbersome: you must use GroupJoin followed by SelectMany and DefaultIfEmpty. This is where query syntax shines—it reads nearly identically to SQL and requires no knowledge of the GroupJoin/DefaultIfEmpty pattern.</p>
-    <p>The key difference between INNER and LEFT JOINs is what happens when there's no match. In SQL, LEFT JOIN includes the left row with NULL values for right table columns. In LINQ, you use DefaultIfEmpty() to provide an empty collection when there are no matches, then flatten it with SelectMany to restore single-row results.</p>
-  </div>
+                <p>A LEFT JOIN returns all rows from the left table plus matching rows from the right table. In SQL, this is straightforward with the LEFT JOIN keyword.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block sql">
@@ -642,8 +1273,8 @@ ORDER BY c.CustomerId;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>Method syntax for LEFT JOIN requires careful composition. First, GroupJoin collects all matching orders for each customer into a grouped collection. Then DefaultIfEmpty provides an empty collection if a customer has no orders. Finally, SelectMany flattens the grouped structure back into individual rows, with null-coalesced values for customers without orders.</p>
-  </div>
+                <p>Method syntax for LEFT JOIN requires careful composition. First, GroupJoin collects all matching orders for each customer into a grouped collection.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp-method">
@@ -672,8 +1303,8 @@ ORDER BY c.CustomerId;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>Compare that to query syntax, which is substantially cleaner and more similar to SQL:</p>
-  </div>
+                <p>Compare that to query syntax, which is substantially cleaner and more similar to SQL:</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp-query">
@@ -699,16 +1330,19 @@ ORDER BY c.CustomerId;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>In Entity Framework with navigation properties, LEFT JOIN behavior comes naturally. The Include method loads related data, and then you project or filter as needed. If you want all customers even those without orders, you use DefaultIfEmpty on the collection side after Include. This pattern is memory-efficient when used correctly.</p>
-  </div>
+                <p>In Entity Framework with navigation properties, LEFT JOIN behavior comes naturally. The Include method loads related data, and then you project or filter as needed.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
       <span class="code-label">EF LEFT JOIN Patterns</span>
       <pre><code>// Pattern 1: Include then SelectMany with DefaultIfEmpty
-var result = context.Customers
+var result = await context.Customers
   .Include(c => c.Orders)
-  .AsEnumerable()
+  .AsNoTracking()
+  .ToListAsync();
+
+var finalResult = result
   .SelectMany(
     c => c.Orders.DefaultIfEmpty(),
     (c, o) => new {
@@ -722,8 +1356,8 @@ var result = context.Customers
   .ToList();
 
 // Pattern 2: Query syntax after Include
-var result = (
-  from c in context.Customers.Include(c => c.Orders)
+var result = await (
+  from c in context.Customers.Include(c => c.Orders).AsNoTracking()
   from o in c.Orders.DefaultIfEmpty()
   orderby c.CustomerId
   select new {
@@ -732,12 +1366,12 @@ var result = (
     OrderId = o?.OrderId,
     OrderDate = o?.OrderDate
   }
-).ToList();
+).ToListAsync();
 
 // Pattern 3: Using explicit LEFT JOIN syntax (still on DbSet)
-var result = (
-  from c in context.Customers
-  join o in context.Orders
+var result = await (
+  from c in context.Customers.AsNoTracking()
+  join o in context.Orders.AsNoTracking()
     on c.CustomerId equals o.CustomerId
     into customerOrders
   from co in customerOrders.DefaultIfEmpty()
@@ -748,13 +1382,13 @@ var result = (
     OrderId = co?.OrderId,
     OrderDate = co?.OrderDate
   }
-).ToList();</code></pre>
+).ToListAsync();</code></pre>
     </div>
   </div>
 
   <div class="section-text">
-    <p>Note the AsEnumerable() call in Pattern 1. Entity Framework's query provider cannot translate DefaultIfEmpty() to SQL directly when used with navigation property flattening. By switching to LINQ to Objects, you evaluate the join in memory after fetching the data. For large datasets, this may be inefficient. Pattern 3 (explicit LEFT JOIN on DbSets) allows EF to generate the SQL directly without AsEnumerable. Measure with SQL logging enabled to see which pattern generates the most efficient query.</p>
-  </div>
+                <p>Note the AsEnumerable() call in Pattern 1. Entity Framework's query provider cannot translate DefaultIfEmpty() to SQL directly when used with navigation property flattening.</p>
+            </div>
 </div>
 
 <div class="section">
@@ -762,9 +1396,8 @@ var result = (
   <h2>CROSS JOIN: Cartesian Products with SelectMany</h2>
 
   <div class="section-text">
-    <p>A CROSS JOIN produces a cartesian product: every row from the first table combined with every row from the second table. In SQL, you write CROSS JOIN or omit the ON clause entirely. In LINQ, you use SelectMany (or nested from clauses) to achieve the same result. The resulting set size is always rows(left) × rows(right).</p>
-    <p>Cross joins are less common than INNER or LEFT joins, but they're useful for generating combinations—all color and size variants of a product, for example, or creating a date range by crossing a dates table with a times table. They're also useful in generating test data or permission matrices.</p>
-  </div>
+                <p>A CROSS JOIN produces a cartesian product: every row from the first table combined with every row from the second table.</p>
+            </div>
 
   <div class="triple-comparison">
     <div class="code-block sql">
@@ -814,8 +1447,8 @@ CROSS JOIN Colors c;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>A practical example: imagine you have sizes (S, M, L, XL) and colors (Red, Blue, Green, Black). A CROSS JOIN creates all 16 combinations: S+Red, S+Blue, M+Red, M+Blue, and so on. You'd use this when creating product variants, generating shift schedules by crossing days with time slots, or building permission matrices from users and resources.</p>
-  </div>
+                <p>A practical example: imagine you have sizes (S, M, L, XL) and colors (Red, Blue, Green, Black). A CROSS JOIN creates all 16 combinations: S+Red, S+Blue, M+Red, M+Blue, and so on.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
@@ -850,8 +1483,8 @@ var variants = (
   </div>
 
   <div class="section-text">
-    <p>Be cautious with CROSS JOINs on large tables. The result set grows exponentially. If you have 1000 products and 100 colors, a CROSS JOIN produces 100,000 rows. This is often a sign that you need a different approach, such as filtering early, using a more targeted query, or breaking the operation into smaller batches. Always measure memory usage when dealing with cartesian products of large datasets.</p>
-  </div>
+                <p>Be cautious with CROSS JOINs on large tables. The result set grows exponentially.</p>
+            </div>
 </div>
 
 <div class="section">
@@ -859,13 +1492,12 @@ var variants = (
   <h2>Multi-Table JOINs: Chaining & ThenInclude</h2>
 
   <div class="section-text">
-    <p>Real-world queries often join three, four, or more tables. Joining Orders to Customers is simple, but joining Orders to OrderItems to Products requires chaining joins. In LINQ, you can chain .Join() calls, nest from/join clauses, or use Include().ThenInclude() in Entity Framework for automatic navigation through relationships. The choice between explicit joins and navigation properties becomes more important as the number of tables increases.</p>
-    <p>Navigation properties reduce boilerplate and improve readability, while explicit joins give you precise control over which rows are included and how matches are performed. In most cases, navigation properties are preferable in EF Core because the framework optimizes the generated SQL.</p>
-  </div>
+                <p>Real-world queries often join three, four, or more tables. Joining Orders to Customers is simple, but joining Orders to OrderItems to Products requires chaining joins.</p>
+            </div>
 
   <div class="section-text">
-    <p>Consider a query: get all order items and their products for customers in Seattle. You need to join Customers → Orders → OrderItems → Products, filtering by city. This is a realistic multi-table scenario.</p>
-  </div>
+                <p>Consider a query: get all order items and their products for customers in Seattle. You need to join Customers → Orders → OrderItems → Products, filtering by city.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block sql">
@@ -889,8 +1521,8 @@ ORDER BY o.OrderDate DESC;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>Method syntax becomes verbose with multiple joins. Each additional join requires more nesting and intermediate variable tracking:</p>
-  </div>
+                <p>Method syntax becomes verbose with multiple joins. Each additional join requires more nesting and intermediate variable tracking:</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp-method">
@@ -959,8 +1591,8 @@ ORDER BY o.OrderDate DESC;</code></pre>
   </div>
 
   <div class="section-text">
-    <p>In Entity Framework with navigation properties, the code becomes even simpler and more efficient. If your model has Orders → OrderItems → Products relationships properly configured, you can navigate directly through the graph:</p>
-  </div>
+                <p>In Entity Framework with navigation properties, the code becomes even simpler and more efficient.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
@@ -1012,8 +1644,8 @@ var result = (
   </div>
 
   <div class="section-text">
-    <p>The Include().ThenInclude() approach tells Entity Framework exactly which related data to load, reducing the "N+1 query" problem. Instead of issuing one query per order to fetch items, one query per item to fetch products, you fetch everything in typically 2-3 database round trips. The generated SQL uses efficient LEFT JOINs internally. This is the recommended approach for most EF Core scenarios because it balances code clarity with query efficiency.</p>
-  </div>
+                <p>The Include().ThenInclude() approach tells Entity Framework exactly which related data to load, reducing the "N+1 query" problem.</p>
+            </div>
 </div>
 
 <div class="section">
@@ -1021,9 +1653,8 @@ var result = (
   <h2>Self-Join: Employee-Manager Hierarchies</h2>
 
   <div class="section-text">
-    <p>A self-join connects a table to itself. The classic example is an Employee table where each employee has a ManagerId pointing to another employee row. To find the employee name and their manager's name, you join the table to itself. Self-joins are common in hierarchical data: organizational charts, category hierarchies, product taxonomy, or discussion threads where a post can reference a parent post.</p>
-    <p>In LINQ, a self-join looks like a regular join, but both sides of the join reference the same source collection. The complexity lies in managing the references and ensuring your projection captures the right relationships.</p>
-  </div>
+                <p>A self-join connects a table to itself. The classic example is an Employee table where each employee has a ManagerId pointing to another employee row.</p>
+            </div>
 
   <div class="triple-comparison">
     <div class="code-block sql">
@@ -1138,8 +1769,8 @@ var result = context.Employees
   </div>
 
   <div class="section-text">
-    <p>Self-joins become complex when you need multi-level hierarchies (employees, their managers, and their managers' managers). Navigation properties help navigate the graph, but deep hierarchies can cause cartesian explosions if not carefully projected. Use Include wisely to load only the levels you need. For very deep hierarchies (e.g., category → parent category → grandparent category), consider denormalization or recursive Common Table Expressions (CTEs) in the database.</p>
-  </div>
+                <p>Self-joins become complex when you need multi-level hierarchies (employees, their managers, and their managers' managers).</p>
+            </div>
 </div>
 
 <div class="section">
@@ -1147,9 +1778,8 @@ var result = context.Employees
   <h2>Composite Key JOINs: Multiple Join Conditions</h2>
 
   <div class="section-text">
-    <p>Some tables are identified by multiple columns, called a composite key (or compound key). When joining on composite keys, you must match all key columns. In SQL, you use multiple conditions in the ON clause separated by AND. In LINQ, you create anonymous objects with all key components to match against.</p>
-    <p>Composite keys are common in bridge tables (many-to-many mappings), audit logs (where entries are identified by entity ID + timestamp), partitioned tables (where identity requires a partition key plus an ID), or any normalized schema with multi-part identities.</p>
-  </div>
+                <p>Some tables are identified by multiple columns, called a composite key (or compound key). When joining on composite keys, you must match all key columns.</p>
+            </div>
 
   <div class="triple-comparison">
     <div class="code-block sql">
@@ -1205,8 +1835,8 @@ INNER JOIN OrderItems oi
   </div>
 
   <div class="section-text">
-    <p>A practical example: a StudentGrades table keyed by (StudentId, CourseId, Semester). Joining to a Courses table requires matching all three components. This is common in academic systems where the same course is offered each semester with potentially different instructors or materials.</p>
-  </div>
+                <p>A practical example: a StudentGrades table keyed by (StudentId, CourseId, Semester). Joining to a Courses table requires matching all three components.</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
@@ -1262,8 +1892,8 @@ var result = studentGrades
   </div>
 
   <div class="section-text">
-    <p>Composite keys are straightforward once you remember to create anonymous objects with matching property names and types. The compiler ensures type safety on both sides of the equals, and the behavior is identical to SQL's AND of multiple ON conditions. When the number of key columns exceeds 3-4, consider whether denormalization or a surrogate key would simplify your model.</p>
-  </div>
+                <p>Composite keys are straightforward once you remember to create anonymous objects with matching property names and types.</p>
+            </div>
 </div>
 
 <div class="section">
@@ -1271,8 +1901,8 @@ var result = studentGrades
   <h2>Navigation Properties vs. Explicit Joins: When to Use Each</h2>
 
   <div class="section-text">
-    <p>You now have multiple tools for joining: explicit .Join(), query syntax join, navigation properties with Include(), and SelectMany with navigation. How do you choose? The answer depends on context, performance requirements, and code readability. Here's a decision framework for selecting the right approach in different scenarios.</p>
-  </div>
+                <p>You now have multiple tools for joining: explicit .Join(), query syntax join, navigation properties with Include(), and SelectMany with navigation.</p>
+            </div>
 
   <table class="comparison-table">
     <thead>
@@ -1323,46 +1953,26 @@ var result = studentGrades
   </div>
 
   <div class="section-text">
-    <p><strong>Use navigation properties when:</strong></p>
-    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 14px; margin-left: 20px;">
-      <li>Working with Entity Framework and your model has defined relationships</li>
-      <li>The join is one-to-many or one-to-one</li>
-      <li>You need Include() for eager loading to avoid N+1 queries</li>
-      <li>You're joining the same table to itself in a parent-child relationship</li>
-      <li>You want EF to optimize the generated SQL automatically</li>
-    </ul>
-  </div>
+                <p>Use navigation properties when: Working with Entity Framework and your model has defined relationships The join is one-t...</p>
+            </div>
 
   <div class="section-text">
-    <p><strong>Use query syntax join when:</strong></p>
-    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 14px; margin-left: 20px;">
-      <li>Joining multiple tables (three or more) in LINQ to Objects or Dapper results</li>
-      <li>Needing LEFT JOIN or FULL OUTER JOIN behavior</li>
-      <li>Working with LINQ to Objects (in-memory data)</li>
-      <li>Your model doesn't expose navigation properties</li>
-      <li>You need precise control over join conditions (composite keys, complex predicates)</li>
-      <li>Transitioning from SQL and want readable, SQL-like syntax</li>
-    </ul>
-  </div>
+                <p>Use query syntax join when: Joining multiple tables (three or more) in LINQ to Objects or Dapper results Needing LEFT JO...</p>
+            </div>
 
   <div class="section-text">
-    <p><strong>Use method .Join() when:</strong></p>
-    <ul style="font-family: 'Source Serif 4', serif; margin-bottom: 28px; margin-left: 20px;">
-      <li>Building dynamic queries with complex lambda expressions computed at runtime</li>
-      <li>You're already in a fluent chain and adding a join at the end is cleaner</li>
-      <li>You have a reusable join condition you want to parameterize</li>
-      <li>Combining multiple joins with complex intermediate projections</li>
-    </ul>
-  </div>
+                <p>Use method .</p>
+            </div>
 
   <div class="code-single">
     <div class="code-block csharp">
       <span class="code-label">Decision Framework: Example Queries</span>
       <pre><code>// Scenario 1: Simple parent-child in EF
 // Decision: Navigation property + Include
-var customers = context.Customers
+var customers = await context.Customers
   .Include(c => c.Orders)
-  .ToList();
+  .AsNoTracking()
+  .ToListAsync();
 
 // Scenario 2: Three-table join, in-memory data
 // Decision: Query syntax (readable and efficient)
@@ -1392,23 +2002,25 @@ var result = customers
 
 // Scenario 5: Complex SQL needed, window functions, CTEs
 // Decision: Raw SQL or Dapper
-var result = context.Orders
+var result = await context.Orders
   .FromSqlRaw(
     "SELECT * FROM Orders WHERE CustomerId = @id AND OrderDate > @date",
     new SqlParameter("@id", customerId),
     new SqlParameter("@date", DateTime.Now.AddYears(-1))
   )
-  .ToList();
+  .AsNoTracking()
+  .ToListAsync();
 
 // Scenario 6: Avoiding N+1 with deep include chains
 // Decision: Include().ThenInclude() chains
-var result = context.Customers
+var result = await context.Customers
+  .AsNoTracking()
   .Where(c => c.City == "Seattle")
   .Include(c => c.Orders)
     .ThenInclude(o => o.OrderItems)
     .ThenInclude(oi => oi.Product)
   .Include(c => c.Addresses)
-  .ToList();</code></pre>
+  .ToListAsync();</code></pre>
     </div>
   </div>
 

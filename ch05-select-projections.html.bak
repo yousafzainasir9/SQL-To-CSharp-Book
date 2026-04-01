@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5: SELECT → .Select() — Projections — SQL to C#</title>
+<meta name="description" content="Master SELECT projections in SQL and their C# LINQ equivalents. Learn anonymous types, DTOs, computed columns, and what Entity Framework generates under the hood.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f8f7f3;
+  --bg2: #f0ede6;
+  --bg3: #e8e4db;
+  --white: #ffffff;
+  --ink: #1c1a17;
+  --ink2: #3d3a34;
+  --ink3: #6b6760;
+  --ink4: #a8a49e;
+  --rule: #dedad3;
+  --acc: #c96b1e;
+  --acc-l: #fdf3eb;
+  --acc-b: #f5c99a;
+  --green: #1d6b45;
+  --green-l: #edf8f2;
+  --green-b: #9fd9bc;
+  --blue: #1a4f8a;
+  --blue-l: #edf2fb;
+  --blue-b: #afc8ef;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  background: rgba(248,247,243,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: var(--acc);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.nav-links a:hover { color: var(--acc); }
+
+/* CHAPTER HEADER */
+.chapter-header {
+  padding: 60px 0 50px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 50px;
+}
+
+.chapter-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.chapter-header h1 {
+  font-size: clamp(32px, 4vw, 42px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 15px;
+  color: var(--ink);
+}
+
+.chapter-desc {
+  font-family: 'Source Serif 4', serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.7;
+  max-width: 640px;
+}
+
+/* IN THIS CHAPTER */
+.in-this-chapter {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 60px;
+}
+
+.in-this-chapter h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.in-this-chapter ul {
+  list-style: none;
+  padding: 0;
+}
+
+.in-this-chapter li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.in-this-chapter li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--acc);
+  font-weight: 600;
+}
+
+/* CONTENT SECTIONS */
+.section {
+  margin-bottom: 70px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acc);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-num::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.section h2 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.section-text {
+  font-family: 'Source Serif 4', serif;
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--ink2);
+  line-height: 1.8;
+  margin-bottom: 28px;
+  max-width: 750px;
+}
+
+.section-text p {
+  margin-bottom: 14px;
+}
+
+.section-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* CODE COMPARISON */
+.code-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.triple-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.code-block {
+  border-radius: 12px;
+  padding: 24px;
+  overflow-x: auto;
+}
+
+.code-block.sql {
+  background: var(--ink);
+  border: 1px solid #2a2824;
+}
+
+.code-block.csharp {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block.csharp-method {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-block.csharp-query {
+  background: var(--blue-l);
+  border: 1px solid var(--blue-b);
+}
+
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.code-block.sql .code-label {
+  color: var(--acc-b);
+}
+
+.code-block.csharp .code-label,
+.code-block.csharp-method .code-label,
+.code-block.csharp-query .code-label {
+  color: var(--blue);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.code-block.sql code {
+  color: #e8e4db;
+}
+
+.code-block.csharp code,
+.code-block.csharp-method code,
+.code-block.csharp-query code {
+  color: var(--ink);
+}
+
+/* SINGLE CODE BLOCK */
+.code-single {
+  margin-bottom: 28px;
+}
+
+.code-single .code-block {
+  max-width: 100%;
+}
+
+/* KEY INSIGHT CALLOUT */
+.key-insight {
+  border-left: 4px solid var(--acc);
+  background: var(--acc-l);
+  padding: 20px;
+  padding-left: 24px;
+  border-radius: 4px;
+  margin-bottom: 28px;
+}
+
+.key-insight strong {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.key-insight p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* KEY TAKEAWAYS */
+.key-takeaways {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 30px;
+  margin: 80px 0;
+}
+
+.key-takeaways h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.key-takeaways ul {
+  list-style: none;
+  padding: 0;
+}
+
+.key-takeaways li {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  color: var(--ink2);
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.key-takeaways li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* CHAPTER NAV */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 0;
+  margin-top: 80px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.nav-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item.prev {
+  align-items: flex-start;
+}
+
+.nav-item.next {
+  align-items: flex-end;
+}
+
+.nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  font-weight: 600;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--acc);
+  transition: color .2s;
+}
+
+.nav-item:hover .nav-title {
+  color: var(--ink);
+}
+
+/* FOOTER */
+footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--rule);
+  padding: 60px 0;
+  margin-top: 100px;
+}
+
+.footer-inner {
+  text-align: center;
+  font-family: 'Source Serif 4', serif;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+@media (max-width: 1024px) {
+  .triple-comparison {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .code-comparison,
+  .triple-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-nav {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .nav-item.next {
+    align-items: flex-start;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap" style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+    <a href="index.html" class="nav-brand">
+      SQL to C#
+      <span class="nav-pill">Ch 05</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">← All Chapters</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="chapter-header">
+    <div class="chapter-num">Chapter 05</div>
+    <h1>SELECT → .Select() — Projections</h1>
+    <p class="chapter-desc">Select only the columns you need. Projections reduce data transfer, memory use, and query cost.</p>
+  </header>
+
+  <div class="in-this-chapter">
+    <h3>In This Chapter</h3>
+    <ul>
+      <li>Basic column selection: choosing which columns to fetch</li>
+      <li>Computed columns and aliases for on-the-fly transformations</li>
+      <li>SELECT DISTINCT and removing duplicates</li>
+      <li>Conditional logic with CASE and ternary operators</li>
+      <li>Projection targets: anonymous types, DTOs, and records</li>
+      <li>Nested aggregations with let binding</li>
+      <li>Verifying generated SQL with .ToQueryString()</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 01: Basic Column Selection -->
+  <section class="section">
+    <div class="section-num">01</div>
+    <h2>Basic Column Selection</h2>
+
+    <p class="section-text">
+      Selecting specific columns is more efficient than SELECT *. The database reads fewer pages, transfers less data, and your app uses less memory.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT Name, Email, Phone
+FROM Customers;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await customers
+  .AsNoTracking()
+  .Select(c => new {
+    c.Name,
+    c.Email,
+    c.Phone
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from c in customers.AsNoTracking()
+              select new {
+                c.Name,
+                c.Email,
+                c.Phone
+              })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Both C# approaches create anonymous types with only the properties you need. EF Core translates both to identical SQL that selects only those columns.
+    </p>
+
+    <div class="key-insight">
+      <strong>Why It Matters</strong>
+      <p>On a 20-column table needing 3 columns, projection reduces result volume by ~85%. Less I/O, smaller network packets, less memory—all from one simple .Select() call.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 02: Computed Columns and Aliases -->
+  <section class="section">
+    <div class="section-num">02</div>
+    <h2>Computed Columns and Aliases</h2>
+
+    <p class="section-text">
+      Transform data at query time, not in your application. SQL uses AS for aliases, LINQ uses property assignment. The database does the work—it's far faster.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  OrderId,
+  Quantity,
+  UnitPrice,
+  Quantity * UnitPrice AS Total,
+  Quantity * UnitPrice * 0.9 AS Discounted
+FROM OrderItems;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await items
+  .AsNoTracking()
+  .Select(i => new {
+    i.OrderId,
+    i.Quantity,
+    i.UnitPrice,
+    Total = i.Quantity * i.UnitPrice,
+    Discounted = i.Quantity
+      * i.UnitPrice * 0.9m
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from i in items.AsNoTracking()
+              select new {
+                i.OrderId,
+                i.Quantity,
+                i.UnitPrice,
+                Total = i.Quantity * i.UnitPrice,
+                Discounted = i.Quantity
+                  * i.UnitPrice * 0.9m
+              })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      String operations work the same way:
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  FirstName,
+  LastName,
+  CONCAT(FirstName, ' ', LastName) AS FullName,
+  LEN(Email) AS EmailLength
+FROM Users;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await users
+  .AsNoTracking()
+  .Select(u => new {
+    u.FirstName,
+    u.LastName,
+    FullName = $"{u.FirstName} "
+      + u.LastName,
+    EmailLength = u.Email.Length
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from u in users.AsNoTracking()
+              select new {
+                u.FirstName,
+                u.LastName,
+                FullName = $"{u.FirstName} "
+                  + u.LastName,
+                EmailLength = u.Email.Length
+              })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Handle NULLs with COALESCE / ?? operator:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  CustomerId,
+  COALESCE(MiddleName, '') AS Middle,
+  ISNULL(Phone, 'No phone') AS Phone
+FROM Customers;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C#</span>
+        <pre><code>var result = await customers
+  .AsNoTracking()
+  .Select(c => new {
+    c.CustomerId,
+    Middle = c.MiddleName ?? "",
+    Phone = c.Phone ?? "No phone"
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Push to Database</strong>
+      <p>Computing in SQL means parallel processing of millions of rows. Computing in C# means fetching everything first. Always push computation down with .Select().</p>
+    </div>
+  </section>
+
+  <!-- SECTION 03: SELECT DISTINCT -->
+  <section class="section">
+    <div class="section-num">03</div>
+    <h2>SELECT DISTINCT — Removing Duplicates</h2>
+
+    <p class="section-text">
+      DISTINCT eliminates duplicate rows. It's expensive (requires sorting or hashing) but necessary when you need unique values. Apply it at the database level, not after fetching.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT DISTINCT City
+FROM Customers
+ORDER BY City;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await customers
+  .AsNoTracking()
+  .Select(c => c.City)
+  .Distinct()
+  .OrderBy(city => city)
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from c in customers.AsNoTracking()
+              select c.City)
+  .Distinct()
+  .OrderBy(city => city)
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      DISTINCT on multiple columns:
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT DISTINCT City, Country
+FROM Customers
+ORDER BY Country, City;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await customers
+  .AsNoTracking()
+  .Select(c => new { c.City, c.Country })
+  .Distinct()
+  .OrderBy(x => x.Country)
+  .ThenBy(x => x.City)
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from c in customers.AsNoTracking()
+              select new { c.City, c.Country })
+  .Distinct()
+  .OrderBy(x => x.Country)
+  .ThenBy(x => x.City)
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Filter Early</strong>
+      <p>SELECT DISTINCT with WHERE first, then DISTINCT. Filtering 10,000 rows down to 500 before DISTINCT is far cheaper than DISTINCT on 10,000 rows.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 04: CASE → Conditional Logic -->
+  <section class="section">
+    <div class="section-num">04</div>
+    <h2>CASE Expressions and Conditional Projections</h2>
+
+    <p class="section-text">
+      SQL's CASE and C#'s ternary operator (? :) both compute conditional values at the database level. Use these to categorize or transform data without application logic.
+    </p>
+
+    <div class="triple-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  Name,
+  Age,
+  CASE
+    WHEN Age >= 18 THEN 'Adult'
+    WHEN Age >= 13 THEN 'Teenager'
+    ELSE 'Child'
+  END AS AgeCategory
+FROM Users;</code></pre>
+      </div>
+      <div class="code-block csharp-method">
+        <span class="code-label">Method Syntax</span>
+        <pre><code>var result = await users
+  .AsNoTracking()
+  .Select(u => new {
+    u.Name,
+    u.Age,
+    AgeCategory = u.Age >= 18
+      ? "Adult"
+      : u.Age >= 13
+        ? "Teenager"
+        : "Child"
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">Query Syntax</span>
+        <pre><code>var result = await (from u in users.AsNoTracking()
+              select new {
+                u.Name,
+                u.Age,
+                AgeCategory = u.Age >= 18
+                  ? "Adult"
+                  : u.Age >= 13
+                    ? "Teenager"
+                    : "Child"
+              })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Multiple conditions:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block sql">
+        <span class="code-label">SQL</span>
+        <pre><code>SELECT
+  OrderId,
+  OrderTotal,
+  CASE
+    WHEN OrderTotal > 1000 THEN 'Premium'
+    WHEN OrderTotal > 500 THEN 'Standard'
+    WHEN OrderTotal > 100 THEN 'Small'
+    ELSE 'Minimal'
+  END AS Category
+FROM Orders;</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">C#</span>
+        <pre><code>var result = await context.Orders
+  .AsNoTracking()
+  .Select(o => new {
+    o.OrderId,
+    o.OrderTotal,
+    Category = o.OrderTotal > 1000
+      ? "Premium"
+      : o.OrderTotal > 500
+        ? "Standard"
+        : o.OrderTotal > 100
+          ? "Small"
+          : "Minimal"
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Keep It Simple</strong>
+      <p>EF translates comparisons, arithmetic, and string methods in .Select(). Calling custom C# functions breaks translation. Keep expressions database-translatable.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 05: Projection Targets -->
+  <section class="section">
+    <div class="section-num">05</div>
+    <h2>Projecting to DTOs, Records, and Anonymous Types</h2>
+
+    <p class="section-text">
+      Choose your projection target based on scope: anonymous types for local use, DTOs for reusable data transfer, records for immutable value semantics. EF generates identical SQL for all three.
+    </p>
+
+    <p class="section-text">
+      Anonymous types (one-off, local):
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">Anonymous Type</span>
+        <pre><code>// Compiler-generated, not reusable outside this method
+var result = await context.Customers
+  .AsNoTracking()
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    OrderCount = c.Orders.CountAsync()
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      DTOs (reusable classes):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">DTO Definition</span>
+        <pre><code>public class CustomerSummary
+{
+  public int Id { get; set; }
+  public string Name { get; set; }
+  public int OrderCount { get; set; }
+}</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">Project to DTO</span>
+        <pre><code>var result = await context.Customers
+  .AsNoTracking()
+  .Select(c => new CustomerSummary {
+    Id = c.Id,
+    Name = c.Name,
+    OrderCount = c.Orders.CountAsync()
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Records (immutable):
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">Record Definition</span>
+        <pre><code>public record CustomerSummary(
+  int Id,
+  string Name,
+  int OrderCount
+);</code></pre>
+      </div>
+      <div class="code-block csharp">
+        <span class="code-label">Project to Record</span>
+        <pre><code>var result = await context.Customers
+  .AsNoTracking()
+  .Select(c => new CustomerSummary(
+    c.Id,
+    c.Name,
+    c.Orders.CountAsync()
+  ))
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Performance: All Identical</strong>
+      <p>EF generates the same SQL regardless of target type. Choose by scope: anonymous for local queries, DTO for API responses, record for immutable data.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 06: Nested Aggregations -->
+  <section class="section">
+    <div class="section-num">06</div>
+    <h2>Nested Aggregations with let</h2>
+
+    <p class="section-text">
+      Use LINQ's let keyword to compute intermediate values in complex projections. Makes the select clause cleaner and easier to read.
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp-method">
+        <span class="code-label">Without let (Less Clear)</span>
+        <pre><code>var result = await context.Customers
+  .AsNoTracking()
+  .Select(c => new {
+    c.Id,
+    c.Name,
+    OrderCount = c.Orders.CountAsync(),
+    TotalSpent = c.Orders.SumAsync(o => o.Total ?? 0)
+  })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+      <div class="code-block csharp-query">
+        <span class="code-label">With let (More Readable)</span>
+        <pre><code>var result = await (from c in context.Customers.AsNoTracking()
+              let count = c.Orders.CountAsync()
+              let total = c.Orders.SumAsync(o => o.Total ?? 0)
+              select new {
+                c.Id,
+                c.Name,
+                OrderCount = count,
+                TotalSpent = total
+              })
+  .ToListAsync(cancellationToken);</code></pre>
+      </div>
+    </div>
+
+    <div class="code-single">
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL (Both Produce This)</span>
+        <pre><code>SELECT
+  c.Id,
+  c.Name,
+  COUNT(o.Id) AS OrderCount,
+  COALESCE(SUM(o.Total), 0) AS TotalSpent
+FROM Customers AS c
+LEFT JOIN Orders AS o ON c.Id = o.CustomerId
+GROUP BY c.Id, c.Name;</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>One Level Deep</strong>
+      <p>Shallow nested aggregations (counts, sums over one related table) work well. Deep nesting (3+ levels) can cause N+1 queries or cartesian products. Flatten when possible.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 07: Verify Generated SQL -->
+  <section class="section">
+    <div class="section-num">07</div>
+    <h2>Understanding Generated SQL</h2>
+
+    <p class="section-text">
+      Always inspect what SQL EF generates. Use .ToQueryString() (EF Core 5.0+) or enable query logging to verify your LINQ translates efficiently.
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ Query</span>
+        <pre><code>var query = context.Products
+  .AsNoTracking()
+  .Where(p => p.Category == "Electronics")
+  .Select(p => new {
+    p.Id,
+    p.Name,
+    p.Price
+  });
+
+string sql = query.ToQueryString();
+Console.WriteLine(sql);</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL</span>
+        <pre><code>SELECT p.Id, p.Name, p.Price
+FROM Products AS p
+WHERE p.Category = N'Electronics';</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      With computed columns:
+    </p>
+
+    <div class="code-comparison">
+      <div class="code-block csharp">
+        <span class="code-label">LINQ</span>
+        <pre><code>var query = context.OrderItems
+  .AsNoTracking()
+  .Select(oi => new {
+    oi.OrderId,
+    Subtotal = oi.Quantity * oi.UnitPrice,
+    WithTax = (oi.Quantity * oi.UnitPrice) * 1.1m
+  });
+
+string sql = query.ToQueryString();</code></pre>
+      </div>
+      <div class="code-block sql">
+        <span class="code-label">Generated SQL</span>
+        <pre><code>SELECT
+  oi.OrderId,
+  (oi.Quantity * oi.UnitPrice) AS Subtotal,
+  ((oi.Quantity * oi.UnitPrice) * 1.1) AS WithTax
+FROM OrderItems AS oi;</code></pre>
+      </div>
+    </div>
+
+    <p class="section-text">
+      Enable automatic logging:
+    </p>
+
+    <div class="code-single">
+      <div class="code-block csharp">
+        <span class="code-label">DbContext Query Logging</span>
+        <pre><code>var options = new DbContextOptionsBuilder<AppDbContext>()
+  .UseSqlServer(connectionString)
+  .LogTo(
+    message => Console.WriteLine(message),
+    LogLevel.Information
+  )
+  .Build();</code></pre>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <strong>Never Assume</strong>
+      <p>Verify every complex .Select() with .ToQueryString(). Look for: SELECT *, missing WHERE, unexpected JOINs, unintended GROUP BY. These are signs translation failed or is inefficient.</p>
+    </div>
+  </section>
+
+  <!-- KEY TAKEAWAYS -->
+  <div class="key-takeaways">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li>Use .Select() to project only needed columns. Reduces I/O, network, and memory.</li>
+      <li>Compute in SQL (at database), not in C#. Use .Select() for arithmetic, string ops, and null coalescing.</li>
+      <li>DISTINCT is expensive. Apply at DB level in .Select().Distinct(), not in-memory after fetching.</li>
+      <li>CASE (SQL) = ternary (C#). Entity Framework translates nested ternaries to SQL CASE.</li>
+      <li>Anonymous types for local one-offs, DTOs for reusable data transfer, records for immutable structures.</li>
+      <li>let keyword simplifies complex query syntax projections by breaking calculations into steps.</li>
+      <li>Always use .ToQueryString() to verify generated SQL. Never assume translation is efficient.</li>
+    </ul>
+  </div>
+
+  <!-- CHAPTER NAV -->
+  <div class="chapter-nav">
+    <a href="ch04-relationships.html" class="nav-item prev">
+      <span class="nav-label">Previous Chapter</span>
+      <span class="nav-title">Relationships</span>
+    </a>
+    <a href="ch06-where-filtering.html" class="nav-item next">
+      <span class="nav-label">Next Chapter</span>
+      <span class="nav-title">WHERE → .Where() — Filtering</span>
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p class="footer-inner">SQL to C#: A practical guide to translating database logic into modern C# LINQ patterns.</p>
+  </div>
+</footer>
+
+</body>
+</html>
