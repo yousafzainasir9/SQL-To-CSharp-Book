@@ -1,180 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 29: Testing Data Access Code — SQL to C#</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff; --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e; --rule: #dedad3; --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a; --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc; --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef; --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
-nav { position: sticky; top: 0; z-index: 100; height: 54px; display: flex; align-items: center; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--acc); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.nav-pill { font-size: 10px; text-transform: uppercase; background: var(--acc); color: var(--white); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-.chapter-header { padding: 60px 0 50px; border-bottom: 1px solid var(--rule); margin-bottom: 50px; }
-.chapter-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--acc); text-transform: uppercase; margin-bottom: 10px; }
-.chapter-header h1 { font-size: 38px; font-weight: 800; margin-bottom: 15px; color: var(--ink); }
-.chapter-desc { font-size: 17px; font-weight: 300; color: var(--ink2); line-height: 1.7; max-width: 640px; }
-.in-this-chapter { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 30px; margin-bottom: 60px; }
-.in-this-chapter h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--ink); margin-bottom: 16px; }
-.in-this-chapter ul { list-style: none; padding: 0; }
-.in-this-chapter li { font-size: 15px; color: var(--ink2); padding: 6px 0 6px 20px; position: relative; }
-.in-this-chapter li:before { content: "→"; position: absolute; left: 0; color: var(--acc); font-weight: 600; }
-main { padding-bottom: 40px; }
-.section { margin-bottom: 70px; }
-.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--acc); text-transform: uppercase; margin-bottom: 8px; }
-.section h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
-.section-text { font-size: 16px; font-weight: 300; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; max-width: 750px; }
-.code-block { border-radius: 12px; padding: 24px; overflow-x: auto; margin-bottom: 28px; }
-.code-block.csharp { background: var(--blue-l); border: 1px solid var(--blue-b); }
-.code-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; display: block; color: var(--blue); }
-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; display: block; white-space: pre-wrap; color: var(--ink); }
-.key-insight { border-left: 5px solid var(--acc); background: var(--acc-l); padding: 20px 20px 20px 24px; border-radius: 4px; margin-bottom: 28px; }
-.key-insight strong { font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; font-size: 14px; text-transform: uppercase; }
-.key-insight p { font-size: 14px; line-height: 1.6; color: var(--ink2); }
-table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin-bottom: 28px; }
-thead { background: var(--bg2); }
-th { font-weight: 600; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 13px; }
-td { padding: 10px 16px; border-bottom: 1px solid var(--bg3); font-size: 13px; }
-tr:last-child td { border-bottom: none; }
-.chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 60px 0; }
-.nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-.nav-item:hover { border-color: var(--acc); }
-.nav-item.prev { text-align: right; }
-.nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
-.nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
-.nav-item:hover .nav-item-title { color: var(--acc); }
-footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; }
-@media (max-width: 768px) { .chapter-nav { grid-template-columns: 1fr; } .nav-item.prev { text-align: left; } }
-</style>
-</head>
-<body>
-    <nav><div class="wrap" style="display:flex;justify-content:space-between;width:100%;"><a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">CH 29</span></a><a href="index.html" style="font-size:13px;color:var(--ink3);text-decoration:none;">&larr; All</a></div></nav>
-    <div class="wrap"><div class="chapter-header"><div class="chapter-num">Chapter 29</div><h1>Testing Data Access</h1><p class="chapter-desc">Test data access with in-memory databases, SQLite, and TestContainers. Mock repositories for unit tests.</p></div>
-    <div class="in-this-chapter"><h3>In This Chapter</h3><ul><li>Unit vs integration testing strategies</li><li>In-memory databases</li><li>SQLite for testing</li><li>TestContainers for real databases</li><li>Mocking repositories</li></ul></div>
-    <section class="section"><div class="section-num">01</div><h2>Testing Strategies</h2><p class="section-text">Unit tests use mocks/in-memory. Integration tests use real databases. Start with unit; add integration for critical paths.</p>
-    <table><thead><tr><th>Type</th><th>Speed</th><th>Reliability</th><th>Cost</th><th>Best For</th></tr></thead><tbody><tr><td>Unit (Mock)</td><td>Fast</td><td>Good</td><td>None</td><td>Business logic, edge cases</td></tr><tr><td>Integration (In-Memory)</td><td>Fast</td><td>Good</td><td>None</td><td>EF Core LINQ queries</td></tr><tr><td>Integration (SQLite)</td><td>Fast</td><td>Better</td><td>None</td><td>SQL syntax verification</td></tr><tr><td>E2E (Real DB)</td><td>Slow</td><td>Best</td><td>High</td><td>Production-like scenarios</td></tr></tbody></table>
-    <div class="key-insight"><strong>Rule:</strong><p>Test database queries with actual SQL engines (SQLite, TestContainers). Never use in-memory-only for query logic.</p></div></section>
-    <section class="section"><div class="section-num">02</div><h2>In-Memory Testing</h2><p class="section-text">Fast unit tests for business logic that doesn't depend on SQL specifics.</p>
-    <div class="code-block csharp"><span class="code-label">In-Memory Context</span><code>var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
-    .UseInMemoryDatabase("TestDb_" + Guid.NewGuid())
-    .Options;
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Chapter 29: Testing — SQL to C#</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"><style>:root{--bg:#f8f7f3;--bg2:#f0ede6;--bg3:#e8e4db;--white:#fff;--ink:#1c1a17;--ink2:#3d3a34;--ink3:#6b6760;--ink4:#a8a49e;--rule:#dedad3;--acc:#c96b1e;--acc-l:#fdf3eb;--acc-b:#f5c99a;--green:#1d6b45;--green-l:#edf8f2;--green-b:#9fd9bc;--blue:#1a4f8a;--blue-l:#edf2fb;--blue-b:#afc8ef;--amber:#7a5200;--amber-l:#fdf8ec;--amber-b:#e8d08a;}*{margin:0;padding:0;box-sizing:border-box;}html,body{font-family:'Source Serif 4',serif;background:var(--bg);color:var(--ink);line-height:1.6;}nav{position:sticky;top:0;height:54px;background:rgba(248,247,243,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 2rem;z-index:1000;}nav .nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;margin-right:auto;}nav .nav-brand-text{font-family:'Outfit',sans-serif;font-weight:700;font-size:18px;color:var(--acc);}nav .nav-pill{background:var(--acc-l);color:var(--acc);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;}nav .nav-link{font-family:'Outfit',sans-serif;font-size:14px;color:var(--ink);text-decoration:none;}nav .nav-link:hover{color:var(--acc);}main{max-width:960px;margin:0 auto;padding:60px 2rem;}.chapter-header{margin-bottom:48px;}.chapter-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink4);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}h1{font-family:'Outfit',sans-serif;font-size:42px;font-weight:700;margin-bottom:16px;line-height:1.2;}.chapter-intro{font-size:17px;color:var(--ink2);line-height:1.7;max-width:700px;}.section{margin-bottom:56px;}.section-header{display:flex;align-items:center;gap:16px;margin-bottom:16px;}.sec-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);letter-spacing:1px;}.sec-rule{flex:1;height:1px;background:var(--rule);}h2{font-family:'Outfit',sans-serif;font-size:24px;font-weight:700;margin-bottom:12px;}.requirement{background:var(--amber-l);border:1px solid var(--amber-b);border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:14px;color:var(--ink2);line-height:1.6;}.requirement strong{color:var(--amber);font-family:'Outfit',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}.thinking{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}.think-sql,.think-csharp{border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;}.think-sql{background:#1c1a17;color:#d4d0c8;}.think-sql strong{color:var(--acc-b);font-family:'Outfit',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}.think-csharp{background:var(--blue-l);border:1px solid var(--blue-b);color:var(--ink2);}.think-csharp strong{color:var(--blue);font-family:'Outfit',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}.code-comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}.triple-comparison{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}.code-block{border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;overflow-x:auto;}.code-block pre{margin:0;font-family:inherit;font-size:inherit;line-height:inherit;}.sql-block{background:#1c1a17;color:#d4d0c8;}.csharp-block{background:var(--blue-l);border:1px solid var(--blue-b);color:var(--ink);}.ef-block{background:var(--green-l);border:1px solid var(--green-b);color:var(--ink);}.dapper-block{background:var(--amber-l);border:1px solid var(--amber-b);color:var(--ink);}.code-label{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}.code-full{margin-bottom:16px;}table{width:100%;border-collapse:collapse;margin-bottom:16px;background:var(--white);border:1px solid var(--rule);border-radius:8px;overflow:hidden;}thead{background:var(--bg2);}th{font-family:'Outfit',sans-serif;font-weight:600;padding:10px 14px;text-align:left;border-bottom:1px solid var(--rule);font-size:12px;}td{padding:8px 14px;border-bottom:1px solid var(--bg3);font-family:'JetBrains Mono',monospace;font-size:12px;}td code{background:var(--bg);padding:2px 5px;border-radius:3px;font-size:11px;}tr:last-child td{border-bottom:none;}.chapter-nav{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:48px;}.nav-item{background:var(--white);border:1px solid var(--rule);border-radius:8px;padding:16px;text-decoration:none;transition:all .2s;}.nav-item:hover{border-color:var(--acc);}.nav-item.prev{text-align:right;}.nav-item-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink4);text-transform:uppercase;margin-bottom:4px;display:block;}.nav-item-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--ink);}.nav-item:hover .nav-item-title{color:var(--acc);}footer{background:var(--bg2);border-top:1px solid var(--rule);padding:28px 2rem;text-align:center;color:var(--ink3);font-size:13px;margin-top:40px;}@media (max-width:768px){h1{font-size:32px;}.code-comparison,.thinking,.triple-comparison{grid-template-columns:1fr;}.chapter-nav{grid-template-columns:1fr;}.nav-item.prev{text-align:left;}main{padding:40px 1.5rem;}}</style></head><body><nav><a href="index.html" class="nav-brand"><span class="nav-brand-text">SQL to C#</span><span class="nav-pill">CH 29</span></a><a href="index.html" class="nav-link">← All Chapters</a></nav><main><div class="chapter-header"><div class="chapter-label">Chapter 29</div><h1>Testing Data Access</h1><p class="chapter-intro">Test database code without a database. Mock it, use in-memory, use SQLite, or spin up Docker containers. Learn when and how for each approach.</p></div><section class="section"><div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div><h2>Requirement: "Test Without a Real Database"</h2><div class="requirement"><strong>Business Requirement</strong><br>Unit tests run fast on every developer machine. No SQL Server required. But tests must catch real bugs, not false positives.</div><div class="thinking"><div class="think-sql"><strong>SQL Developer Thinks</strong><br>Mocking is for business logic. Real SQL queries need a real SQL engine.</div><div class="think-csharp"><strong>C# Developer Thinks</strong><br>Use three tiers: mocks for logic, in-memory/SQLite for queries, TestContainers for integration tests.</div></div><table><thead><tr><th>Approach</th><th>Speed</th><th>Accuracy</th><th>Best For</th></tr></thead><tbody><tr><td>Mock Repository</td><td>Very Fast</td><td>Logic only</td><td>Business logic</td></tr><tr><td>In-Memory DB</td><td>Fast</td><td>LINQ queries</td><td>Simple LINQ</td></tr><tr><td>SQLite In-Memory</td><td>Fast</td><td>Real SQL</td><td>SQL migrations</td></tr><tr><td>TestContainers</td><td>Slower</td><td>Exact</td><td>Integration</td></tr></tbody></table></section><section class="section"><div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div><h2>In-Memory DB Testing</h2><div class="requirement"><strong>Business Requirement</strong><br>Fast LINQ query tests. In-memory DB doesn't execute real SQL. When is it right?</div><div class="thinking"><div class="think-sql"><strong>SQL Developer Thinks</strong><br>In-memory has no SQL engine. LIKE, date functions, complex logic may fail.</div><div class="think-csharp"><strong>C# Developer Thinks</strong><br>For simple WHERE/ORDER BY use in-memory. For SQL functions use SQLite.</div></div><div class="code-block csharp-block"><div class="code-label">In-Memory DbContext</div><pre>var opts = new DbContextOptionsBuilder()
+    .UseInMemoryDatabase("TestDb").Options;
 
-var db = new AppDbContext(options);
+var db = new AppDbContext(opts);
+db.Customers.Add(new Customer { Name = "Alice" });
+await db.SaveChangesAsync();
 
-// Seed test data
-db.Customers.Add(new Customer { Id = 1, Name = "Alice", Balance = 100 });
-db.SaveChanges();
+var c = await db.Customers
+    .FirstOrDefaultAsync(c =&gt; c.Name == "Alice");</pre></div></section><section class="section"><div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div><h2>SQLite for Real SQL Testing</h2><div class="requirement"><strong>Business Requirement</strong><br>Test real SQL. Database migrations. Date functions. Complex WHERE clauses.</div><div class="thinking"><div class="think-sql"><strong>SQL Developer Thinks</strong><br>SQLite is a real SQL engine. It's lightweight, in-memory or file-based.</div><div class="think-csharp"><strong>C# Developer Thinks</strong><br>Use SqliteConnection with in-memory database. Run migrations. Execute real SQL syntax.</div></div><div class="code-block csharp-block"><div class="code-label">SQLite In-Memory</div><pre>var conn = new SqliteConnection("DataSource=:memory:");
+await conn.OpenAsync();
 
-// Test
-var customer = db.Customers.FirstOrDefault(c => c.Name == "Alice");
-Assert.NotNull(customer);
-Assert.Equal(100, customer.Balance);</code></div>
-    <div class="key-insight"><strong>Caution:</strong><p>In-memory DB doesn't execute real SQL. LIKE queries, date functions, and complex filters may not work.</p></div></section>
-    <section class="section"><div class="section-num">03</div><h2>SQLite for Testing</h2><p class="section-text">Real SQL engine in a file. Great for testing EF queries without setting up SQL Server.</p>
-    <div class="code-block csharp"><span class="code-label">SQLite Test Setup</span><code>var connection = new SqliteConnection("DataSource=:memory:");
-connection.Open();
+var opts = new DbContextOptionsBuilder()
+    .UseSqlite(conn).Options;
 
-var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
-    .UseSqlite(connection)
-    .Options;
+var db = new AppDbContext(opts);
+await db.Database.MigrateAsync();
 
-using var db = new AppDbContext(options);
-db.Database.EnsureCreated();
+db.Customers.Add(new Customer { CreatedAt = DateTime.Now });
+await db.SaveChangesAsync();</pre></div></section><section class="section"><div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div><h2>Mock Repositories for Unit Tests</h2><div class="requirement"><strong>Business Requirement</strong><br>Test business logic without any database. Fast unit tests for OrderService, PaymentService, etc.</div><div class="thinking"><div class="think-sql"><strong>SQL Developer Thinks</strong><br>Mocks return fake data. No SQL executed.</div><div class="think-csharp"><strong>C# Developer Thinks</strong><br>Use Moq or create fake IRepository implementations. Fast, isolated unit tests.</div></div><div class="code-block csharp-block"><div class="code-label">Mock Repository Pattern</div><pre>public class MockCustomerRepository : ICustomerRepository {
+    private List&lt;Customer&gt; customers = new();
 
-// Seed and test
-db.Customers.Add(new Customer { Id = 1, Name = "Alice" });
-db.SaveChanges();
-
-var result = await db.Customers
-    .Where(c => EF.Functions.Like(c.Name, "%ice"))  // SQLite supports LIKE
-    .ToListAsync();
-
-Assert.Single(result);</code></div>
-    <div class="key-insight"><strong>Connection Lifetime:</strong><p>Use :memory: for in-process tests. Use file path for persistent databases between test runs.</p></div></section>
-    <section class="section"><div class="section-num">04</div><h2>Mock Repositories</h2><p class="section-text">Unit test business logic without touching databases.</p>
-    <div class="code-block csharp"><span class="code-label">Mock Repository Pattern</span><code>public class MockCustomerRepository : ICustomerRepository
-{
-    private readonly List&lt;Customer&gt; _customers = new();
-
-    public async Task&lt;Customer?&gt; GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        await Task.FromResult(_customers.FirstOrDefault(c => c.Id == id));
-
-    public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetActiveAsync(CancellationToken cancellationToken = default) =>
-        await Task.FromResult(_customers.Where(c => c.IsActive));
-
-    public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
-    {
-        _customers.Add(customer);
-        await Task.CompletedTask;
+    public async Task&lt;Customer&gt; GetByIdAsync(int id, CancellationToken ct = default) {
+        return await Task.FromResult(customers.FirstOrDefault(c =&gt; c.Id == id));
     }
 }
 
-// Test
 [Fact]
-public async Task OrderService_CreatesOrderForActiveCustomer()
-{
+public async Task OrderService_ProcessesOrder() {
     var repo = new MockCustomerRepository();
-    repo.AddAsync(new Customer { Id = 1, IsActive = true });
+    repo.Add(new Customer { Id = 1, IsActive = true });
 
-    var service = new OrderService(repo);
-    var order = await service.CreateOrderAsync(1, ...);
+    var svc = new OrderService(repo);
+    var order = await svc.CreateOrderAsync(1);
 
     Assert.NotNull(order);
-}</code></div></section>
-    <section class="section"><div class="section-num">05</div><h2>TestContainers</h2><p class="section-text">Spin up real Docker containers (SQL Server, PostgreSQL) for each test run.</p>
-    <div class="code-block csharp"><span class="code-label">TestContainers Setup</span><code>// NuGet: Testcontainers, Testcontainers.MsSql
-
-[Collection("Database collection")]
-public class CustomerRepositoryTests : IAsyncLifetime
-{
-    private readonly MsSqlContainer _container;
-    private AppDbContext _db;
-
-    public CustomerRepositoryTests()
-    {
-        _container = new MsSqlBuilder()
-            .WithPassword("YourStrong@Password1")
-            .Build();
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _container.StartAsync();
-        var connStr = _container.GetConnectionString();
-
-        var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
-            .UseSqlServer(connStr)
-            .Options;
-
-        _db = new AppDbContext(options);
-        await _db.Database.MigrateAsync();
-    }
-
-    public async Task DisposeAsync() => await _container.StopAsync();
-
-    [Fact]
-    public async Task GetCustomersByRegion_ReturnsMatching()
-    {
-        _db.Customers.Add(new Customer { Id = 1, Region = "West" });
-        await _db.SaveChangesAsync();
-
-        var result = await _db.Customers
-            .AsNoTracking()
-            .Where(c => c.Region == "West")
-            .ToListAsync();
-
-        Assert.Single(result);
-    }
-}</code></div>
-    <div class="key-insight"><strong>When to Use:</strong><p>TestContainers for CI/CD pipelines. Start with SQLite for local dev. Use containers for production-like testing.</p></div></section>
-    <div class="chapter-nav">
-        <a class="nav-item prev" href="ch28-transactions.html"><span class="nav-item-label">&larr; Previous</span><span class="nav-item-title">Transactions</span></a>
-        <a class="nav-item" href="ch30-security.html"><span class="nav-item-label">Next &rarr;</span><span class="nav-item-title">Security</span></a>
-    </div></div>
-    <footer><p>SQL to C# &mdash; The Complete Data Access Guide</p><p>LINQ &middot; Entity Framework &middot; Dapper</p></footer>
-</body>
-</html>
+}</pre></div></section><div class="chapter-nav"><a class="nav-item prev" href="ch28-transactions.html"><span class="nav-item-label">← Previous</span><span class="nav-item-title">Transactions</span></a><a class="nav-item" href="ch30-security.html"><span class="nav-item-label">Next →</span><span class="nav-item-title">Security</span></a></div></main><footer><p>SQL to C# — The Complete Data Access Guide</p><p>LINQ · Entity Framework · Dapper</p></footer></body></html>

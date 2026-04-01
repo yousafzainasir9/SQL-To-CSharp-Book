@@ -1,164 +1,451 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 31: Working with JSON Columns — SQL to C#</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff; --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e; --rule: #dedad3; --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a; --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc; --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef; --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
-nav { position: sticky; top: 0; z-index: 100; height: 54px; display: flex; align-items: center; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--acc); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.nav-pill { font-size: 10px; text-transform: uppercase; background: var(--acc); color: var(--white); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-.chapter-header { padding: 60px 0 50px; border-bottom: 1px solid var(--rule); margin-bottom: 50px; }
-.chapter-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--acc); text-transform: uppercase; margin-bottom: 10px; }
-.chapter-header h1 { font-size: 38px; font-weight: 800; margin-bottom: 15px; color: var(--ink); }
-.chapter-desc { font-size: 17px; font-weight: 300; color: var(--ink2); line-height: 1.7; max-width: 640px; }
-.in-this-chapter { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 30px; margin-bottom: 60px; }
-.in-this-chapter h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--ink); margin-bottom: 16px; }
-.in-this-chapter ul { list-style: none; padding: 0; }
-.in-this-chapter li { font-size: 15px; color: var(--ink2); padding: 6px 0 6px 20px; position: relative; }
-.in-this-chapter li:before { content: "→"; position: absolute; left: 0; color: var(--acc); font-weight: 600; }
-main { padding-bottom: 40px; }
-.section { margin-bottom: 70px; }
-.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--acc); text-transform: uppercase; margin-bottom: 8px; }
-.section h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
-.section-text { font-size: 16px; font-weight: 300; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; max-width: 750px; }
-.code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-.code-block { border-radius: 12px; padding: 24px; overflow-x: auto; }
-.code-block.sql { background: var(--ink); border: 1px solid #2a2824; }
-.code-block.csharp { background: var(--blue-l); border: 1px solid var(--blue-b); }
-.code-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; display: block; }
-.code-block.sql .code-label { color: var(--acc-b); }
-.code-block.csharp .code-label { color: var(--blue); }
-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; display: block; white-space: pre-wrap; color: var(--ink); }
-.code-block.sql code { color: #e8e4db; }
-.code-block.csharp code { color: var(--ink); }
-.key-insight { border-left: 5px solid var(--acc); background: var(--acc-l); padding: 20px 20px 20px 24px; border-radius: 4px; margin-bottom: 28px; }
-.key-insight strong { font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; font-size: 14px; text-transform: uppercase; }
-.key-insight p { font-size: 14px; line-height: 1.6; color: var(--ink2); }
-.chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 60px 0; }
-.nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-.nav-item:hover { border-color: var(--acc); }
-.nav-item.prev { text-align: right; }
-.nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
-.nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
-.nav-item:hover .nav-item-title { color: var(--acc); }
-footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; }
-@media (max-width: 768px) { .code-comparison { grid-template-columns: 1fr; } .chapter-nav { grid-template-columns: 1fr; } .nav-item.prev { text-align: left; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 31: JSON Columns &mdash; SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp { border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6; }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-size: 12px; }
+        td code { font-family: 'JetBrains Mono', monospace; background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-    <nav><div class="wrap" style="display:flex;justify-content:space-between;width:100%;"><a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">CH 31</span></a><a href="index.html" style="font-size:13px;color:var(--ink3);text-decoration:none;">&larr; All</a></div></nav>
-    <div class="wrap"><div class="chapter-header"><div class="chapter-num">Chapter 31</div><h1>JSON Columns</h1><p class="chapter-desc">Store and query JSON in SQL Server, PostgreSQL. Semi-structured data without extra tables.</p></div>
-    <div class="in-this-chapter"><h3>In This Chapter</h3><ul><li>JSON column types in SQL Server and PostgreSQL</li><li>JSON functions in SQL</li><li>EF Core value conversions</li><li>When to use JSON vs relational tables</li><li>Querying JSON columns</li></ul></div>
-    <section class="section"><div class="section-num">01</div><h2>JSON in SQL</h2><p class="section-text">Store nested data as JSON without creating extra tables.</p>
-    <div class="code-comparison">
-        <div class="code-block sql">
-            <span class="code-label">SQL Server: NVARCHAR(MAX)</span>
-            <code>CREATE TABLE Customers (
-    Id INT PRIMARY KEY,
-    Name NVARCHAR(100),
-    Metadata NVARCHAR(MAX)  -- JSON string
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 31</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
+
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 31</div>
+            <h1>JSON Columns</h1>
+            <p class="chapter-intro">You get a requirement: &ldquo;Store flexible settings without creating extra tables.&rdquo; JSON columns store semi-structured data right in a table column. A SQL developer uses JSON_VALUE() and JSON_MODIFY(). A C# developer uses value converters and owned types. Both store and query flexible data &mdash; here&rsquo;s how.</p>
+        </div>
+
+        <!-- 01: Store user preferences -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Store User Preferences&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Each user has different settings: theme, language, notification preferences, dashboard layout. The shape varies per user. Creating a column for each setting is impractical.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I&rsquo;ll add an NVARCHAR(MAX) column and store JSON. SQL Server has JSON_VALUE() and JSON_QUERY() to read into it. No extra tables needed.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I&rsquo;ll create a UserPreferences class and let EF Core serialize/deserialize it automatically. I work with a strongly-typed object, not raw JSON strings.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; Store JSON</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Users (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(100) NOT NULL,
+    Email       NVARCHAR(255) NOT NULL,
+    Preferences NVARCHAR(MAX) NULL
 );
 
-INSERT INTO Customers VALUES (1, 'Alice',
-    '{"phone":"555-1234","address":"123 Main St","tags":["vip","premium"]}');
-
--- Query JSON
-SELECT Id, Name,
-       JSON_VALUE(Metadata, '$.phone') AS Phone,
-       JSON_QUERY(Metadata, '$.tags') AS Tags
-FROM Customers;</code>
-        </div>
-        <div class="code-block sql">
-            <span class="code-label">PostgreSQL: jsonb Type</span>
-            <code>CREATE TABLE customers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    metadata JSONB  -- Native JSON type
-);
-
-INSERT INTO customers VALUES (1, 'Alice',
-    '{"phone":"555-1234","address":"123 Main St","tags":["vip","premium"]}'::jsonb);
-
--- Query JSON
-SELECT id, name,
-       metadata->>'phone' AS phone,
-       metadata->'tags' AS tags
-FROM customers;</code>
-        </div>
-    </div>
-    <div class="key-insight"><strong>SQL Server vs PostgreSQL:</strong><p>SQL Server: use NVARCHAR(MAX), parse with JSON_VALUE/JSON_QUERY. PostgreSQL: use jsonb, supports indexing.</p></div></section>
-    <section class="section"><div class="section-num">02</div><h2>EF Core Value Conversion</h2><p class="section-text">Map C# objects to JSON columns automatically.</p>
-    <div class="code-block csharp">
-        <span class="code-label">Define Domain Model</span>
-        <code>public class Customer
+INSERT INTO Users (Name, Email, Preferences)
+VALUES ('Alice', 'alice@example.com',
+  '{"theme":"dark","lang":"en",
+    "notifications":{"email":true,
+    "sms":false},"pageSize":25}');</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# &mdash; Strongly-Typed Class</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class User
 {
     public int Id { get; set; }
-    public string Name { get; set; }
-
-    // Complex type stored as JSON
-    public CustomerMetadata Metadata { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public UserPreferences? Preferences
+        { get; set; }
 }
 
-public class CustomerMetadata
+public class UserPreferences
 {
-    public string Phone { get; set; }
-    public string Address { get; set; }
-    public List&lt;string&gt; Tags { get; set; }
+    public string Theme { get; set; } = "light";
+    public string Lang { get; set; } = "en";
+    public NotificationSettings Notifications
+        { get; set; } = new();
+    public int PageSize { get; set; } = 20;
 }
 
-// Configuration
-modelBuilder.Entity&lt;Customer&gt;(e =>
+public class NotificationSettings
 {
-    e.Property(c => c.Metadata)
+    public bool Email { get; set; } = true;
+    public bool Sms { get; set; } = false;
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: Map C# object to JSON column -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Map C# Object to JSON Column&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                When I save a User, Preferences should auto-serialize to JSON. When I load, it auto-deserializes. No manual JSON parsing.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    The column stores text. JSON is just a string to the database. I use JSON functions to query it when needed.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    EF Core 7+ supports OwnsOne with ToJson() &mdash; maps a nested C# object to a JSON column automatically. For older versions, HasConversion works.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; EF Core 7+ OwnsOne + ToJson()</div>
+                <div class="code-block ef-block">
+                    <pre>modelBuilder.Entity&lt;User&gt;(e =&gt;
+{
+    e.HasKey(u =&gt; u.Id);
+    e.Property(u =&gt; u.Name).IsRequired().HasMaxLength(100);
+    e.Property(u =&gt; u.Email).IsRequired().HasMaxLength(255);
+
+    // Map Preferences to a JSON column
+    e.OwnsOne(u =&gt; u.Preferences, prefs =&gt;
+    {
+        prefs.ToJson();
+        prefs.OwnsOne(p =&gt; p.Notifications);
+    });
+});</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; HasConversion (EF Core 6 and earlier)</div>
+                <div class="code-block csharp-block">
+                    <pre>modelBuilder.Entity&lt;User&gt;(e =&gt;
+{
+    e.Property(u =&gt; u.Preferences)
         .HasConversion(
-            v => JsonConvert.SerializeObject(v),  // C# to JSON
-            v => JsonConvert.DeserializeObject&lt;CustomerMetadata&gt;(v));  // JSON to C#
-        // EF Core handles serialization automatically
-});</code>
-    </div>
-    <div class="key-insight"><strong>Alternative:</strong><p>EF Core 7+ supports System.Text.Json natively without explicit conversion.</p></div></section>
-    <section class="section"><div class="section-num">03</div><h2>Querying JSON</h2><p class="section-text">Query into JSON columns using EF functions.</p>
-    <div class="code-block csharp">
-        <span class="code-label">Filter by JSON Properties</span>
-        <code>// Get customers with 'vip' tag
-var customers = await db.Customers
-    .AsNoTracking()
-    .Where(c => EF.Functions.JsonContains(
-        c.Metadata, "vip"))
-    .ToListAsync();
+            v =&gt; JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v =&gt; JsonSerializer.Deserialize&lt;UserPreferences&gt;(v,
+                (JsonSerializerOptions?)null))
+        .HasColumnType("nvarchar(max)");
+});</pre>
+                </div>
+            </div>
 
-// Alternative: extract and filter
-var customers = await db.Customers
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Usage (Auto Serialization)</div>
+                <div class="code-block csharp-block">
+                    <pre>// Create &mdash; object serializes to JSON automatically
+var user = new User
+{
+    Name = "Alice", Email = "alice@example.com",
+    Preferences = new UserPreferences
+    {
+        Theme = "dark", Lang = "en", PageSize = 25,
+        Notifications = new() { Email = true, Sms = false }
+    }
+};
+context.Users.Add(user);
+await context.SaveChangesAsync(ct);
+
+// Read &mdash; JSON deserializes automatically
+var loaded = await context.Users
     .AsNoTracking()
-    .Where(c => c.Metadata.Tags.Contains("vip"))
-    .ToListAsync();
-// EF translates to JSON_CONTAINS or jsonb operators</code>
-    </div></section>
-    <section class="section"><div class="section-num">04</div><h2>When to Use JSON</h2><p class="section-text">JSON columns solve specific problems. Not a replacement for normalization.</p>
-    <table style="width:100%;margin-bottom:28px;border-collapse:collapse;">
-        <thead style="background:#f0ede6;">
-            <tr><th style="padding:12px;border-bottom:1px solid #dedad3;text-align:left;font-weight:600;">Scenario</th><th style="padding:12px;border-bottom:1px solid #dedad3;text-align:left;font-weight:600;">Use JSON?</th></tr>
-        </thead>
-        <tbody>
-            <tr><td style="padding:10px;border-bottom:1px solid #e8e4db;">Metadata (tags, settings)</td><td style="padding:10px;border-bottom:1px solid #e8e4db;">Yes. Schema flexible.</td></tr>
-            <tr><td style="padding:10px;border-bottom:1px solid #e8e4db;">Audit trail (immutable history)</td><td style="padding:10px;border-bottom:1px solid #e8e4db;">Yes. Array of events.</td></tr>
-            <tr><td style="padding:10px;border-bottom:1px solid #e8e4db;">Related records you always query together</td><td style="padding:10px;border-bottom:1px solid #e8e4db;">Maybe. Depends on queries.</td></tr>
-            <tr><td style="padding:10px;border-bottom:1px solid #e8e4db;">Many-to-many relationships</td><td style="padding:10px;border-bottom:1px solid #e8e4db;">No. Use junction table.</td></tr>
-            <tr><td style="padding:10px;">Frequently filtered columns</td><td style="padding:10px;">No. Use proper columns + index.</td></tr>
-        </tbody>
-    </table>
-    <div class="key-insight"><strong>Rule:</strong><p>JSON for semi-structured, query-rarely data. Relational tables for frequently filtered, normalized data.</p></div></section>
-    <div class="chapter-nav">
-        <a class="nav-item prev" href="ch30-security.html"><span class="nav-item-label">&larr; Previous</span><span class="nav-item-title">Security</span></a>
-        <a class="nav-item" href="ch32-cheat-sheet.html"><span class="nav-item-label">Next &rarr;</span><span class="nav-item-title">Cheat Sheet</span></a>
-    </div></div>
-    <footer><p>SQL to C# &mdash; The Complete Data Access Guide</p></footer>
+    .FirstOrDefaultAsync(u =&gt; u.Id == user.Id, ct);
+var theme = loaded?.Preferences?.Theme; // "dark"</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03: Query inside JSON -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Query Inside the JSON&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Find all users who prefer dark mode. Find users with email notifications enabled. Filter and sort by JSON properties.
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; JSON_VALUE()</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Find dark mode users
+SELECT Id, Name
+FROM Users
+WHERE JSON_VALUE(Preferences, '$.theme')
+    = 'dark';
+
+-- Sort by page size
+SELECT Id, Name,
+    JSON_VALUE(Preferences, '$.pageSize')
+        AS PageSize
+FROM Users
+ORDER BY CAST(JSON_VALUE(Preferences,
+    '$.pageSize') AS INT) DESC;
+
+-- Query nested value
+SELECT Id, Name
+FROM Users
+WHERE JSON_VALUE(Preferences,
+    '$.notifications.email') = 'true';</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# &mdash; LINQ with Owned Types (EF 7+)</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Find dark mode users
+var darkUsers = await context.Users
+    .AsNoTracking()
+    .Where(u =&gt; u.Preferences!.Theme
+        == "dark")
+    .ToListAsync(ct);
+
+// Sort by page size
+var sorted = await context.Users
+    .AsNoTracking()
+    .OrderByDescending(u =&gt;
+        u.Preferences!.PageSize)
+    .ToListAsync(ct);
+
+// Query nested value
+var emailNotif = await context.Users
+    .AsNoTracking()
+    .Where(u =&gt; u.Preferences!
+        .Notifications.Email == true)
+    .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper &mdash; Direct JSON Queries</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(connectionString);
+var darkUsers = await conn.QueryAsync&lt;User&gt;(
+    @"SELECT Id, Name, Email, Preferences
+      FROM Users
+      WHERE JSON_VALUE(Preferences, '$.theme') = @Theme",
+    new { Theme = "dark" });</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Update part of JSON -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Update Part of the JSON&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                User clicks &ldquo;Switch to dark mode.&rdquo; Update only the theme inside their preferences &mdash; don&rsquo;t replace the entire object.
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; JSON_MODIFY()</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Update only the theme
+UPDATE Users
+SET Preferences = JSON_MODIFY(
+    Preferences, '$.theme', 'dark')
+WHERE Id = 42;
+
+-- Update nested value
+UPDATE Users
+SET Preferences = JSON_MODIFY(
+    Preferences,
+    '$.notifications.sms',
+    CAST(1 AS BIT))
+WHERE Id = 42;
+
+-- Add a new key
+UPDATE Users
+SET Preferences = JSON_MODIFY(
+    Preferences, '$.sidebar', 'collapsed')
+WHERE Id = 42;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# &mdash; Two Approaches</div>
+                    <div class="code-block csharp-block">
+                        <pre>// Approach 1: Load, modify, save
+// (EF re-serializes entire JSON)
+var user = await context.Users
+    .FirstOrDefaultAsync(
+        u =&gt; u.Id == 42, ct);
+
+if (user?.Preferences is not null)
+{
+    user.Preferences.Theme = "dark";
+    await context.SaveChangesAsync(ct);
+}
+
+// Approach 2: Surgical raw SQL
+await context.Database
+    .ExecuteSqlInterpolatedAsync(
+    $@"UPDATE Users
+       SET Preferences = JSON_MODIFY(
+           Preferences, '$.theme', {theme})
+       WHERE Id = {userId}", ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: When to use JSON vs tables -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>&ldquo;Should This Be JSON or a Separate Table?&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>The Question</strong><br>
+                Product has attributes that vary by category (shoes have size/color, laptops have RAM/CPU). JSON column or separate table?
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    If I need to JOIN, GROUP BY, or index the data &mdash; use tables. If it&rsquo;s read-mostly and schema varies &mdash; JSON is fine. JSON queries are slower than indexed columns.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    If the data has a fixed shape &mdash; use a table with proper entities. If it&rsquo;s flexible, user-defined, or rarely queried &mdash; JSON keeps the model simple.
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr><th>Scenario</th><th>Use JSON</th><th>Use Separate Table</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>User preferences / settings</td><td>Yes &mdash; flexible, rarely queried</td><td>&mdash;</td></tr>
+                    <tr><td>Product attributes (vary by type)</td><td>Yes &mdash; schema varies per product</td><td>If you filter/sort by attributes</td></tr>
+                    <tr><td>Audit log metadata</td><td>Yes &mdash; read-only, archival</td><td>&mdash;</td></tr>
+                    <tr><td>Order line items</td><td>&mdash;</td><td>Yes &mdash; need JOINs, aggregates, FKs</td></tr>
+                    <tr><td>Address fields</td><td>&mdash;</td><td>Yes &mdash; queried frequently, indexed</td></tr>
+                    <tr><td>API request/response log</td><td>Yes &mdash; blob storage, rarely parsed</td><td>&mdash;</td></tr>
+                    <tr><td>Permissions / roles</td><td>&mdash;</td><td>Yes &mdash; relational queries needed</td></tr>
+                    <tr><td>Form builder dynamic fields</td><td>Yes &mdash; user-defined schema</td><td>&mdash;</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch30-security.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Security</span>
+            </a>
+            <a class="nav-item" href="ch32-cheat-sheet.html">
+                <span class="nav-item-label">Next &rarr;</span>
+                <span class="nav-item-title">Quick Reference Cheat Sheet</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>

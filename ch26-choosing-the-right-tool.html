@@ -1,796 +1,431 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chapter 26: Choosing the Right Tool — EF Core vs Dapper vs ADO.NET | SQL to C#</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 23: Repository Pattern — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-    :root {
-      --bg: #f8f7f3;
-      --bg2: #f0ede6;
-      --bg3: #e8e4db;
-      --white: #fff;
-      --ink: #1c1a17;
-      --ink2: #3d3a34;
-      --ink3: #6b6760;
-      --ink4: #a8a49e;
-      --rule: #dedad3;
-      --acc: #c96b1e;
-      --acc-l: #fdf3eb;
-      --acc-b: #f5c99a;
-      --green: #1d6b45;
-      --green-l: #edf8f2;
-      --green-b: #9fd9bc;
-      --blue: #1a4f8a;
-      --blue-l: #edf2fb;
-      --blue-b: #afc8ef;
-      --amber: #7a5200;
-      --amber-l: #fdf8ec;
-      --amber-b: #e8d08a;
-    }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-    html { scroll-behavior: smooth; }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-    body {
-      font-family: 'Source Serif 4', serif;
-      background-color: var(--bg);
-      color: var(--ink);
-      line-height: 1.7;
-    }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-    nav {
-      position: sticky;
-      top: 0;
-      height: 54px;
-      background-color: var(--white);
-      border-bottom: 1px solid var(--rule);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 2rem;
-      z-index: 1000;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .nav-brand {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--acc);
-    }
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-    .nav-chapter {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background-color: var(--acc-l);
-      color: var(--acc);
-      padding: 0.4rem 1rem;
-      border-radius: 20px;
-      text-decoration: none;
-    }
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-    main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
 
-    header {
-      margin-bottom: 3rem;
-    }
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      color: var(--ink);
-    }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
-    .chapter-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      color: var(--acc);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
-    }
-
-    .chapter-subtitle {
-      font-family: 'Source Serif 4', serif;
-      font-size: 1.1rem;
-      color: var(--ink3);
-      font-weight: 300;
-      margin-bottom: 2rem;
-    }
-
-    .in-this-chapter {
-      background-color: var(--blue-l);
-      border-left: 4px solid var(--blue);
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-      border-radius: 4px;
-    }
-
-    .in-this-chapter h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--blue);
-      margin-bottom: 1rem;
-    }
-
-    .in-this-chapter ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .in-this-chapter li {
-      margin-bottom: 0.6rem;
-      font-size: 0.95rem;
-      color: var(--ink2);
-      padding-left: 1.5rem;
-      position: relative;
-    }
-
-    .in-this-chapter li:before {
-      content: "▸";
-      position: absolute;
-      left: 0;
-      color: var(--blue);
-    }
-
-    .section {
-      margin-bottom: 3rem;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--rule);
-    }
-
-    .section-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: var(--acc);
-      line-height: 1;
-      min-width: 3rem;
-    }
-
-    .section-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .prose {
-      margin-bottom: 1.5rem;
-      color: var(--ink2);
-      line-height: 1.8;
-    }
-
-    .prose p {
-      margin-bottom: 1rem;
-    }
-
-    .prose strong {
-      color: var(--ink);
-      font-weight: 600;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: var(--white);
-      border: 1px solid var(--rule);
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 2rem;
-    }
-
-    thead {
-      background-color: var(--bg2);
-    }
-
-    th {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid var(--rule);
-      font-size: 0.9rem;
-    }
-
-    td {
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--bg3);
-      font-size: 0.95rem;
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    .comparison {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .comparison-block {
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    .comparison-label {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 0.75rem 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .sql-block {
-      background-color: var(--ink);
-    }
-
-    .sql-block .comparison-label {
-      background-color: var(--ink2);
-      color: var(--white);
-    }
-
-    .csharp-block {
-      background-color: var(--blue-l);
-    }
-
-    .csharp-block .comparison-label {
-      background-color: var(--blue);
-      color: var(--white);
-    }
-
-    .dapper-block {
-      background-color: var(--amber-l);
-    }
-
-    .dapper-block .comparison-label {
-      background-color: var(--amber);
-      color: var(--white);
-    }
-
-    .code-content {
-      background-color: var(--ink);
-      color: #e8e8e8;
-      padding: 1.25rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      overflow-x: auto;
-      min-height: 120px;
-    }
-
-    .csharp-block .code-content {
-      background-color: var(--white);
-      color: var(--ink);
-      border: 1px solid var(--blue-b);
-    }
-
-    .dapper-block .code-content {
-      background-color: var(--white);
-      color: var(--ink);
-      border: 1px solid var(--amber-b);
-    }
-
-    .insight {
-      background-color: var(--acc-l);
-      border-left: 4px solid var(--acc);
-      padding: 1.5rem;
-      margin: 2rem 0;
-      border-radius: 4px;
-    }
-
-    .insight-title {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      color: var(--acc);
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-    }
-
-    .insight-text {
-      color: var(--ink2);
-      font-size: 0.95rem;
-      line-height: 1.7;
-    }
-
-    .code-block {
-      margin-bottom: 2rem;
-      border-radius: 4px;
-      overflow: hidden;
-      background-color: var(--ink);
-    }
-
-    .code-block .code-content {
-      min-height: 150px;
-    }
-
-    .key-takeaways {
-      background-color: var(--green-l);
-      border-left: 4px solid var(--green);
-      padding: 1.5rem;
-      margin-bottom: 3rem;
-      border-radius: 4px;
-    }
-
-    .key-takeaways h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--green);
-      margin-bottom: 1rem;
-    }
-
-    .key-takeaways ul {
-      list-style: none;
-      padding-left: 0;
-    }
-
-    .key-takeaways li {
-      margin-bottom: 0.6rem;
-      padding-left: 1.5rem;
-      position: relative;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: var(--ink2);
-    }
-
-    .key-takeaways li::before {
-      content: "\2713";
-      position: absolute;
-      left: 0;
-      color: var(--green);
-      font-weight: bold;
-    }
-
-    .chapter-nav {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 3rem;
-    }
-
-    .nav-item {
-      background-color: var(--white);
-      border: 1px solid var(--rule);
-      border-radius: 10px;
-      padding: 20px;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .nav-item:hover {
-      border-color: var(--acc);
-    }
-
-    .nav-item.prev {
-      text-align: right;
-    }
-
-    .nav-item-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      color: var(--ink4);
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-      display: block;
-    }
-
-    .nav-item-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--ink);
-    }
-
-    .nav-item:hover .nav-item-title {
-      color: var(--acc);
-    }
-
-    footer {
-      background-color: var(--bg2);
-      border-top: 1px solid var(--rule);
-      padding: 2rem;
-      text-align: center;
-      color: var(--ink3);
-      font-size: 0.85rem;
-      margin-top: 3rem;
-    }
-
-    @media (max-width: 768px) {
-      h1 { font-size: 2rem; }
-      .code-comparison { grid-template-columns: 1fr; }
-      .chapter-nav { grid-template-columns: 1fr; }
-      .nav-item.prev { text-align: left; }
-      table { font-size: 0.85rem; }
-    }
-  </style>
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
     <nav>
         <a href="index.html" class="nav-brand">
-            <span>SQL to C#</span>
-            <span class="nav-chapter">CH 26</span>
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 23</span>
         </a>
-        <a href="index.html" class="nav-chapter" style="background:none;color:var(--ink3);padding:0;">&larr; All Chapters</a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
     </nav>
 
     <main>
-        <header>
-            <div class="chapter-number">Chapter 26</div>
-            <h1>Choosing the Right Tool</h1>
-            <p class="chapter-subtitle">EF Core, Dapper, and ADO.NET each have strengths. Choose based on your needs.</p>
-        </header>
-
-        <!-- SECTION 01: The Three Options -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">01</span>
-                <h2 class="section-title">EF Core vs Dapper vs ADO.NET</h2>
-            </div>
-
-            <div class="prose">
-                <p>Three main data access tools in .NET: ORM (EF Core), micro-ORM (Dapper), and raw SQL (ADO.NET).</p>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Aspect</th>
-                        <th>EF Core</th>
-                        <th>Dapper</th>
-                        <th>ADO.NET</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Abstraction</strong></td>
-                        <td>Full ORM</td>
-                        <td>Micro-ORM</td>
-                        <td>None (raw SQL)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>SQL Generated?</strong></td>
-                        <td>Yes (automatic)</td>
-                        <td>No (you write it)</td>
-                        <td>No (you write it)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Relationships</strong></td>
-                        <td>Full support</td>
-                        <td>Manual joins</td>
-                        <td>Manual joins</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Performance</strong></td>
-                        <td>Good (N+1 issues)</td>
-                        <td>Excellent (minimal overhead)</td>
-                        <td>Fastest (no abstraction)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Learning Curve</strong></td>
-                        <td>Moderate</td>
-                        <td>Low</td>
-                        <td>Low</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Best For</strong></td>
-                        <td>CRUD, rapid development</td>
-                        <td>Queries, reporting</td>
-                        <td>Complex SQL, stored procedures</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="insight">
-                <strong class="insight-title">Hybrid Approach:</strong>
-                <p class="insight-text">Most teams use EF Core for writes, Dapper/ADO.NET for complex reads. Use the best tool for each job.</p>
-            </div>
-        </section>
-
-        <!-- SECTION 02: EF Core -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">02</span>
-                <h2 class="section-title">EF Core: Full ORM</h2>
-            </div>
-
-            <div class="prose">
-                <p>Generates SQL, handles relationships, tracks changes. Best for CRUD and rapid development.</p>
-            </div>
-
-            <div class="code-block">
-                <div class="comparison-label">EF Core Example</div>
-                <div class="code-content"><pre>// Write
-var customer = new Customer { Name = "Alice" };
-db.Customers.Add(customer);
-await db.SaveChangesAsync();
-
-// Read with relationships
-var customers = await db.Customers
-    .AsNoTracking()
-    .Include(c => c.Orders)
-    .ThenInclude(o => o.Items)
-    .Where(c => c.IsActive)
-    .ToListAsync();
-
-// Automatic SQL generation
-// SELECT c.* FROM Customers c
-// LEFT JOIN Orders o ON c.Id = o.CustomerId
-// LEFT JOIN OrderItems oi ON o.Id = oi.OrderId
-// WHERE c.IsActive</pre></div>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">Pros:</strong>
-                <p class="insight-text">Fast to code, handles relationships elegantly, automatic change tracking.</p>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">Cons:</strong>
-                <p class="insight-text">Generated SQL can be inefficient; N+1 queries if not careful; learning curve for advanced scenarios.</p>
-            </div>
-        </section>
-
-        <!-- SECTION 03: Dapper -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">03</span>
-                <h2 class="section-title">Dapper: Micro-ORM</h2>
-            </div>
-
-            <div class="prose">
-                <p>You write SQL; Dapper maps results to objects. Minimal overhead, excellent for reporting and complex queries.</p>
-            </div>
-
-            <div class="code-block">
-                <div class="comparison-label">Dapper Example</div>
-                <div class="code-content"><pre>await using var conn = new SqlConnection(connString);
-
-// Explicit SQL with parameters
-var customers = await conn.QueryAsync&lt;CustomerDto&gt;(
-    @"SELECT c.Id, c.Name, c.Email,
-             COUNT(o.Id) AS OrderCount,
-             SUM(oi.Price * oi.Quantity) AS TotalSpent
-      FROM Customers c
-      LEFT JOIN Orders o ON c.Id = o.CustomerId
-      LEFT JOIN OrderItems oi ON o.Id = oi.OrderId
-      WHERE c.IsActive = 1
-      GROUP BY c.Id, c.Name, c.Email",
-    new { }
-);
-
-// Insert
-await conn.ExecuteAsync(
-    "INSERT INTO Customers (Name, Email) VALUES (@Name, @Email)",
-    new { Name = "Alice", Email = "alice@example.com" }
-);</pre></div>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">Pros:</strong>
-                <p class="insight-text">Fast, lightweight, explicit SQL, perfect for complex queries and reporting.</p>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">Cons:</strong>
-                <p class="insight-text">No relationship loading, no change tracking, must manage connections.</p>
-            </div>
-        </section>
-
-        <!-- SECTION 04: ADO.NET -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">04</span>
-                <h2 class="section-title">ADO.NET: Raw SQL</h2>
-            </div>
-
-            <div class="prose">
-                <p>No abstraction. Complete control, maximum performance for edge cases.</p>
-            </div>
-
-            <div class="code-block">
-                <div class="comparison-label">ADO.NET Example</div>
-                <div class="code-content"><pre>using var conn = new SqlConnection(connString);
-await conn.OpenAsync();
-
-using var cmd = new SqlCommand(
-    "SELECT * FROM Customers WHERE IsActive = 1", conn);
-
-using var reader = await cmd.ExecuteReaderAsync();
-var customers = new List&lt;Customer&gt;();
-
-while (await reader.ReadAsync())
-{
-    customers.Add(new Customer
-    {
-        Id = (int)reader["Id"],
-        Name = (string)reader["Name"],
-        Email = (string)reader["Email"]
-    });
-}
-
-// Explicit transaction control
-using var transaction = conn.BeginTransaction();
-try
-{
-    await cmd.ExecuteNonQueryAsync();
-    await transaction.CommitAsync();
-}
-catch
-{
-    await transaction.RollbackAsync();
-    throw;
-}</pre></div>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">When to Use:</strong>
-                <p class="insight-text">Stored procedures, extreme performance requirements, legacy systems. Rarely needed in modern apps.</p>
-            </div>
-        </section>
-
-        <!-- SECTION 05: Decision Framework -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">05</span>
-                <h2 class="section-title">Decision Framework</h2>
-            </div>
-
-            <div class="prose">
-                <p>Choose based on query complexity, performance requirements, and team experience.</p>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Scenario</th>
-                        <th>Recommendation</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Standard CRUD on a table</strong></td>
-                        <td>EF Core. Fast to code, relationships work.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Complex join with aggregation</strong></td>
-                        <td>Dapper. Write explicit SQL for clarity and control.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Real-time reporting/dashboards</strong></td>
-                        <td>Dapper + read-only replica. Explicit SQL for speed.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Bulk inserts/updates</strong></td>
-                        <td>Dapper or ADO.NET with batch operations.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>API with read/write split</strong></td>
-                        <td>EF Core for writes, Dapper for complex reads.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Stored procedure calls</strong></td>
-                        <td>ADO.NET or EF Core .FromSqlInterpolated().</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- SECTION 06: Hybrid Example -->
-        <section class="section">
-            <div class="section-header">
-                <span class="section-number">06</span>
-                <h2 class="section-title">Hybrid Approach (Best Practice)</h2>
-            </div>
-
-            <div class="prose">
-                <p>Combine EF Core (writes) and Dapper (reads) for optimal performance and code clarity.</p>
-            </div>
-
-            <div class="code-block">
-                <div class="comparison-label">Service Using Both</div>
-                <div class="code-content"><pre>public class OrderService
-{
-    private readonly DbContext _db;
-    private readonly IDbConnection _readConn;
-
-    // Write operation with EF Core
-    public async Task CreateOrderAsync(CreateOrderCommand cmd)
-    {
-        var order = new Order { CustomerId = cmd.CustomerId };
-        _db.Orders.Add(order);
-
-        foreach (var item in cmd.Items)
-        {
-            order.Items.Add(new OrderItem
-            {
-                ProductId = item.ProductId,
-                Quantity = item.Quantity
-            });
-        }
-
-        await _db.SaveChangesAsync();
-    }
-
-    // Complex read with Dapper
-    public async Task&lt;OrderReportDto&gt; GetOrderReportAsync(int customerId, CancellationToken cancellationToken = default)
-    {
-        await using var conn = new SqlConnection(_readConn.ConnectionString);
-
-        var report = await conn.QueryFirstOrDefaultAsync&lt;OrderReportDto&gt;(
-            @"SELECT c.Id, c.Name,
-                     COUNT(DISTINCT o.Id) AS OrderCount,
-                     SUM(oi.Price * oi.Quantity) AS TotalSpent,
-                     MAX(o.CreatedAt) AS LastOrder
-              FROM Customers c
-              LEFT JOIN Orders o ON c.Id = o.CustomerId
-              LEFT JOIN OrderItems oi ON o.Id = oi.OrderId
-              WHERE c.Id = @CustomerId
-              GROUP BY c.Id, c.Name",
-            new { CustomerId = customerId }
-        );
-
-        return report;
-    }
-}</pre></div>
-            </div>
-
-            <div class="insight">
-                <strong class="insight-title">Best of Both Worlds:</strong>
-                <p class="insight-text">EF's simplicity for writes, Dapper's control for reads. Most scalable .NET data access pattern.</p>
-            </div>
-        </section>
-
-        <!-- Key Takeaways -->
-        <div class="key-takeaways">
-            <h3>Key Takeaways</h3>
-            <ul>
-                <li>EF Core: Full ORM, generates SQL, great for CRUD and rapid development.</li>
-                <li>Dapper: Micro-ORM, explicit SQL, perfect for complex queries and reporting.</li>
-                <li>ADO.NET: Raw SQL, rare in modern apps, maximum control.</li>
-                <li>Hybrid approach: EF Core for writes, Dapper for complex reads.</li>
-                <li>Always parameterize queries to prevent SQL injection.</li>
-                <li>Profile and measure; don't optimize prematurely.</li>
-            </ul>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 23</div>
+            <h1>Repository Pattern</h1>
+            <p class="chapter-intro">Abstraction is the enemy of clarity — until it solves a real problem. The repository pattern encapsulates data access behind a clean interface, so your business logic doesn't care if you're using EF Core, Dapper, or SQL Server directly.</p>
         </div>
 
-        <!-- Chapter Navigation -->
+        <!-- 01: The Problem -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Hide Database Access"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Business logic should not know about DbContext or SQL. Data access queries should be testable without a real database.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Stored procedures encapsulate queries. Business logic calls them, doesn't write SQL. If the schema changes, you update the procedure, not 50 places in code.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    An interface defines what data access looks like. Business logic depends on the interface, not the implementation. Swap in a mock for testing.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Stored Procedure</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE usp_GetActiveCustomers
+    @IsActive BIT = 1
+AS
+BEGIN
+    SELECT Id, Name, Email, Balance
+    FROM Customers
+    WHERE IsActive = @IsActive
+    ORDER BY Name
+END</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Repository Interface</div>
+                    <div class="code-block csharp-block">
+                        <pre>public interface ICustomerRepository
+{
+    Task&lt;IEnumerable&lt;Customer&gt;&gt;
+        GetActiveAsync(CancellationToken ct);
+}
+
+var customers =
+    await repository.GetActiveAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02: Generic Repository -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Generic Repository (CRUD for Any Entity)</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Create, read, update, delete. Every entity needs these operations. Don't repeat the same code for each table.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Basic CRUD — SELECT, INSERT, UPDATE, DELETE. Same pattern applies to Orders, Products, Customers.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Generic&lt;T&gt; handles any entity type. One implementation covers all. For specific business queries, create a specialized repository.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — EF Core Implementation</div>
+                <div class="code-block csharp-block">
+                    <pre>public interface IRepository&lt;T&gt; where T : class
+{
+    Task&lt;T?&gt; GetByIdAsync(int id, CancellationToken ct = default);
+    Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync(CancellationToken ct = default);
+    Task AddAsync(T entity, CancellationToken ct = default);
+    Task UpdateAsync(T entity, CancellationToken ct = default);
+    Task RemoveAsync(int id, CancellationToken ct = default);
+}
+
+public class Repository&lt;T&gt; : IRepository&lt;T&gt; where T : class
+{
+    private readonly DbContext _db;
+
+    public Repository(DbContext db) => _db = db;
+
+    public async Task&lt;T?&gt; GetByIdAsync(int id, CancellationToken ct = default)
+        =&gt; await _db.Set&lt;T&gt;().FindAsync(new object[] { id }, ct);
+
+    public async Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync(CancellationToken ct = default)
+        =&gt; await _db.Set&lt;T&gt;().AsNoTracking().ToListAsync(ct);
+
+    public async Task AddAsync(T entity, CancellationToken ct = default)
+    {
+        await _db.Set&lt;T&gt;().AddAsync(entity, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task UpdateAsync(T entity, CancellationToken ct = default)
+    {
+        _db.Set&lt;T&gt;().Update(entity);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveAsync(int id, CancellationToken ct = default)
+    {
+        var entity = await GetByIdAsync(id, ct);
+        if (entity != null)
+        {
+            _db.Set&lt;T&gt;().Remove(entity);
+            await _db.SaveChangesAsync(ct);
+        }
+    }
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03: Domain-Specific Repository -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Domain-Specific Repository (Encapsulate Business Logic)</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                "Get active customers" is a business concept. Map it directly to a repository method, not a scattered LINQ query.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Stored procedures map to domain concepts. Instead of SELECT...WHERE...ORDER, you have usp_GetActiveCustomers.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Repository methods map to business actions. GetActiveAsync(), GetByEmailAsync(), GetWithRecentOrdersAsync(). Clear intent.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Domain-Focused Interface</div>
+                <div class="code-block csharp-block">
+                    <pre>public interface ICustomerRepository
+{
+    Task&lt;Customer?&gt; GetByIdAsync(int id, CancellationToken ct = default);
+    Task&lt;IEnumerable&lt;Customer&gt;&gt; GetActiveAsync(CancellationToken ct = default);
+    Task&lt;Customer?&gt; GetByEmailAsync(string email, CancellationToken ct = default);
+    Task&lt;IEnumerable&lt;Customer&gt;&gt; GetWithBalanceAboveAsync(
+        decimal minBalance, CancellationToken ct = default);
+    Task AddAsync(Customer customer, CancellationToken ct = default);
+    Task UpdateAsync(Customer customer, CancellationToken ct = default);
+}
+
+public class CustomerRepository : ICustomerRepository
+{
+    private readonly DbContext _db;
+
+    public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetActiveAsync(CancellationToken ct = default)
+        =&gt; await _db.Customers
+            .AsNoTracking()
+            .Where(c =&gt; c.IsActive)
+            .OrderBy(c =&gt; c.Name)
+            .ToListAsync(ct);
+
+    public async Task&lt;Customer?&gt; GetByEmailAsync(string email, CancellationToken ct = default)
+        =&gt; await _db.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c =&gt; c.Email == email, ct);
+
+    public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetWithBalanceAboveAsync(
+        decimal minBalance, CancellationToken ct = default)
+        =&gt; await _db.Customers
+            .AsNoTracking()
+            .Where(c =&gt; c.Balance &gt;= minBalance)
+            .OrderByDescending(c =&gt; c.Balance)
+            .ToListAsync(ct);
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Pagination Pattern -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Pagination (Handle Large Datasets)</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Return all 50,000 customers at once? Never. Implement pagination to fetch 10 at a time, with total count for UI.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Use OFFSET and FETCH. SELECT * FROM Customers ORDER BY Name OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Skip() and Take(). Also count the total to show "Page 2 of 500" in the UI.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Paged Query</div>
+                <div class="code-block csharp-block">
+                    <pre>public class PagedResult&lt;T&gt;
+{
+    public IEnumerable&lt;T&gt; Items { get; set; } = new List&lt;T&gt;();
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+    public int TotalCount { get; set; }
+    public int TotalPages =&gt; (TotalCount + PageSize - 1) / PageSize;
+}
+
+public class CustomerRepository : ICustomerRepository
+{
+    public async Task&lt;PagedResult&lt;Customer&gt;&gt; GetPagedAsync(
+        int pageNumber, int pageSize, CancellationToken ct = default)
+    {
+        var query = _db.Customers.AsNoTracking().Where(c =&gt; c.IsActive);
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .OrderBy(c =&gt; c.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return new PagedResult&lt;Customer&gt;
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Testing Repositories -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Testing (Mock Repositories)</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Unit tests should not hit the database. Swap in a mock repository that returns test data.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Rollback transactions to avoid polluting test databases. Or use separate test data.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Interface allows dependency injection. Inject a fake repository in tests; inject the real one in production.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Mock Repository for Testing</div>
+                <div class="code-block csharp-block">
+                    <pre>public class MockCustomerRepository : ICustomerRepository
+{
+    private readonly List&lt;Customer&gt; _customers = new();
+
+    public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetActiveAsync(CancellationToken ct = default)
+    {
+        await Task.Delay(0, ct); // Simulate async
+        return _customers.Where(c =&gt; c.IsActive).OrderBy(c =&gt; c.Name);
+    }
+
+    public async Task AddAsync(Customer customer, CancellationToken ct = default)
+    {
+        _customers.Add(customer);
+        await Task.CompletedTask;
+    }
+}
+
+// Unit test
+[Fact]
+public async Task GetActive_ReturnsOnlyActiveCustomers()
+{
+    var repo = new MockCustomerRepository();
+    await repo.AddAsync(new Customer { Id = 1, Name = "Alice", IsActive = true });
+    await repo.AddAsync(new Customer { Id = 2, Name = "Bob", IsActive = false });
+
+    var result = await repo.GetActiveAsync();
+
+    Assert.Single(result);
+    Assert.Equal("Alice", result.First().Name);
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
         <div class="chapter-nav">
-            <a class="nav-item prev" href="ch25-cqrs.html">
+            <a class="nav-item prev" href="ch22-dapper.html">
                 <span class="nav-item-label">&larr; Previous</span>
-                <span class="nav-item-title">CQRS</span>
+                <span class="nav-item-title">Dapper</span>
             </a>
-            <a class="nav-item" href="ch27-indexing.html">
+            <a class="nav-item" href="ch24-unit-of-work.html">
                 <span class="nav-item-label">Next &rarr;</span>
-                <span class="nav-item-title">Indexing</span>
+                <span class="nav-item-title">Unit of Work</span>
             </a>
         </div>
     </main>
 
     <footer>
-        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>SQL to C# — The Complete Data Access Guide</p>
         <p>LINQ &middot; Entity Framework &middot; Dapper</p>
     </footer>
 </body>

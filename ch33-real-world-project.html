@@ -1,60 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chapter 33: Real-World E-Commerce API Walkthrough — SQL to C#</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff; --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e; --rule: #dedad3; --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a; --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc; --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
-nav { position: sticky; top: 0; z-index: 100; height: 54px; display: flex; align-items: center; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); }
-.nav-brand { font-size: 14px; font-weight: 700; color: var(--acc); text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.nav-pill { font-size: 10px; text-transform: uppercase; background: var(--acc); color: var(--white); padding: 2px 8px; border-radius: 4px; font-weight: 600; }
-.chapter-header { padding: 60px 0 50px; border-bottom: 1px solid var(--rule); margin-bottom: 50px; }
-.chapter-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--acc); text-transform: uppercase; margin-bottom: 10px; }
-.chapter-header h1 { font-size: 38px; font-weight: 800; margin-bottom: 15px; color: var(--ink); }
-.chapter-desc { font-size: 17px; font-weight: 300; color: var(--ink2); line-height: 1.7; max-width: 640px; }
-main { padding-bottom: 40px; }
-.section { margin-bottom: 70px; }
-.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--acc); text-transform: uppercase; margin-bottom: 8px; }
-.section h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--ink); }
-.section-text { font-size: 16px; font-weight: 300; color: var(--ink2); line-height: 1.8; margin-bottom: 28px; max-width: 750px; }
-.code-block { border-radius: 12px; padding: 24px; overflow-x: auto; margin-bottom: 28px; background: var(--blue-l); border: 1px solid var(--blue-b); }
-.code-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; display: block; color: var(--blue); }
-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; display: block; white-space: pre-wrap; color: var(--ink); }
-.key-insight { border-left: 5px solid var(--acc); background: var(--acc-l); padding: 20px 20px 20px 24px; border-radius: 4px; margin-bottom: 28px; }
-.key-insight strong { font-weight: 600; color: var(--ink); display: block; margin-bottom: 6px; font-size: 14px; text-transform: uppercase; }
-.key-insight p { font-size: 14px; line-height: 1.6; color: var(--ink2); }
-.chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 60px 0; }
-.nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
-.nav-item:hover { border-color: var(--acc); }
-.nav-item.prev { text-align: right; }
-.nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
-.nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
-.nav-item:hover .nav-item-title { color: var(--acc); }
-footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; }
-@media (max-width: 768px) { .chapter-nav { grid-template-columns: 1fr; } .nav-item.prev { text-align: left; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 33: Real-World E-Commerce Project — SQL to C#</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
+            --rule: #dedad3;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
+
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
+
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+        h3 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 10px; color: var(--ink2); }
+
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
+
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 32px; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
+            .chapter-nav { grid-template-columns: 1fr; }
+            .nav-item.prev { text-align: left; }
+            main { padding: 40px 1.5rem; }
+        }
+    </style>
 </head>
 <body>
-    <nav><div class="wrap" style="display:flex;justify-content:space-between;width:100%;"><a href="index.html" class="nav-brand">SQL to C# <span class="nav-pill">CH 33</span></a><a href="index.html" style="font-size:13px;color:var(--ink3);text-decoration:none;">&larr; All</a></div></nav>
-    <div class="wrap"><div class="chapter-header"><div class="chapter-num">Chapter 33</div><h1>Real-World Project</h1><p class="chapter-desc">Build an e-commerce API using EF Core, repositories, unit of work, and clean architecture patterns.</p></div>
-    <section class="section"><div class="section-num">01</div><h2>Domain Models</h2><p class="section-text">Start with core entities. Keep domain logic separate from data access.</p>
-    <div class="code-block"><span class="code-label">Domain Models</span><code>public class Customer
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 33</span>
+        </a>
+        <a href="index.html" class="nav-link">&larr; All Chapters</a>
+    </nav>
+
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 33</div>
+            <h1>Real-World E-Commerce Project</h1>
+            <p class="chapter-intro">You get a requirement: "Build an e-commerce API." A SQL developer designs tables and stored procedures. A C# developer builds layers &mdash; domain, data access, services, API. This chapter puts every concept from the book together into one production project.</p>
+        </div>
+
+        <!-- 01: Design the Domain Models -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Design the Domain Models"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                We need an e-commerce system. Customers place orders. Each order has line items. Products belong to categories. Track prices, quantities, stock levels, and order status.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Five tables: Customers, Categories, Products, Orders, OrderItems. Foreign keys enforce relationships. DECIMAL for money. INT for stock. CHECK constraints for positive values. UNIQUE on Email and SKU.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Five classes with navigation properties. ICollection&lt;T&gt; for one-to-many. Enum for OrderStatus. Nullable types for optional fields. EF conventions handle the rest.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; Create All Tables</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE TABLE Categories (
+    Id   INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Customers (
+    Id        INT IDENTITY(1,1) PRIMARY KEY,
+    Name      NVARCHAR(100) NOT NULL,
+    Email     NVARCHAR(255) NOT NULL UNIQUE,
+    IsActive  BIT NOT NULL DEFAULT 1,
+    CreatedAt DATETIME2 DEFAULT GETDATE()
+);
+
+CREATE TABLE Products (
+    Id         INT IDENTITY(1,1) PRIMARY KEY,
+    Name       NVARCHAR(200) NOT NULL,
+    Sku        NVARCHAR(50) NOT NULL UNIQUE,
+    Price      DECIMAL(10,2) NOT NULL
+               CHECK (Price &gt;= 0),
+    Stock      INT NOT NULL DEFAULT 0,
+    CategoryId INT NOT NULL
+               REFERENCES Categories(Id),
+    IsActive   BIT NOT NULL DEFAULT 1
+);
+
+CREATE TABLE Orders (
+    Id         INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerId INT NOT NULL
+               REFERENCES Customers(Id),
+    Status     INT NOT NULL DEFAULT 0,
+    Total      DECIMAL(12,2) NOT NULL DEFAULT 0,
+    CreatedAt  DATETIME2 DEFAULT GETDATE(),
+    RowVersion ROWVERSION
+);
+
+CREATE TABLE OrderItems (
+    Id        INT IDENTITY(1,1) PRIMARY KEY,
+    OrderId   INT NOT NULL
+              REFERENCES Orders(Id),
+    ProductId INT NOT NULL
+              REFERENCES Products(Id),
+    Quantity  INT NOT NULL CHECK (Quantity &gt; 0),
+    UnitPrice DECIMAL(10,2) NOT NULL
+);</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# &mdash; Domain Entities</div>
+                    <div class="code-block csharp-block">
+                        <pre>public class Category
 {
     public int Id { get; set; }
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public decimal Balance { get; set; }
-    public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public string Name { get; set; } = "";
+    public ICollection&lt;Product&gt; Products { get; set; }
+        = new List&lt;Product&gt;();
+}
 
-    // Navigation
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
     public ICollection&lt;Order&gt; Orders { get; set; }
+        = new List&lt;Order&gt;();
+}
+
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Sku { get; set; } = "";
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+    public int CategoryId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public Category Category { get; set; } = null!;
+    public ICollection&lt;OrderItem&gt; OrderItems { get; set; }
+        = new List&lt;OrderItem&gt;();
+}
+
+public enum OrderStatus
+{
+    Pending, Confirmed, Shipped,
+    Delivered, Cancelled
 }
 
 public class Order
@@ -64,9 +228,10 @@ public class Order
     public OrderStatus Status { get; set; }
     public decimal Total { get; set; }
     public DateTime CreatedAt { get; set; }
-
-    public Customer Customer { get; set; }
+    public byte[] RowVersion { get; set; } = null!;
+    public Customer Customer { get; set; } = null!;
     public ICollection&lt;OrderItem&gt; Items { get; set; }
+        = new List&lt;OrderItem&gt;();
 }
 
 public class OrderItem
@@ -75,269 +240,791 @@ public class OrderItem
     public int OrderId { get; set; }
     public int ProductId { get; set; }
     public int Quantity { get; set; }
-    public decimal Price { get; set; }
+    public decimal UnitPrice { get; set; }
+    public Order Order { get; set; } = null!;
+    public Product Product { get; set; } = null!;
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    public Order Order { get; set; }
-    public Product Product { get; set; }
-}
+        <!-- 02: Configure DbContext -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Configure the Database Layer"</h2>
 
-public class Product
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Set up the database context with all tables. Define relationships, constraints, indexes, and defaults using Fluent API. Support concurrency on orders.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    The DDL already defines constraints &mdash; NOT NULL, UNIQUE, FOREIGN KEY, CHECK, DEFAULT, ROWVERSION. Migrations should generate matching SQL.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    DbContext with DbSet for each entity. OnModelCreating configures everything via Fluent API &mdash; property constraints, relationship cascades, indexes, concurrency tokens.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; AppDbContext</div>
+                <div class="code-block ef-block">
+                    <pre>public class AppDbContext : DbContext
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Sku { get; set; }
-    public decimal Price { get; set; }
-    public int Stock { get; set; }
+    public DbSet&lt;Category&gt; Categories =&gt; Set&lt;Category&gt;();
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Product&gt; Products =&gt; Set&lt;Product&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;OrderItem&gt; OrderItems =&gt; Set&lt;OrderItem&gt;();
 
-    public ICollection&lt;OrderItem&gt; OrderItems { get; set; }
-}</code></div></section>
-    <section class="section"><div class="section-num">02</div><h2>DbContext & Configuration</h2><p class="section-text">Fluent API defines schema. Migrations generate SQL.</p>
-    <div class="code-block"><span class="code-label">DbContext & ModelBuilder</span><code>public class AppDbContext : DbContext
-{
-    public DbSet&lt;Customer&gt; Customers => Set&lt;Customer&gt;();
-    public DbSet&lt;Order&gt; Orders => Set&lt;Order&gt;();
-    public DbSet&lt;OrderItem&gt; OrderItems => Set&lt;OrderItem&gt;();
-    public DbSet&lt;Product&gt; Products => Set&lt;Product&gt;();
+    public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options)
+        : base(options) { }
 
-    public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options) : base(options) { }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder mb)
     {
+        // Category
+        mb.Entity&lt;Category&gt;(e =&gt;
+        {
+            e.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+        });
+
         // Customer
-        modelBuilder.Entity&lt;Customer&gt;(e =>
+        mb.Entity&lt;Customer&gt;(e =&gt;
         {
-            e.HasKey(c => c.Id);
-            e.Property(c => c.Name).IsRequired().HasMaxLength(100);
-            e.Property(c => c.Email).IsRequired().HasMaxLength(255);
-            e.HasIndex(c => c.Email).IsUnique();
-            e.Property(c => c.CreatedAt).HasDefaultValueSql("GETDATE()");
-        });
-
-        // Order
-        modelBuilder.Entity&lt;Order&gt;(e =>
-        {
-            e.HasKey(o => o.Id);
-            e.HasOne(o => o.Customer).WithMany(c => c.Orders).HasForeignKey(o => o.CustomerId);
-            e.Property(o => o.CreatedAt).HasDefaultValueSql("GETDATE()");
-        });
-
-        // OrderItem
-        modelBuilder.Entity&lt;OrderItem&gt;(e =>
-        {
-            e.HasKey(oi => oi.Id);
-            e.HasOne(oi => oi.Order).WithMany(o => o.Items).HasForeignKey(oi => oi.OrderId);
-            e.HasOne(oi => oi.Product).WithMany(p => p.OrderItems).HasForeignKey(oi => oi.ProductId);
+            e.Property(c =&gt; c.Name).IsRequired().HasMaxLength(100);
+            e.Property(c =&gt; c.Email).IsRequired().HasMaxLength(255);
+            e.HasIndex(c =&gt; c.Email).IsUnique();
+            e.Property(c =&gt; c.CreatedAt).HasDefaultValueSql("GETDATE()");
         });
 
         // Product
-        modelBuilder.Entity&lt;Product&gt;(e =>
+        mb.Entity&lt;Product&gt;(e =&gt;
         {
-            e.HasKey(p => p.Id);
-            e.Property(p => p.Name).IsRequired().HasMaxLength(200);
-            e.Property(p => p.Sku).IsRequired().HasMaxLength(50);
-            e.HasIndex(p => p.Sku).IsUnique();
+            e.Property(p =&gt; p.Name).IsRequired().HasMaxLength(200);
+            e.Property(p =&gt; p.Sku).IsRequired().HasMaxLength(50);
+            e.HasIndex(p =&gt; p.Sku).IsUnique();
+            e.HasCheckConstraint("CK_Product_Price", "[Price] &gt;= 0");
+            e.Property(p =&gt; p.Stock).HasDefaultValue(0);
+            e.HasOne(p =&gt; p.Category)
+             .WithMany(c =&gt; c.Products)
+             .HasForeignKey(p =&gt; p.CategoryId);
+        });
+
+        // Order
+        mb.Entity&lt;Order&gt;(e =&gt;
+        {
+            e.HasOne(o =&gt; o.Customer)
+             .WithMany(c =&gt; c.Orders)
+             .HasForeignKey(o =&gt; o.CustomerId);
+            e.Property(o =&gt; o.CreatedAt).HasDefaultValueSql("GETDATE()");
+            e.Property(o =&gt; o.RowVersion).IsRowVersion();
+        });
+
+        // OrderItem
+        mb.Entity&lt;OrderItem&gt;(e =&gt;
+        {
+            e.HasOne(oi =&gt; oi.Order)
+             .WithMany(o =&gt; o.Items)
+             .HasForeignKey(oi =&gt; oi.OrderId);
+            e.HasOne(oi =&gt; oi.Product)
+             .WithMany(p =&gt; p.OrderItems)
+             .HasForeignKey(oi =&gt; oi.ProductId);
+            e.HasCheckConstraint("CK_OrderItem_Qty", "[Quantity] &gt; 0");
         });
     }
-}</code></div></section>
-    <section class="section"><div class="section-num">03</div><h2>Repositories</h2><p class="section-text">Encapsulate data access logic. Generic + specific repos.</p>
-    <div class="code-block"><span class="code-label">Repository Pattern</span><code>public interface IRepository&lt;T&gt;
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; DI Registration (Program.cs)</div>
+                <div class="code-block csharp-block">
+                    <pre>builder.Services.AddDbContext&lt;AppDbContext&gt;(options =&gt;
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped&lt;IUnitOfWork, UnitOfWork&gt;();
+builder.Services.AddScoped&lt;IOrderService, OrderService&gt;();
+builder.Services.AddScoped(typeof(IRepository&lt;&gt;), typeof(Repository&lt;&gt;));</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03: Build the Repository Layer -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Build the Repository Layer"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Encapsulate all data access behind repositories. Create a generic repository for common CRUD, and specific repositories for domain-specific queries like "get pending orders" or "get orders by customer."
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    This is like stored procedures &mdash; each repo method maps to a specific query. GetPendingAsync = SELECT * FROM Orders WHERE Status = 0. GetByCustomerAsync = SELECT with JOIN on OrderItems.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Generic IRepository&lt;T&gt; handles GetById, GetAll, Add, Update, Delete. IOrderRepository extends it with domain queries. All reads use AsNoTracking(). All methods accept CancellationToken.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Generic Repository</div>
+                <div class="code-block csharp-block">
+                    <pre>public interface IRepository&lt;T&gt; where T : class
 {
-    Task&lt;T&gt; GetByIdAsync(int id);
-    Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync();
-    Task AddAsync(T entity);
-    Task UpdateAsync(T entity);
-    Task DeleteAsync(int id);
+    Task&lt;T?&gt; GetByIdAsync(int id, CancellationToken ct = default);
+    Task&lt;IReadOnlyList&lt;T&gt;&gt; GetAllAsync(CancellationToken ct = default);
+    void Add(T entity);
+    void Update(T entity);
+    void Remove(T entity);
 }
 
 public class Repository&lt;T&gt; : IRepository&lt;T&gt; where T : class
 {
     protected readonly AppDbContext _db;
 
-    public Repository(AppDbContext db) => _db = db;
+    public Repository(AppDbContext db) =&gt; _db = db;
 
-    public async Task&lt;T&gt; GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        await _db.Set&lt;T&gt;().FindAsync(new object[] { id }, cancellationToken);
+    public async Task&lt;T?&gt; GetByIdAsync(int id, CancellationToken ct = default)
+        =&gt; await _db.Set&lt;T&gt;().FindAsync(new object[] { id }, ct);
 
-    public async Task&lt;IEnumerable&lt;T&gt;&gt; GetAllAsync(CancellationToken cancellationToken = default) =>
-        await _db.Set&lt;T&gt;().AsNoTracking().ToListAsync(cancellationToken);
+    public async Task&lt;IReadOnlyList&lt;T&gt;&gt; GetAllAsync(CancellationToken ct = default)
+        =&gt; await _db.Set&lt;T&gt;().AsNoTracking().ToListAsync(ct);
 
-    public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        _db.Set&lt;T&gt;().Add(entity);
-        await _db.SaveChangesAsync(cancellationToken);
-    }
+    public void Add(T entity) =&gt; _db.Set&lt;T&gt;().Add(entity);
+    public void Update(T entity) =&gt; _db.Set&lt;T&gt;().Update(entity);
+    public void Remove(T entity) =&gt; _db.Set&lt;T&gt;().Remove(entity);
+}</pre>
+                </div>
+            </div>
 
-    public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        _db.Set&lt;T&gt;().Update(entity);
-        await _db.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await GetByIdAsync(id, cancellationToken);
-        if (entity is not null)
-        {
-            _db.Set&lt;T&gt;().Remove(entity);
-            await _db.SaveChangesAsync(cancellationToken);
-        }
-    }
-}
-
-public interface IOrderRepository : IRepository&lt;Order&gt;
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Order-Specific Repository</div>
+                <div class="code-block ef-block">
+                    <pre>public interface IOrderRepository : IRepository&lt;Order&gt;
 {
-    Task&lt;IEnumerable&lt;Order&gt;&gt; GetByCustomerAsync(int customerId);
-    Task&lt;IEnumerable&lt;Order&gt;&gt; GetPendingAsync();
+    Task&lt;IReadOnlyList&lt;Order&gt;&gt; GetByCustomerAsync(
+        int customerId, CancellationToken ct = default);
+    Task&lt;IReadOnlyList&lt;Order&gt;&gt; GetPendingAsync(
+        CancellationToken ct = default);
+    Task&lt;Order?&gt; GetWithItemsAsync(
+        int orderId, CancellationToken ct = default);
 }
 
 public class OrderRepository : Repository&lt;Order&gt;, IOrderRepository
 {
     public OrderRepository(AppDbContext db) : base(db) { }
 
-    public async Task&lt;IEnumerable&lt;Order&gt;&gt; GetByCustomerAsync(int customerId, CancellationToken cancellationToken = default) =>
-        await _db.Orders.AsNoTracking().Where(o => o.CustomerId == customerId).Include(o => o.Items).ToListAsync(cancellationToken);
+    public async Task&lt;IReadOnlyList&lt;Order&gt;&gt; GetByCustomerAsync(
+        int customerId, CancellationToken ct = default)
+        =&gt; await _db.Orders.AsNoTracking()
+            .Where(o =&gt; o.CustomerId == customerId)
+            .Include(o =&gt; o.Items)
+                .ThenInclude(i =&gt; i.Product)
+            .OrderByDescending(o =&gt; o.CreatedAt)
+            .ToListAsync(ct);
 
-    public async Task&lt;IEnumerable&lt;Order&gt;&gt; GetPendingAsync(CancellationToken cancellationToken = default) =>
-        await _db.Orders.AsNoTracking().Where(o => o.Status == OrderStatus.Pending).ToListAsync(cancellationToken);
-}</code></div></section>
-    <section class="section"><div class="section-num">04</div><h2>Unit of Work & DI</h2><p class="section-text">Coordinate multiple repos. Register in dependency container.</p>
-    <div class="code-block"><span class="code-label">Unit of Work & Startup</span><code>public interface IUnitOfWork
+    public async Task&lt;IReadOnlyList&lt;Order&gt;&gt; GetPendingAsync(
+        CancellationToken ct = default)
+        =&gt; await _db.Orders.AsNoTracking()
+            .Where(o =&gt; o.Status == OrderStatus.Pending)
+            .Include(o =&gt; o.Customer)
+            .ToListAsync(ct);
+
+    public async Task&lt;Order?&gt; GetWithItemsAsync(
+        int orderId, CancellationToken ct = default)
+        =&gt; await _db.Orders
+            .Include(o =&gt; o.Items)
+                .ThenInclude(i =&gt; i.Product)
+            .FirstOrDefaultAsync(o =&gt; o.Id == orderId, ct);
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; What GetByCustomerAsync Generates</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT o.*, oi.*, p.*
+FROM Orders o
+INNER JOIN OrderItems oi
+    ON oi.OrderId = o.Id
+INNER JOIN Products p
+    ON p.Id = oi.ProductId
+WHERE o.CustomerId = @customerId
+ORDER BY o.CreatedAt DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">LINQ &mdash; Query Syntax Equivalent</div>
+                    <div class="code-block csharp-block">
+                        <pre>var orders = await (
+    from o in db.Orders.AsNoTracking()
+    where o.CustomerId == customerId
+    orderby o.CreatedAt descending
+    select o
+).Include(o =&gt; o.Items)
+    .ThenInclude(i =&gt; i.Product)
+ .ToListAsync(ct);</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Add the Unit of Work -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Coordinate Multiple Repositories"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                When creating an order, we update Products (reduce stock), create an Order, and create OrderItems &mdash; all in a single transaction. If any step fails, nothing should save.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    BEGIN TRANSACTION &rarr; INSERT Order &rarr; INSERT OrderItems &rarr; UPDATE Products SET Stock = Stock - @qty &rarr; COMMIT. One transaction wraps all statements.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Unit of Work pattern. All repos share the same DbContext. Call Add/Update on repos, then one SaveAsync() commits everything in a single transaction.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; Transaction</div>
+                    <div class="code-block sql-block">
+                        <pre>BEGIN TRANSACTION;
+
+INSERT INTO Orders (CustomerId, Status, Total)
+VALUES (@CustomerId, 0, @Total);
+
+DECLARE @OrderId INT = SCOPE_IDENTITY();
+
+INSERT INTO OrderItems
+    (OrderId, ProductId, Quantity, UnitPrice)
+VALUES
+    (@OrderId, @Pid1, @Qty1, @Price1),
+    (@OrderId, @Pid2, @Qty2, @Price2);
+
+UPDATE Products
+SET Stock = Stock - @Qty1
+WHERE Id = @Pid1;
+
+UPDATE Products
+SET Stock = Stock - @Qty2
+WHERE Id = @Pid2;
+
+COMMIT;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# &mdash; Unit of Work</div>
+                    <div class="code-block csharp-block">
+                        <pre>public interface IUnitOfWork : IDisposable
 {
     ICustomerRepository Customers { get; }
     IOrderRepository Orders { get; }
-    IProductRepository Products { get; }
-    Task&lt;int&gt; SaveAsync(CancellationToken cancellationToken = default);
+    IRepository&lt;Product&gt; Products { get; }
+    IRepository&lt;Category&gt; Categories { get; }
+    Task&lt;int&gt; SaveAsync(
+        CancellationToken ct = default);
 }
 
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _db;
 
-    public ICustomerRepository Customers { get; private set; }
-    public IOrderRepository Orders { get; private set; }
-    public IProductRepository Products { get; private set; }
+    public ICustomerRepository Customers { get; }
+    public IOrderRepository Orders { get; }
+    public IRepository&lt;Product&gt; Products { get; }
+    public IRepository&lt;Category&gt; Categories { get; }
 
     public UnitOfWork(AppDbContext db)
     {
         _db = db;
         Customers = new CustomerRepository(db);
         Orders = new OrderRepository(db);
-        Products = new ProductRepository(db);
+        Products = new Repository&lt;Product&gt;(db);
+        Categories = new Repository&lt;Category&gt;(db);
     }
 
-    public async Task&lt;int&gt; SaveAsync(CancellationToken cancellationToken = default) =>
-        await _db.SaveChangesAsync(cancellationToken);
-}
+    public async Task&lt;int&gt; SaveAsync(
+        CancellationToken ct = default)
+        =&gt; await _db.SaveChangesAsync(ct);
 
-// Startup
-services.AddDbContext&lt;AppDbContext&gt;(options =>
-    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+    public void Dispose() =&gt; _db.Dispose();
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-services.AddScoped&lt;IUnitOfWork, UnitOfWork&gt;();
-services.AddScoped(typeof(IRepository&lt;&gt;), typeof(Repository&lt;&gt;));</code></div></section>
-    <section class="section"><div class="section-num">05</div><h2>Service Layer</h2><p class="section-text">Business logic uses repositories. Controllers delegate to services.</p>
-    <div class="code-block"><span class="code-label">Order Service</span><code>public interface IOrderService
+        <!-- 05: Create the Service Layer -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Create an Order with Validation"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                When a customer places an order: validate the customer exists and is active, check each product has enough stock, calculate the total, reduce stock, save everything atomically. Return a DTO, not the entity.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    A stored procedure with IF EXISTS checks, a cursor or loop for items, stock validation with @@ROWCOUNT, and RAISERROR for failures. Everything in one transaction.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    A service class with CreateOrderAsync. Inject IUnitOfWork. Validate, build the Order, iterate items, deduct stock, call SaveAsync. Map to DTO before returning. Handle concurrency with try/catch on DbUpdateConcurrencyException.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; DTOs</div>
+                <div class="code-block csharp-block">
+                    <pre>public record CreateOrderRequest(
+    int CustomerId,
+    List&lt;OrderItemRequest&gt; Items);
+
+public record OrderItemRequest(
+    int ProductId,
+    int Quantity);
+
+public record OrderDto(
+    int Id,
+    string CustomerName,
+    OrderStatus Status,
+    decimal Total,
+    DateTime CreatedAt,
+    List&lt;OrderItemDto&gt; Items);
+
+public record OrderItemDto(
+    string ProductName,
+    int Quantity,
+    decimal UnitPrice,
+    decimal LineTotal);</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; OrderService</div>
+                <div class="code-block ef-block">
+                    <pre>public interface IOrderService
 {
-    Task&lt;OrderDto&gt; CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default);
-    Task&lt;IEnumerable&lt;OrderDto&gt;&gt; GetCustomerOrdersAsync(int customerId, CancellationToken cancellationToken = default);
+    Task&lt;OrderDto&gt; CreateOrderAsync(
+        CreateOrderRequest request, CancellationToken ct = default);
+    Task&lt;IReadOnlyList&lt;OrderDto&gt;&gt; GetCustomerOrdersAsync(
+        int customerId, CancellationToken ct = default);
 }
 
 public class OrderService : IOrderService
 {
     private readonly IUnitOfWork _uow;
-    private readonly IMapper _mapper;
 
-    public OrderService(IUnitOfWork uow, IMapper mapper)
+    public OrderService(IUnitOfWork uow) =&gt; _uow = uow;
+
+    public async Task&lt;OrderDto&gt; CreateOrderAsync(
+        CreateOrderRequest request, CancellationToken ct = default)
     {
-        _uow = uow;
-        _mapper = mapper;
-    }
+        // 1. Validate customer
+        var customer = await _uow.Customers
+            .GetByIdAsync(request.CustomerId, ct)
+            ?? throw new NotFoundException("Customer not found");
 
-    public async Task&lt;OrderDto&gt; CreateOrderAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
-    {
-        // Validate customer
-        var customer = await _uow.Customers.GetByIdAsync(request.CustomerId, cancellationToken);
-        if (customer is null)
-            throw new NotFoundException("Customer not found");
+        if (!customer.IsActive)
+            throw new BadRequestException("Customer is inactive");
 
-        // Create order
+        // 2. Build order
         var order = new Order
         {
-            CustomerId = request.CustomerId,
+            CustomerId = customer.Id,
             Status = OrderStatus.Pending,
-            Total = 0
+            Items = new List&lt;OrderItem&gt;()
         };
 
+        // 3. Process each item
         decimal total = 0;
-        foreach (var itemRequest in request.Items)
+        foreach (var item in request.Items)
         {
-            var product = await _uow.Products.GetByIdAsync(itemRequest.ProductId, cancellationToken);
-            if (product is null || product.Stock < itemRequest.Quantity)
-                throw new BadRequestException("Product unavailable");
+            var product = await _uow.Products
+                .GetByIdAsync(item.ProductId, ct)
+                ?? throw new NotFoundException(
+                    $"Product {item.ProductId} not found");
+
+            if (product.Stock &lt; item.Quantity)
+                throw new BadRequestException(
+                    $"Insufficient stock for {product.Name}");
 
             order.Items.Add(new OrderItem
             {
                 ProductId = product.Id,
-                Quantity = itemRequest.Quantity,
-                Price = product.Price
+                Quantity = item.Quantity,
+                UnitPrice = product.Price
             });
 
-            total += product.Price * itemRequest.Quantity;
-            product.Stock -= itemRequest.Quantity;
+            product.Stock -= item.Quantity;
+            _uow.Products.Update(product);
+            total += product.Price * item.Quantity;
         }
 
+        // 4. Save atomically
         order.Total = total;
-        await _uow.Orders.AddAsync(order, cancellationToken);
-        await _uow.SaveAsync(cancellationToken);
+        _uow.Orders.Add(order);
+        await _uow.SaveAsync(ct);
 
-        return _mapper.Map&lt;OrderDto&gt;(order);
+        // 5. Return DTO
+        return MapToDto(order, customer);
     }
 
-    public async Task&lt;IEnumerable&lt;OrderDto&gt;&gt; GetCustomerOrdersAsync(int customerId, CancellationToken cancellationToken = default)
+    public async Task&lt;IReadOnlyList&lt;OrderDto&gt;&gt; GetCustomerOrdersAsync(
+        int customerId, CancellationToken ct = default)
     {
-        var orders = await _uow.Orders.GetByCustomerAsync(customerId, cancellationToken);
-        return orders.Select(o => _mapper.Map&lt;OrderDto&gt;(o));
+        var orders = await _uow.Orders
+            .GetByCustomerAsync(customerId, ct);
+
+        return orders.Select(o =&gt; MapToDto(o, o.Customer))
+            .ToList();
     }
-}</code></div></section>
-    <section class="section"><div class="section-num">06</div><h2>API Endpoints</h2><p class="section-text">Controllers delegate to services. Keep them thin.</p>
-    <div class="code-block"><span class="code-label">Order Controller</span><code>[ApiController]
+
+    private static OrderDto MapToDto(Order o, Customer c) =&gt; new(
+        o.Id,
+        c.Name,
+        o.Status,
+        o.Total,
+        o.CreatedAt,
+        o.Items.Select(i =&gt; new OrderItemDto(
+            i.Product?.Name ?? "Unknown",
+            i.Quantity,
+            i.UnitPrice,
+            i.Quantity * i.UnitPrice
+        )).ToList()
+    );
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: Wire Up API Endpoints -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Expose REST API Endpoints"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Create API endpoints: POST /api/orders to place an order, GET /api/orders/{id} to fetch order details, GET /api/customers/{id}/orders to list a customer's orders. Return proper HTTP status codes.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Each endpoint maps to a query: POST triggers the INSERT transaction, GET /orders/{id} is a SELECT with JOIN, GET /customers/{id}/orders is a filtered SELECT. HTTP 201, 200, 404 correspond to INSERT success, SELECT found, SELECT empty.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Thin controller that delegates to IOrderService. Constructor injection. CancellationToken on every action. Return CreatedAtAction for POST, Ok for GET, NotFound when null. Exception middleware handles domain exceptions globally.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; API Controller</div>
+                <div class="code-block csharp-block">
+                    <pre>[ApiController]
 [Route("api/orders")]
-public class OrderController
+public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
 
-    public OrderController(IOrderService orderService) => _orderService = orderService;
+    public OrdersController(IOrderService orderService)
+        =&gt; _orderService = orderService;
 
     [HttpPost]
-    public async Task&lt;ActionResult&lt;OrderDto&gt;&gt; CreateOrder(CreateOrderRequest request, CancellationToken cancellationToken)
+    public async Task&lt;ActionResult&lt;OrderDto&gt;&gt; CreateOrder(
+        CreateOrderRequest request, CancellationToken ct)
+    {
+        var order = await _orderService.CreateOrderAsync(request, ct);
+        return CreatedAtAction(
+            nameof(GetOrder),
+            new { id = order.Id },
+            order);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task&lt;ActionResult&lt;OrderDto&gt;&gt; GetOrder(
+        int id, CancellationToken ct)
+    {
+        var orders = await _orderService
+            .GetCustomerOrdersAsync(id, ct);
+        return Ok(orders);
+    }
+}
+
+[ApiController]
+[Route("api/customers/{customerId:int}/orders")]
+public class CustomerOrdersController : ControllerBase
+{
+    private readonly IOrderService _orderService;
+
+    public CustomerOrdersController(IOrderService orderService)
+        =&gt; _orderService = orderService;
+
+    [HttpGet]
+    public async Task&lt;ActionResult&lt;IReadOnlyList&lt;OrderDto&gt;&gt;&gt; GetOrders(
+        int customerId, CancellationToken ct)
+    {
+        var orders = await _orderService
+            .GetCustomerOrdersAsync(customerId, ct);
+        return Ok(orders);
+    }
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Global Exception Middleware</div>
+                <div class="code-block ef-block">
+                    <pre>public class ExceptionMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public ExceptionMiddleware(RequestDelegate next) =&gt; _next = next;
+
+    public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            var order = await _orderService.CreateOrderAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
+            await _next(context);
         }
         catch (NotFoundException ex)
         {
-            return NotFound(new { error = ex.Message });
+            context.Response.StatusCode = 404;
+            await context.Response.WriteAsJsonAsync(
+                new { error = ex.Message });
         }
         catch (BadRequestException ex)
         {
-            return BadRequest(new { error = ex.Message });
+            context.Response.StatusCode = 400;
+            await context.Response.WriteAsJsonAsync(
+                new { error = ex.Message });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            context.Response.StatusCode = 409;
+            await context.Response.WriteAsJsonAsync(
+                new { error = "Data was modified by another user" });
         }
     }
+}
 
-    [HttpGet("{id}")]
-    public async Task&lt;ActionResult&lt;OrderDto&gt;&gt; GetOrder(int id, CancellationToken cancellationToken)
+// Program.cs
+app.UseMiddleware&lt;ExceptionMiddleware&gt;();</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 07: Add Dapper for Read Queries -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">07</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Build a Dashboard with Dapper"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The admin dashboard needs fast read queries: total revenue, orders by status, top customers, and top products. These are read-only reports &mdash; use Dapper for performance alongside EF Core for writes.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SUM(Total) for revenue, GROUP BY Status for order counts, TOP 5 with JOIN for top customers and products. These are reporting queries &mdash; raw SQL is fastest.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    CQRS approach: EF Core for commands (insert, update, delete), Dapper for queries (reports, dashboards). Inject IDbConnection separately from DbContext. Map directly to DTOs.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Dashboard DTOs</div>
+                <div class="code-block csharp-block">
+                    <pre>public record DashboardDto(
+    decimal TotalRevenue,
+    int TotalOrders,
+    List&lt;OrderStatusCount&gt; OrdersByStatus,
+    List&lt;TopCustomerDto&gt; TopCustomers,
+    List&lt;TopProductDto&gt; TopProducts);
+
+public record OrderStatusCount(string Status, int Count);
+public record TopCustomerDto(string Name, decimal TotalSpent, int OrderCount);
+public record TopProductDto(string Name, int TotalSold, decimal Revenue);</pre>
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; Dashboard Queries</div>
+                    <div class="code-block sql-block">
+                        <pre>-- Total revenue
+SELECT SUM(Total) AS TotalRevenue,
+       COUNT(*) AS TotalOrders
+FROM Orders
+WHERE Status != 4; -- Not cancelled
+
+-- Orders by status
+SELECT Status, COUNT(*) AS Count
+FROM Orders
+GROUP BY Status;
+
+-- Top 5 customers
+SELECT TOP 5
+    c.Name,
+    SUM(o.Total) AS TotalSpent,
+    COUNT(o.Id) AS OrderCount
+FROM Customers c
+INNER JOIN Orders o ON o.CustomerId = c.Id
+WHERE o.Status != 4
+GROUP BY c.Name
+ORDER BY TotalSpent DESC;
+
+-- Top 5 products
+SELECT TOP 5
+    p.Name,
+    SUM(oi.Quantity) AS TotalSold,
+    SUM(oi.Quantity * oi.UnitPrice)
+        AS Revenue
+FROM Products p
+INNER JOIN OrderItems oi
+    ON oi.ProductId = p.Id
+INNER JOIN Orders o
+    ON o.Id = oi.OrderId
+WHERE o.Status != 4
+GROUP BY p.Name
+ORDER BY Revenue DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Dapper &mdash; Dashboard Service</div>
+                    <div class="code-block dapper-block">
+                        <pre>public class DashboardService
+{
+    private readonly IDbConnection _conn;
+
+    public DashboardService(
+        IDbConnection conn) =&gt; _conn = conn;
+
+    public async Task&lt;DashboardDto&gt;
+        GetDashboardAsync(
+        CancellationToken ct = default)
     {
-        var orders = await _orderService.GetCustomerOrdersAsync(id, cancellationToken);
-        return Ok(orders);
+        const string sql = @"
+            SELECT SUM(Total), COUNT(*)
+            FROM Orders WHERE Status != 4;
+
+            SELECT Status, COUNT(*) AS Count
+            FROM Orders GROUP BY Status;
+
+            SELECT TOP 5 c.Name,
+                SUM(o.Total) AS TotalSpent,
+                COUNT(o.Id) AS OrderCount
+            FROM Customers c
+            JOIN Orders o
+                ON o.CustomerId = c.Id
+            WHERE o.Status != 4
+            GROUP BY c.Name
+            ORDER BY TotalSpent DESC;
+
+            SELECT TOP 5 p.Name,
+                SUM(oi.Quantity) AS TotalSold,
+                SUM(oi.Quantity * oi.UnitPrice)
+                    AS Revenue
+            FROM Products p
+            JOIN OrderItems oi
+                ON oi.ProductId = p.Id
+            JOIN Orders o
+                ON o.Id = oi.OrderId
+            WHERE o.Status != 4
+            GROUP BY p.Name
+            ORDER BY Revenue DESC;";
+
+        using var multi = await _conn
+            .QueryMultipleAsync(sql);
+
+        var summary = await multi
+            .ReadFirstAsync&lt;dynamic&gt;();
+        var byStatus = (await multi
+            .ReadAsync&lt;OrderStatusCount&gt;())
+            .ToList();
+        var topCustomers = (await multi
+            .ReadAsync&lt;TopCustomerDto&gt;())
+            .ToList();
+        var topProducts = (await multi
+            .ReadAsync&lt;TopProductDto&gt;())
+            .ToList();
+
+        return new DashboardDto(
+            (decimal)summary.TotalRevenue,
+            (int)summary.TotalOrders,
+            byStatus,
+            topCustomers,
+            topProducts);
     }
-}</code></div></section>
-    <div class="key-insight"><strong>Architecture Summary:</strong><p>Domain Models → DbContext → Repositories → Unit of Work → Services → Controllers. Clean separation of concerns.</p></div>
-    <div class="chapter-nav">
-        <a class="nav-item prev" href="ch32-cheat-sheet.html"><span class="nav-item-label">&larr; Previous</span><span class="nav-item-title">Cheat Sheet</span></a>
-        <a class="nav-item" href="index.html"><span class="nav-item-label">Home &rarr;</span><span class="nav-item-title">All Chapters</span></a>
-    </div></div>
-    <footer><p>SQL to C# &mdash; The Complete Data Access Guide</p><p>LINQ &middot; Entity Framework &middot; Dapper</p></footer>
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# &mdash; Register Dapper alongside EF Core</div>
+                <div class="code-block ef-block">
+                    <pre>// Program.cs — EF for writes, Dapper for reads
+builder.Services.AddDbContext&lt;AppDbContext&gt;(options =&gt;
+    options.UseSqlServer(connString));
+
+builder.Services.AddScoped&lt;IDbConnection&gt;(_ =&gt;
+    new SqlConnection(connString));
+
+builder.Services.AddScoped&lt;DashboardService&gt;();</pre>
+                </div>
+            </div>
+
+            <table>
+                <thead><tr><th>Concern</th><th>Technology</th><th>Why</th></tr></thead>
+                <tbody>
+                    <tr><td>Create / Update / Delete</td><td><code>EF Core + Unit of Work</code></td><td>Change tracking, transactions, migrations</td></tr>
+                    <tr><td>Complex Read Queries</td><td><code>Dapper</code></td><td>Raw SQL performance, multi-result sets</td></tr>
+                    <tr><td>Simple Read Queries</td><td><code>EF Core + AsNoTracking()</code></td><td>Quick LINQ queries, projections</td></tr>
+                    <tr><td>Concurrency Control</td><td><code>RowVersion + EF Core</code></td><td>Automatic conflict detection</td></tr>
+                    <tr><td>API Error Handling</td><td><code>Exception Middleware</code></td><td>Consistent HTTP responses</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Navigation -->
+        <div class="chapter-nav">
+            <a class="nav-item prev" href="ch32-cheat-sheet.html">
+                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-title">Quick Reference Cheat Sheet</span>
+            </a>
+            <a class="nav-item" href="index.html">
+                <span class="nav-item-label">Home &rarr;</span>
+                <span class="nav-item-title">All Chapters</span>
+            </a>
+        </div>
+    </main>
+
+    <footer>
+        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
+        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+    </footer>
 </body>
 </html>
