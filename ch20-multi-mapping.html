@@ -3,111 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chapter 20: Multi-Mapping with Dapper — Join multiple tables, split result sets, and map related objects in a single query.">
-    <title>Chapter 20: Multi-Mapping with Dapper | SQL to C#</title>
+    <title>Chapter 20: Multi-Mapping with Dapper — SQL to C#</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8f7f3;
-            --bg2: #f0ede6;
-            --bg3: #e8e4db;
-            --white: #ffffff;
-            --ink: #1c1a17;
-            --ink2: #3d3a34;
-            --ink3: #6b6760;
-            --ink4: #a8a49e;
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
             --rule: #dedad3;
-            --acc: #c96b1e;
-            --acc-l: #fdf3eb;
-            --acc-b: #f5c99a;
-            --green: #1d6b45;
-            --green-l: #edf8f2;
-            --green-b: #9fd9bc;
-            --blue: #1a4f8a;
-            --blue-l: #edf2fb;
-            --blue-b: #afc8ef;
-            --amber: #7a5200;
-            --amber-l: #fdf8ec;
-            --amber-b: #e8d08a;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-        html, body {
-            font-family: 'Source Serif 4', serif;
-            background-color: var(--bg);
-            color: var(--ink);
-            line-height: 1.6;
-        }
-
-        nav {
-            position: sticky; top: 0; height: 54px;
-            background: rgba(248,247,243,0.96);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--rule);
-            display: flex; align-items: center;
-            padding: 0 2rem; z-index: 1000;
-        }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
         nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
         nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
-        nav .nav-pill { background-color: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
         nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
         nav .nav-link:hover { color: var(--acc); }
 
         main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
-
         .chapter-header { margin-bottom: 48px; }
         .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
         h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
         .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-        .section { margin-bottom: 64px; }
-        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
         .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
-        .sec-rule { flex: 1; height: 1px; background-color: var(--rule); }
-        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 16px; }
-        .section-prose { font-size: 15px; color: var(--ink2); line-height: 1.7; margin-bottom: 20px; }
-        .section-prose p { margin-bottom: 10px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .code-block { border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
         .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
-        .sql-block { background-color: #1c1a17; color: #d4d0c8; }
-        .csharp-block { background-color: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
-        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-        .code-full-width { margin-bottom: 24px; }
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
 
-        .insight {
-            background-color: var(--acc-l); border-left: 4px solid var(--acc);
-            padding: 16px 20px; border-radius: 0 8px 8px 0;
-            margin-bottom: 24px; font-size: 14px; line-height: 1.6; color: var(--ink2);
-        }
-
-        .key-takeaways {
-            background-color: var(--green-l); border-left: 4px solid var(--green);
-            padding: 24px 28px; border-radius: 0 12px 12px 0; margin-bottom: 48px;
-        }
-        .key-takeaways h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-        .key-takeaways ul { list-style: none; padding-left: 0; }
-        .key-takeaways li { margin-bottom: 8px; padding-left: 24px; position: relative; font-size: 14px; line-height: 1.6; color: var(--ink2); }
-        .key-takeaways li::before { content: "\2713"; position: absolute; left: 0; color: var(--green); font-weight: bold; }
-
-        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
-        .nav-item { background-color: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
         .nav-item:hover { border-color: var(--acc); }
         .nav-item.prev { text-align: right; }
-        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
-        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
         .nav-item:hover .nav-item-title { color: var(--acc); }
 
-        footer { background-color: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
-            .code-comparison { grid-template-columns: 1fr; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
             .chapter-nav { grid-template-columns: 1fr; }
             .nav-item.prev { text-align: left; }
             main { padding: 40px 1.5rem; }
@@ -127,294 +111,424 @@
         <div class="chapter-header">
             <div class="chapter-label">Chapter 20</div>
             <h1>Multi-Mapping with Dapper</h1>
-            <p class="chapter-intro">Map JOIN results to multiple C# objects, split result sets by key, and populate related objects in a single query.</p>
+            <p class="chapter-intro">Requirement: "Show orders with customer details &mdash; in one query." In EF, you use <code>Include()</code>. In Dapper, you use multi-mapping: one SQL JOIN, and Dapper splits the result row into multiple objects using <code>splitOn</code>.</p>
         </div>
 
-        <!-- SECTION 01: One-to-One Joins -->
+        <!-- 01: One-to-One / splitOn -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">01</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>One-to-One Joins</h2>
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Each Order with Its Customer"</h2>
 
-            <div class="section-prose">
-                <p>Multi-mapping tells Dapper which columns belong to which object. Use <code>Query&lt;Parent, Child, Result&gt;</code> with a <code>splitOn</code> parameter.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Order list page shows order details + customer name in one query. No N+1 queries. One trip to the database.
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>SELECT c.Id, c.FirstName, c.Email,
-       a.Id, a.Street, a.City
-FROM Customers c
-INNER JOIN Addresses a ON c.Id = a.CustomerId</pre>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I'll JOIN Orders to Customers. SELECT o.*, c.* FROM Orders o JOIN Customers c ON o.CustomerId = c.Id. The database returns one row per order, with both order and customer columns mixed together.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I need to tell Dapper: "The first set of columns (o.*) maps to Order. Then at the Id column, start mapping to Customer (c.*)." That's what <code>splitOn: "Id"</code> does. Dapper reads column positions and knows where the split happens.
                 </div>
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>public class Customer
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public string Email { get; set; }
-    public Address Address { get; set; }
-}
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — JOIN</div>
+                    <div class="code-block sql-block">
+                        <pre>SELECT
+    o.Id, o.OrderDate, o.Total, o.CustomerId,
+    c.Id, c.Name, c.Email
+FROM Orders o
+JOIN Customers c ON o.CustomerId = c.Id
+WHERE o.OrderDate &gt;= @StartDate
+ORDER BY o.OrderDate DESC;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Dapper — Multi-Mapping</div>
+                    <div class="code-block dapper-block">
+                        <pre>await using var conn = new SqlConnection(cs);
 
-public class Address
-{
-    public int Id { get; set; }
-    public string Street { get; set; }
-    public string City { get; set; }
-}
-
-var sql = @"SELECT c.Id, c.FirstName, c.Email,
-                  a.Id, a.Street, a.City
-           FROM Customers c
-           INNER JOIN Addresses a ON c.Id = a.CustomerId";
-
-var results = connection.Query&lt;Customer, Address, Customer&gt;(sql,
-    (customer, address) =>
+var orders = await conn.QueryAsync&lt;Order, Customer, Order&gt;(
+    @"SELECT o.Id, o.OrderDate, o.Total,
+             o.CustomerId,
+             c.Id, c.Name, c.Email
+      FROM Orders o
+      JOIN Customers c ON o.CustomerId = c.Id
+      WHERE o.OrderDate &gt;= @Start",
+    (order, customer) =&gt;
     {
-        customer.Address = address;
-        return customer;
+        order.Customer = customer;
+        return order;
     },
-    splitOn: "Id").ToList();</pre>
+    new { Start = startDate },
+    splitOn: "Id");
+
+return orders.ToList();</pre>
+                    </div>
                 </div>
             </div>
 
-            <div class="insight">
-                <strong>splitOn parameter:</strong> Tells Dapper where one object ends and the next begins. Usually <code>"Id"</code> (the key of the second object).
+            <div class="code-full">
+                <div class="code-label">C# — EF Include for Comparison</div>
+                <div class="code-block ef-block">
+                    <pre>var orders = await db.Orders
+    .AsNoTracking()
+    .Include(o =&gt; o.Customer)
+    .Where(o =&gt; o.OrderDate &gt;= startDate)
+    .OrderByDescending(o =&gt; o.OrderDate)
+    .ToListAsync(ct);</pre>
+                </div>
             </div>
         </section>
 
-        <!-- SECTION 02: One-to-Many Grouping -->
+        <!-- 02: One-to-Many Grouping -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">02</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>One-to-Many: Grouping Children</h2>
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Each Customer with All Their Orders"</h2>
 
-            <div class="section-prose">
-                <p>When a parent has many children, Dapper returns duplicate parent rows. Group them in C# using <code>ToDictionary</code> or <code>GroupBy</code>.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Customer detail page lists all orders per customer. The JOIN returns one row per order, so the customer data repeats. We need to deduplicate and group orders under each customer.
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>SELECT c.Id, c.FirstName,
-       o.Id, o.OrderDate, o.Total
-FROM Customers c
-LEFT JOIN Orders o ON c.Id = o.CustomerId
-ORDER BY c.Id</pre>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    SELECT c.*, o.* FROM Customers c LEFT JOIN Orders o ON c.Id = o.CustomerId ORDER BY c.Id. This returns one row per order, repeating the customer info. The app must group them.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I'll map both objects, then use a Dictionary to group: iterate the results, accumulate orders under each CustomerId, and skip duplicate customer rows. The final result is a list of customers with their orders nested.
                 </div>
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">C# — Using Dictionary</div>
-                <div class="code-block csharp-block">
-                    <pre>public class Customer
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public List&lt;Order&gt; Orders { get; set; } = new();
-}
+            <div class="code-full">
+                <div class="code-label">SQL — LEFT JOIN (Repeats Customer for Each Order)</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT
+    c.Id, c.Name, c.Email, c.Phone,
+    o.Id, o.OrderDate, o.Total
+FROM Customers c
+LEFT JOIN Orders o ON c.Id = o.CustomerId
+ORDER BY c.Id, o.OrderDate;</pre>
+                </div>
+            </div>
 
-var sql = @"SELECT c.Id, c.FirstName,
-                  o.Id, o.OrderDate, o.Total
-           FROM Customers c
-           LEFT JOIN Orders o ON c.Id = o.CustomerId
-           ORDER BY c.Id";
+            <div class="code-full">
+                <div class="code-label">Dapper — Multi-Map + Dictionary Grouping</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(cs);
 
 var customerDict = new Dictionary&lt;int, Customer&gt;();
 
-connection.Query&lt;Customer, Order, Customer&gt;(sql,
-    (customer, order) =>
+await conn.QueryAsync&lt;Customer, Order, Customer&gt;(
+    @"SELECT c.Id, c.Name, c.Email, c.Phone,
+             o.Id, o.OrderDate, o.Total
+      FROM Customers c
+      LEFT JOIN Orders o ON c.Id = o.CustomerId
+      ORDER BY c.Id, o.OrderDate",
+    (customer, order) =&gt;
     {
-        if (!customerDict.TryGetValue(customer.Id, out var existing))
+        if (!customerDict.TryGetValue(customer.Id, out var cust))
         {
-            existing = customer;
-            customerDict.Add(customer.Id, existing);
+            cust = customer;
+            cust.Orders = new List&lt;Order&gt;();
+            customerDict.Add(cust.Id, cust);
         }
+
         if (order != null)
-            existing.Orders.Add(order);
-        return existing;
+            cust.Orders.Add(order);
+
+        return cust;
     },
-    splitOn: "Id").ToList();
+    splitOn: "Id");
 
-var results = customerDict.Values.ToList();</pre>
+return customerDict.Values.ToList();</pre>
                 </div>
             </div>
 
-            <div class="insight">
-                <strong>Key to avoid duplicates:</strong> Use a dictionary keyed on the parent ID to consolidate rows. Only add each parent once.
-            </div>
-        </section>
-
-        <!-- SECTION 03: Multiple Splits -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">03</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Three or More Tables</h2>
-
-            <div class="section-prose">
-                <p>Join more than two tables by specifying multiple splitOn columns and using <code>Query&lt;T1, T2, T3, TResult&gt;</code>.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C# — Three-Way Join</div>
+            <div class="code-full">
+                <div class="code-label">C# Entity — Customer with Orders Collection</div>
                 <div class="code-block csharp-block">
-                    <pre>var sql = @"SELECT c.Id, c.FirstName,
-                  o.Id, o.OrderDate,
-                  p.Id, p.ProductName, p.Price
-           FROM Customers c
-           JOIN Orders o ON c.Id = o.CustomerId
-           JOIN OrderItems p ON o.Id = p.OrderId";
-
-var results = await connection.QueryAsync&lt;Customer, Order, Product, (Customer, Order, Product)&gt;(sql,
-    (customer, order, product) => (customer, order, product),
-    splitOn: "Id,Id");  // Two splits: after first Id, after second Id
-
-foreach (var (customer, order, product) in results)
+                    <pre>public class Customer
 {
-    Console.WriteLine($"{customer.FirstName}: {order.OrderDate} - {product.ProductName}");
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Phone { get; set; } = "";
+
+    // Navigation — all orders for this customer
+    public List&lt;Order&gt; Orders { get; set; } = new();
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public DateTime OrderDate { get; set; }
+    public decimal Total { get; set; }
+    public int CustomerId { get; set; }
 }</pre>
                 </div>
             </div>
-
-            <div class="insight">
-                <strong>splitOn syntax:</strong> Comma-separated column names. <code>"Id,Id"</code> means split after the 1st Id and 2nd Id.
-            </div>
         </section>
 
-        <!-- SECTION 04: QueryMultiple for Relationships -->
+        <!-- 03: 3+ Tables -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">04</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Alternative: Separate Queries with QueryMultiple</h2>
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Show Order with Customer, Product, and Category"</h2>
 
-            <div class="section-prose">
-                <p>Instead of complex JOINs, use <code>QueryMultiple</code> to fetch parents and children separately, then join in C#.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Invoice page needs Order + Customer + OrderItem (line items) + Product + Category info. Chain multiple JOINs and map to 4 different types.
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var sql = @"SELECT Id, FirstName FROM Customers;
-            SELECT Id, CustomerId, OrderDate FROM Orders;";
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Multiple JOINs: Orders &rarr; Customers, Orders &rarr; OrderItems &rarr; Products &rarr; Categories. The result set is wider &mdash; more columns to map.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>QueryAsync&lt;T1, T2, T3, T4, TReturn&gt;</code> with a map function that receives all 4 objects. Use <code>splitOn</code> multiple times: <code>"Id,Id,Id"</code> to mark where each object boundary starts.
+                </div>
+            </div>
 
-using var multi = await connection.QueryMultipleAsync(sql);
-var customers = (await multi.ReadAsync&lt;Customer&gt;()).ToList();
-var orders = (await multi.ReadAsync&lt;Order&gt;()).ToList();
+            <div class="code-full">
+                <div class="code-label">SQL — Multiple JOINs</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT
+    o.Id, o.OrderDate, o.Total, o.CustomerId,
+    c.Id, c.Name, c.Email,
+    oi.Id, oi.Quantity, oi.UnitPrice,
+    p.Id, p.Name AS ProductName, p.Sku,
+    cat.Id, cat.Name AS CategoryName
+FROM Orders o
+JOIN Customers c ON o.CustomerId = c.Id
+JOIN OrderItems oi ON o.Id = oi.OrderId
+JOIN Products p ON oi.ProductId = p.Id
+JOIN Categories cat ON p.CategoryId = cat.Id
+WHERE o.Id = @OrderId
+ORDER BY oi.Id;</pre>
+                </div>
+            </div>
 
-// Join in C#
-var result = customers
-    .GroupJoin(orders, c => c.Id, o => o.CustomerId,
-        (customer, customerOrders) =>
+            <div class="code-full">
+                <div class="code-label">Dapper — QueryAsync with 4 Types</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(cs);
+
+var invoiceDict = new Dictionary&lt;int, Order&gt;();
+var itemDict = new Dictionary&lt;int, OrderItem&gt;();
+
+await conn.QueryAsync&lt;Order, Customer, OrderItem, Product, Category, Order&gt;(
+    @"SELECT o.Id, o.OrderDate, o.Total, o.CustomerId,
+             c.Id, c.Name, c.Email,
+             oi.Id, oi.Quantity, oi.UnitPrice,
+             p.Id, p.Name, p.Sku,
+             cat.Id, cat.Name
+      FROM Orders o
+      JOIN Customers c ON o.CustomerId = c.Id
+      JOIN OrderItems oi ON o.Id = oi.OrderId
+      JOIN Products p ON oi.ProductId = p.Id
+      JOIN Categories cat ON p.CategoryId = cat.Id
+      WHERE o.Id = @OrderId",
+    (order, customer, item, product, category) =&gt;
+    {
+        if (!invoiceDict.TryGetValue(order.Id, out var ord))
         {
-            customer.Orders = customerOrders.ToList();
-            return customer;
-        })
-    .ToList();</pre>
-                </div>
-            </div>
+            ord = order;
+            ord.Customer = customer;
+            ord.Items = new List&lt;OrderItem&gt;();
+            invoiceDict.Add(ord.Id, ord);
+        }
 
-            <div class="insight">
-                <strong>Trade-off:</strong> Two queries but simpler logic. Better for complex one-to-many relationships.
+        if (!itemDict.TryGetValue(item.Id, out var itm))
+        {
+            itm = item;
+            itm.Product = product;
+            itm.Product.Category = category;
+            ord.Items.Add(itm);
+            itemDict.Add(itm.Id, itm);
+        }
+
+        return ord;
+    },
+    new { OrderId = orderId },
+    splitOn: "Id,Id,Id,Id");
+
+return invoiceDict.Values.First();</pre>
+                </div>
             </div>
         </section>
 
-        <!-- SECTION 05: Dynamic Objects in Multi-Mapping -->
+        <!-- 04: QueryMultiple -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">05</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Dynamic Objects</h2>
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Load Two Separate Lists from One Database Call"</h2>
 
-            <div class="section-prose">
-                <p>Use <code>Query&lt;dynamic&gt;</code> to avoid defining classes, but you lose type safety and must cast values.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Dashboard needs both customer summary AND recent orders. Instead of two round trips, batch both queries in one call and read two result sets.
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var results = await connection.QueryAsync&lt;dynamic&gt;(sql);
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Two SELECT statements in one batch. Separate them by a semicolon or GO. The database sends two result sets back in one response.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>QueryMultipleAsync()</code> sends both statements at once. Use <code>gridReader.ReadAsync&lt;T&gt;()</code> to read each result set sequentially. One network call, two lists.
+                </div>
+            </div>
 
-foreach (dynamic row in results)
+            <div class="code-full">
+                <div class="code-label">SQL — Batch Query</div>
+                <div class="code-block sql-block">
+                    <pre>SELECT TOP 5
+    Id, Name, City, TotalOrders = (
+        SELECT COUNT(*) FROM Orders WHERE CustomerId = c.Id
+    )
+FROM Customers c
+WHERE IsActive = 1
+ORDER BY TotalOrders DESC;
+
+SELECT TOP 10
+    o.Id, o.OrderDate, o.Total, c.Name AS CustomerName
+FROM Orders o
+JOIN Customers c ON o.CustomerId = c.Id
+ORDER BY o.OrderDate DESC;</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper — QueryMultipleAsync</div>
+                <div class="code-block dapper-block">
+                    <pre>await using var conn = new SqlConnection(cs);
+
+using (var grid = await conn.QueryMultipleAsync(
+    @"SELECT TOP 5 Id, Name, City,
+             TotalOrders = (SELECT COUNT(*)
+                            FROM Orders
+                            WHERE CustomerId = c.Id)
+      FROM Customers c
+      WHERE IsActive = 1
+      ORDER BY TotalOrders DESC;
+
+      SELECT TOP 10 o.Id, o.OrderDate, o.Total,
+                    c.Name AS CustomerName
+      FROM Orders o
+      JOIN Customers c ON o.CustomerId = c.Id
+      ORDER BY o.OrderDate DESC;",
+    commandTimeout: 30))
 {
-    int customerId = (int)row.CustomerId;
-    string firstName = (string)row.FirstName;
-    decimal total = (decimal)row.Total;
-    Console.WriteLine($"{firstName}: {total}");
+    var topCustomers = await grid.ReadAsync&lt;CustomerSummary&gt;();
+    var recentOrders = await grid.ReadAsync&lt;RecentOrder&gt;();
+
+    return new Dashboard
+    {
+        TopCustomers = topCustomers.ToList(),
+        RecentOrders = recentOrders.ToList()
+    };
 }</pre>
                 </div>
             </div>
-
-            <div class="insight">
-                <strong>Use sparingly:</strong> Dynamic is flexible but requires casting and loses IntelliSense. Define classes for production code.
-            </div>
         </section>
 
-        <!-- SECTION 06: Performance Tips -->
+        <!-- 05: Performance table -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">06</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Performance Considerations</h2>
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Performance &mdash; Multi-Map vs Separate Queries"</h2>
 
-            <div class="section-prose">
-                <p>Multi-mapping with large one-to-many sets can cause significant data duplication across the network. Choose your approach wisely.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Which approach is fastest and uses least memory? Multi-map one query, separate queries with N+1 trips, or QueryMultiple for grouped results?
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">Comparison</div>
-                <div class="code-block csharp-block">
-                    <pre>// Approach 1: Single JOIN Query
-// Pro: One round trip
-// Con: Duplicate parent data for every child row
-var singleQuery = await connection.QueryAsync&lt;Customer, Order, Customer&gt;(
-    @"SELECT c.Id, c.FirstName, o.Id, o.Total
-      FROM Customers c JOIN Orders o ON c.Id = o.CustomerId");
+            <table>
+                <thead>
+                    <tr>
+                        <th>Approach</th>
+                        <th>Queries</th>
+                        <th>Network Trips</th>
+                        <th>Memory</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Multi-Mapping</strong></td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>High (row duplication)</td>
+                        <td>One-to-one, small one-to-many (5&ndash;10 children)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Separate Queries</strong></td>
+                        <td>N+1</td>
+                        <td>N+1</td>
+                        <td>Low</td>
+                        <td>Few parents, clean code preferred</td>
+                    </tr>
+                    <tr>
+                        <td><strong>QueryMultiple</strong></td>
+                        <td>M</td>
+                        <td>1</td>
+                        <td>Medium</td>
+                        <td>Unrelated queries (e.g., dashboard: top 5 &amp; recent 10)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EF Include</strong></td>
+                        <td>1</td>
+                        <td>1</td>
+                        <td>High</td>
+                        <td>Auto-deduplication, change tracking needed</td>
+                    </tr>
+                </tbody>
+            </table>
 
-// Approach 2: Two Separate Queries
-// Pro: No duplication, cleaner queries
-// Con: Two round trips
-var parents = await connection.QueryAsync&lt;Customer&gt;("SELECT * FROM Customers");
-var children = await connection.QueryAsync&lt;Order&gt;("SELECT * FROM Orders");</pre>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    All approaches send the same data from SQL Server to the network. The difference is how the C# app processes and stores it in memory. One query = less latency. Separate queries = more round trips.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Multi-mapping duplicates object data in memory (same customer repeated 100 times for 100 orders). Separate queries = 1 customer query + 100 order queries. QueryMultiple = 2 queries, 1 trip. Pick based on row count and tolerance for network latency.
                 </div>
             </div>
 
-            <div class="insight">
-                <strong>Choose based on:</strong> Small result sets use JOIN. Large one-to-many use separate queries.
+            <div class="code-full">
+                <div class="code-label">Dapper — When to Use Each</div>
+                <div class="code-block dapper-block">
+                    <pre>// ONE-TO-ONE: Use multi-mapping
+// Example: Order + Customer
+// Result: 1000 rows × (Order + Customer) = 1000 objects
+
+// ONE-TO-MANY (small): Use multi-mapping + Dictionary
+// Example: Customer + Orders (3 orders per customer)
+// Result: 300 rows, grouped into 100 customers + orders
+
+// ONE-TO-MANY (large): Use separate queries
+// Example: Customer + Orders (100 per customer = 10K rows)
+// Result: 1 customer query + 100 order queries = 101 calls
+
+// UNRELATED SETS: Use QueryMultiple
+// Example: Top 5 customers + Recent 10 orders
+// Result: 2 queries, 1 network trip</pre>
+                </div>
             </div>
         </section>
 
-        <!-- Key Takeaways -->
-        <div class="key-takeaways">
-            <h3>Key Takeaways</h3>
-            <ul>
-                <li>One-to-one: Use <code>Query&lt;Parent, Child, Result&gt;</code> with <code>splitOn</code>.</li>
-                <li>One-to-many: Use a dictionary to group duplicate parent rows.</li>
-                <li>Multiple tables: Specify multiple columns in <code>splitOn</code>.</li>
-                <li><code>QueryMultiple</code> is cleaner for complex relationships than single JOIN.</li>
-                <li>Dynamic objects work but lose compile-time safety.</li>
-                <li>Large one-to-many: Two queries often better than one JOIN with duplication.</li>
-            </ul>
-        </div>
-
-        <!-- Chapter Navigation -->
+        <!-- Navigation -->
         <div class="chapter-nav">
             <a class="nav-item prev" href="ch19-object-mapping.html">
-                <span class="nav-item-label">&larr; Previous</span>
+                <span class="nav-item-label">&larr; Prev</span>
                 <span class="nav-item-title">Object Mapping</span>
             </a>
             <a class="nav-item" href="ch21-stored-procedures.html">

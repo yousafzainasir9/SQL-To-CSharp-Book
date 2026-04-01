@@ -3,701 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chapter 18: Connection & Queries with Dapper | SQL to C#</title>
+    <title>Chapter 18: Dapper: Connection & Queries — SQL to C#</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8f7f3;
-            --bg2: #f0ede6;
-            --bg3: #e8e4db;
-            --white: #fff;
-            --ink: #1c1a17;
-            --ink2: #3d3a34;
-            --ink3: #6b6760;
-            --ink4: #a8a49e;
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
             --rule: #dedad3;
-            --acc: #c96b1e;
-            --acc-l: #fdf3eb;
-            --acc-b: #f5c99a;
-            --green: #1d6b45;
-            --green-l: #edf8f2;
-            --green-b: #9fd9bc;
-            --blue: #1a4f8a;
-            --blue-l: #edf2fb;
-            --blue-b: #afc8ef;
-            --amber: #7a5200;
-            --amber-l: #fdf8ec;
-            --amber-b: #e8d08a;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
+        nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
+        nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
+        nav .nav-link:hover { color: var(--acc); }
 
-        body {
-            font-family: 'Source Serif 4', serif;
-            background-color: var(--bg);
-            color: var(--ink);
-            line-height: 1.7;
-        }
+        main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
+        .chapter-header { margin-bottom: 48px; }
+        .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
+        .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-        .nav {
-            position: sticky;
-            top: 0;
-            height: 54px;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--rule);
-            display: flex;
-            align-items: center;
-            padding: 0 40px;
-            gap: 20px;
-            z-index: 100;
-            font-family: 'Outfit', sans-serif;
-        }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-        .nav-brand {
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--acc);
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
         }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .nav-chapter {
-            background-color: var(--acc-l);
-            color: var(--acc);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            font-family: 'JetBrains Mono', monospace;
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
         }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
 
-        .nav-link {
-            margin-left: auto;
-            color: var(--ink);
-            text-decoration: none;
-            font-size: 14px;
-        }
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-        .nav-link:hover {
-            color: var(--acc);
-        }
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
 
-        .container {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 60px 40px;
-        }
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
+        .nav-item:hover { border-color: var(--acc); }
+        .nav-item.prev { text-align: right; }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+        .nav-item:hover .nav-item-title { color: var(--acc); }
 
-        header {
-            margin-bottom: 60px;
-        }
-
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 48px;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 20px;
-            color: var(--ink);
-        }
-
-        .subtitle {
-            font-family: 'Source Serif 4', serif;
-            font-size: 18px;
-            color: var(--ink3);
-            font-weight: 300;
-        }
-
-        .in-this-chapter {
-            background-color: var(--green-l);
-            border-left: 4px solid var(--green);
-            padding: 20px;
-            margin-bottom: 60px;
-            border-radius: 4px;
-        }
-
-        .in-this-chapter h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--green);
-            margin-bottom: 12px;
-        }
-
-        .in-this-chapter ul {
-            list-style: none;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .in-this-chapter li {
-            font-size: 14px;
-            color: var(--ink2);
-        }
-
-        .in-this-chapter li:before {
-            content: "→ ";
-            color: var(--green);
-            font-weight: 600;
-            margin-right: 6px;
-        }
-
-        section {
-            margin-bottom: 80px;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .section-number {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--acc);
-            min-width: 60px;
-        }
-
-        .section-divider {
-            flex: 1;
-            height: 1px;
-            background-color: var(--rule);
-        }
-
-        h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 24px;
-        }
-
-        h3 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--ink2);
-            margin-top: 28px;
-            margin-bottom: 12px;
-        }
-
-        p {
-            margin-bottom: 16px;
-            color: var(--ink2);
-            font-size: 16px;
-            line-height: 1.6;
-        }
-
-        .comparison {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 30px 0;
-        }
-
-        .code-block {
-            border-radius: 4px;
-            padding: 20px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            overflow-x: auto;
-            margin-bottom: 24px;
-        }
-
-        .code-block pre {
-            margin: 0;
-            font-family: inherit;
-            font-size: inherit;
-        }
-
-        .code-sql {
-            background-color: #1c1a17;
-            color: #d4d0c8;
-        }
-
-        .code-csharp {
-            background-color: var(--blue-l);
-            border: 1px solid var(--blue-b);
-            color: var(--ink);
-        }
-
-        .code-label {
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink4);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .insight {
-            background-color: var(--acc-l);
-            border-left: 4px solid var(--acc);
-            padding: 16px 20px;
-            border-radius: 0 8px 8px 0;
-            margin-bottom: 24px;
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--ink2);
-        }
-
-        .insight-title {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 30px 0;
-            background-color: var(--white);
-            border: 1px solid var(--rule);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        thead {
-            background-color: var(--bg2);
-        }
-
-        th {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--rule);
-            font-size: 13px;
-        }
-
-        td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--bg3);
-            font-size: 13px;
-        }
-
-        td code {
-            font-family: 'JetBrains Mono', monospace;
-            background-color: var(--bg);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        .key-takeaways {
-            background-color: var(--green-l);
-            border-left: 4px solid var(--green);
-            padding: 24px 28px;
-            border-radius: 0 12px 12px 0;
-            margin-bottom: 48px;
-        }
-
-        .key-takeaways h3 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .key-takeaways ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        .key-takeaways li {
-            margin-bottom: 8px;
-            padding-left: 24px;
-            position: relative;
-            font-size: 14px;
-            line-height: 1.6;
-            color: var(--ink2);
-        }
-
-        .key-takeaways li::before {
-            content: "\2713";
-            position: absolute;
-            left: 0;
-            color: var(--green);
-            font-weight: bold;
-        }
-
-        .chapter-nav {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 48px;
-        }
-
-        .nav-item {
-            background-color: var(--white);
-            border: 1px solid var(--rule);
-            border-radius: 10px;
-            padding: 20px;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .nav-item:hover {
-            border-color: var(--acc);
-        }
-
-        .nav-item.prev {
-            text-align: right;
-        }
-
-        .nav-item-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--ink4);
-            text-transform: uppercase;
-            margin-bottom: 6px;
-            display: block;
-        }
-
-        .nav-item-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--ink);
-        }
-
-        .nav-item:hover .nav-item-title {
-            color: var(--acc);
-        }
-
-        footer {
-            background-color: var(--bg2);
-            border-top: 1px solid var(--rule);
-            padding: 32px 2rem;
-            text-align: center;
-            color: var(--ink3);
-            font-size: 13px;
-            margin-top: 40px;
-        }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
-            .comparison { grid-template-columns: 1fr; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
             .chapter-nav { grid-template-columns: 1fr; }
             .nav-item.prev { text-align: left; }
-            .container { padding: 40px 1.5rem; }
+            main { padding: 40px 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-brand">SQL to C#</div>
-        <div class="nav-chapter">CH 18</div>
+    <nav>
+        <a href="index.html" class="nav-brand">
+            <span class="nav-brand-text">SQL to C#</span>
+            <span class="nav-pill">CH 18</span>
+        </a>
         <a href="index.html" class="nav-link">&larr; All Chapters</a>
     </nav>
 
-    <div class="container">
-        <header>
-            <h1>Connection & Queries with Dapper</h1>
-            <p class="subtitle">Dapper is a lightweight micro-ORM that maps SQL results to C# objects with minimal overhead.</p>
-        </header>
-
-        <div class="in-this-chapter">
-            <h2>In This Chapter</h2>
-            <ul>
-                <li>What Dapper is and why it exists</li>
-                <li>Your first Dapper query in 3 lines</li>
-                <li>Parameterized queries and SQL injection prevention</li>
-                <li>INSERT, UPDATE, DELETE with Execute</li>
-                <li>Query variants: First, Single, FirstOrDefault</li>
-                <li>Async/await patterns with Dapper</li>
-            </ul>
+    <main>
+        <div class="chapter-header">
+            <div class="chapter-label">Chapter 18</div>
+            <h1>Dapper: Connection &amp; Queries</h1>
+            <p class="chapter-intro">EF Core generates SQL for you. Dapper lets you write the SQL yourself and maps results to C# objects. It&rsquo;s a thin layer &mdash; you get speed and full SQL power. Requirement: &ldquo;I need direct SQL control with minimal overhead.&rdquo;</p>
         </div>
 
-        <!-- SECTION 01: What is Dapper -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">01</div>
-                <div class="section-divider"></div>
+        <!-- 01: What Is Dapper -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Set Up a Lightweight Database Layer&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Microservice needs fast, simple database access. EF is too heavy. We need to write raw SQL and get objects back with minimal framework overhead.
             </div>
-            <h2>What is Dapper?</h2>
 
-            <p>Dapper is a micro-ORM — a thin wrapper around <code>IDbConnection</code> that maps SQL query results to C# objects. You write SQL; Dapper handles object mapping.</p>
-
-            <div class="comparison">
-                <div>
-                    <span class="code-label">SQL (You Write This)</span>
-                    <div class="code-block code-sql">
-                        <pre>SELECT Id, Name, Email
-FROM Customers
-WHERE Department = @Department
-ORDER BY CreatedAt DESC</pre>
-                    </div>
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I write my own SELECT, INSERT, UPDATE, DELETE statements. I know exactly what query is running. No magic ORM, no LINQ translation surprises. I pass parameters to avoid injection.
                 </div>
-                <div>
-                    <span class="code-label">C# (Dapper Maps It)</span>
-                    <div class="code-block code-csharp">
-                        <pre>var customers = connection
-    .Query&lt;Customer&gt;(sql,
-        new { Department = "Sales" })
-    .ToList();</pre>
-                    </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Dapper extends <code>IDbConnection</code>. One NuGet package. I call <code>QueryAsync&lt;T&gt;</code>, pass my SQL and parameters. It maps rows to objects. That&rsquo;s it.
                 </div>
             </div>
 
-            <div class="insight">
-                <span class="insight-title">Why Dapper?</span> Speed and control. No change tracking overhead. No N+1 queries unless you write them. Minimal configuration.
-            </div>
-        </section>
-
-        <!-- SECTION 02: Installation & Setup -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">02</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Installation & Setup</h2>
-
-            <p>Add Dapper via NuGet. Zero dependencies (except your database driver).</p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">Package Manager Console</span>
-                <pre>Install-Package Dapper</pre>
+            <div class="code-full">
+                <div class="code-label">1. Install NuGet Package</div>
+                <div class="code-block csharp-block">
+                    <pre>dotnet add package Dapper</pre>
+                </div>
             </div>
 
-            <p>Create a connection and start querying:</p>
+            <div class="code-full">
+                <div class="code-label">2. Set Up Connection (SqlClient)</div>
+                <div class="code-block csharp-block">
+                    <pre>using System.Data.SqlClient;
+using Dapper;
 
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>public async Task&lt;Customer&gt; GetCustomerAsync(int id)
+public class CustomerRepository
 {
-    await using var connection = new SqlConnection(connectionString);
-    var sql = "SELECT * FROM Customers WHERE Id = @Id";
-    return await connection
-        .QueryFirstOrDefaultAsync&lt;Customer&gt;(sql, new { Id = id });
+    private readonly string _connectionString;
+
+    public CustomerRepository(string connStr)
+    {
+        _connectionString = connStr;
+    }
+
+    private IDbConnection GetConnection()
+        =&gt; new SqlConnection(_connectionString);
 }</pre>
-            </div>
-        </section>
-
-        <!-- SECTION 03: Parameterized Queries -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">03</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Parameterized Queries & SQL Injection</h2>
-
-            <p>Always use parameters (e.g., <code>@Name</code>) to prevent SQL injection. Dapper automatically handles parameter binding from anonymous objects.</p>
-
-            <div class="comparison">
-                <div>
-                    <span class="code-label">Bad: String Concatenation</span>
-                    <div class="code-block code-csharp">
-                        <pre>// DANGEROUS - SQL Injection risk!
-var sql = $"SELECT * FROM Customers WHERE Name = '{name}'";
-var result = connection.Query&lt;Customer&gt;(sql);</pre>
-                    </div>
-                </div>
-                <div>
-                    <span class="code-label">Good: Parameterized</span>
-                    <div class="code-block code-csharp">
-                        <pre>var sql = "SELECT * FROM Customers WHERE Name = @Name";
-var result = connection.Query&lt;Customer&gt;(sql,
-    new { Name = name });</pre>
-                    </div>
                 </div>
             </div>
 
-            <div class="insight">
-                <span class="insight-title">Parameter Rule:</span> Always use <code>@ParameterName</code> in SQL and pass an object with matching properties to Dapper.
+            <div class="code-full">
+                <div class="code-label">3. First Query: Get All Customers</div>
+                <div class="code-block csharp-block">
+                    <pre>public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = &quot;&quot;;
+    public string Email { get; set; } = &quot;&quot;;
+    public bool IsActive { get; set; }
+}
+
+public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetAllAsync(
+    CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = &quot;SELECT Id, Name, Email, IsActive FROM Customers&quot;;
+    return await connection.QueryAsync&lt;Customer&gt;(sql);
+}</pre>
+                </div>
             </div>
         </section>
 
-        <!-- SECTION 04: Query Methods -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">04</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Query Methods: Query, First, Single, FirstOrDefault</h2>
+        <!-- 02: SQL Injection Protection -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Query Must Be Safe from SQL Injection&rdquo;</h2>
 
-            <p>Dapper provides multiple methods depending on how many rows you expect:</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Search feature takes user input. Must be injection-proof. No concatenating user strings into SQL.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Use @parameters. Never concatenate strings. Even if it <i>looks</i> safe, parameterized queries are the only safe way.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Pass an anonymous object to Dapper. Property names match the @parameter names. Dapper handles parameterization automatically.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL &mdash; BAD (Vulnerable)</div>
+                    <div class="code-block sql-block">
+                        <pre>-- NEVER DO THIS
+var email = userInput;
+var sql = &quot;SELECT * FROM Customers &quot; +
+          &quot;WHERE Email = '&quot; + email + &quot;'&quot;;
+-- User enters: ' OR 1=1 --
+-- Result: dumps entire table!</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">Dapper &mdash; GOOD (Safe)</div>
+                    <div class="code-block dapper-block">
+                        <pre>public async Task&lt;Customer?&gt; SearchByEmailAsync(
+    string email, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = &quot;SELECT * FROM Customers &quot; +
+              &quot;WHERE Email = @Email&quot;;
+    return await connection.QueryFirstOrDefaultAsync&lt;Customer&gt;(
+        sql, new { Email = email });
+}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <p style="margin-top: 16px; font-size: 14px; color: var(--ink2);">
+                <strong>How Dapper Parameterizes:</strong> Property names in the anonymous object become SQL parameters. <code>new { Email = email }</code> creates <code>@Email</code>. The parameter value is passed separately from the SQL, so SQL injection is impossible.
+            </p>
+        </section>
+
+        <!-- 03: Query Methods -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Fetch a Single Customer by ID&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                API endpoint: <code>GET /customers/42</code> returns one customer. Must handle &ldquo;not found&rdquo; gracefully.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    <code>SELECT * FROM Customers WHERE Id = @Id</code> returns zero or one row.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>QueryFirstOrDefaultAsync&lt;T&gt;</code> returns <code>T?</code> &mdash; null if no row found. <code>QuerySingleOrDefaultAsync&lt;T&gt;</code> throws if more than one row. Choose carefully.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Fetch List (All Matching Rows)</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;IEnumerable&lt;Customer&gt;&gt; GetByIsActiveAsync(
+    bool isActive, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = &quot;SELECT Id, Name, Email, IsActive &quot; +
+              &quot;FROM Customers WHERE IsActive = @IsActive&quot;;
+    return await connection.QueryAsync&lt;Customer&gt;(
+        sql, new { IsActive = isActive });
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Fetch One or None (First Match)</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;Customer?&gt; GetByIdAsync(
+    int id, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = &quot;SELECT Id, Name, Email, IsActive &quot; +
+              &quot;FROM Customers WHERE Id = @Id&quot;;
+    return await connection.QueryFirstOrDefaultAsync&lt;Customer&gt;(
+        sql, new { Id = id });
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Fetch Exactly One (Throws If Missing or Multiple)</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;Customer&gt; GetByIdRequiredAsync(
+    int id, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = &quot;SELECT Id, Name, Email, IsActive &quot; +
+              &quot;FROM Customers WHERE Id = @Id&quot;;
+    return await connection.QuerySingleOrDefaultAsync&lt;Customer&gt;(
+        sql, new { Id = id })
+        ?? throw new InvalidOperationException($&quot;Customer {id} not found&quot;);
+}</pre>
+                </div>
+            </div>
 
             <table>
                 <thead>
                     <tr>
                         <th>Method</th>
                         <th>Returns</th>
-                        <th>If No Match</th>
+                        <th>Throws If</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>Query&lt;T&gt;</code></td>
-                        <td>IEnumerable&lt;T&gt;</td>
-                        <td>Empty collection</td>
+                        <td><code>QueryAsync&lt;T&gt;</code></td>
+                        <td><code>IEnumerable&lt;T&gt;</code></td>
+                        <td>Never</td>
                     </tr>
                     <tr>
-                        <td><code>QueryFirst&lt;T&gt;</code></td>
-                        <td>T (first row)</td>
-                        <td>Exception</td>
+                        <td><code>QueryFirstOrDefaultAsync&lt;T&gt;</code></td>
+                        <td><code>T?</code></td>
+                        <td>Never (returns null if no match)</td>
                     </tr>
                     <tr>
-                        <td><code>QueryFirstOrDefault&lt;T&gt;</code></td>
-                        <td>T or null</td>
-                        <td>null</td>
+                        <td><code>QuerySingleOrDefaultAsync&lt;T&gt;</code></td>
+                        <td><code>T?</code></td>
+                        <td>More than 1 row</td>
                     </tr>
                     <tr>
-                        <td><code>QuerySingle&lt;T&gt;</code></td>
-                        <td>T (exactly one row)</td>
-                        <td>Exception</td>
+                        <td><code>QuerySingleAsync&lt;T&gt;</code></td>
+                        <td><code>T</code></td>
+                        <td>Zero rows or more than 1</td>
                     </tr>
                     <tr>
-                        <td><code>QuerySingleOrDefault&lt;T&gt;</code></td>
-                        <td>T or null</td>
-                        <td>null</td>
+                        <td><code>ExecuteScalarAsync&lt;T&gt;</code></td>
+                        <td><code>T</code> (single value)</td>
+                        <td>Never (returns default if null)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 04: CRUD with Execute -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Create, Update, Delete with Dapper&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Full CRUD without EF &mdash; insert new customer, update email, delete inactive accounts. Return affected row count or new ID.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    INSERT returns nothing by default. Use <code>OUTPUT INSERTED.Id</code> or <code>SCOPE_IDENTITY()</code> to get the new ID. UPDATE and DELETE return affected row count.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>ExecuteAsync</code> returns <code>int</code> &mdash; affected rows. For INSERT, query the identity in the same command or use <code>ExecuteScalarAsync</code>.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">INSERT &mdash; Get New ID with OUTPUT</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;int&gt; CreateAsync(
+    Customer customer, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = @&quot;
+        INSERT INTO Customers (Name, Email, IsActive)
+        OUTPUT INSERTED.Id
+        VALUES (@Name, @Email, @IsActive)&quot;;
+
+    var newId = await connection.ExecuteScalarAsync&lt;int&gt;(
+        sql, customer);
+    return newId;
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">UPDATE &mdash; Return Affected Rows</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;int&gt; UpdateEmailAsync(
+    int id, string newEmail, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    var sql = @&quot;
+        UPDATE Customers
+        SET Email = @Email
+        WHERE Id = @Id&quot;;
+
+    return await connection.ExecuteAsync(
+        sql, new { Id = id, Email = newEmail });
+}</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">DELETE &mdash; Soft or Hard Delete</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task&lt;int&gt; DeleteAsync(
+    int id, CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    // Soft delete: just mark IsActive = false
+    var sql = &quot;UPDATE Customers SET IsActive = 0 WHERE Id = @Id&quot;;
+
+    return await connection.ExecuteAsync(
+        sql, new { Id = id });
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Transactions -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: &ldquo;Multiple Operations Must Succeed or All Fail&rdquo;</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Create order + order items &mdash; both must succeed atomically. If item insert fails, roll back the order insert too.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    <code>BEGIN TRAN ... COMMIT</code> or <code>ROLLBACK</code>. If any statement fails, the whole transaction rolls back.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    <code>connection.BeginTransactionAsync()</code> returns an <code>IDbTransaction</code>. Pass it to each Execute/Query call. On success, commit. On exception, rollback.
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">Dapper Transaction Pattern</div>
+                <div class="code-block dapper-block">
+                    <pre>public async Task CreateOrderWithItemsAsync(
+    Order order, List&lt;OrderItem&gt; items,
+    CancellationToken ct = default)
+{
+    using var connection = GetConnection();
+    await connection.OpenAsync(ct);
+
+    using var transaction = connection.BeginTransaction();
+    try
+    {
+        // Insert order
+        var orderSql = @&quot;
+            INSERT INTO Orders (CustomerId, Total)
+            OUTPUT INSERTED.Id
+            VALUES (@CustomerId, @Total)&quot;;
+        var orderId = await connection.ExecuteScalarAsync&lt;int&gt;(
+            orderSql, order, transaction);
+
+        // Insert items
+        foreach (var item in items)
+        {
+            var itemSql = @&quot;
+                INSERT INTO OrderItems (OrderId, ProductId, Qty)
+                VALUES (@OrderId, @ProductId, @Qty)&quot;;
+            await connection.ExecuteAsync(itemSql,
+                new { OrderId = orderId,
+                      ProductId = item.ProductId,
+                      Qty = item.Qty },
+                transaction);
+        }
+
+        // All succeeded
+        transaction.Commit();
+    }
+    catch (Exception ex)
+    {
+        transaction.Rollback();
+        throw;
+    }
+    finally
+    {
+        await connection.CloseAsync();
+    }
+}</pre>
+                </div>
+            </div>
+
+            <p style="margin-top: 16px; font-size: 14px; color: var(--ink2);">
+                <strong>Key Points:</strong> Explicit <code>OpenAsync()</code> required. Each Execute/Query method accepts <code>transaction</code> parameter. If exception occurs, <code>Rollback()</code> is called. Otherwise, <code>Commit()</code> persists changes.
+            </p>
+        </section>
+
+        <!-- 06: Dapper vs EF Core Decision Table -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>&ldquo;Dapper vs EF Core: When to Choose Dapper&rdquo;</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Choose Dapper</th>
+                        <th>Choose EF Core</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Raw SQL control</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; full power</td>
+                        <td>Limited (LINQ translation)</td>
                     </tr>
                     <tr>
-                        <td><code>QueryScalar&lt;T&gt;</code></td>
-                        <td>Single value</td>
-                        <td>null or default</td>
+                        <td>Max query performance</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; no overhead</td>
+                        <td>Good (change tracking cost)</td>
+                    </tr>
+                    <tr>
+                        <td>Complex reporting queries</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; hand-tuned SQL</td>
+                        <td>Difficult (LINQ to SQL)</td>
+                    </tr>
+                    <tr>
+                        <td>Microservices, read-heavy</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; lightweight</td>
+                        <td>Overkill</td>
+                    </tr>
+                    <tr>
+                        <td>CRUD with change tracking</td>
+                        <td>No (manual tracking)</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; automatic</td>
+                    </tr>
+                    <tr>
+                        <td>Migrations &amp; schema management</td>
+                        <td>No (write SQL migrations)</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; built-in</td>
+                    </tr>
+                    <tr>
+                        <td>Complex includes/relationships</td>
+                        <td>No (join manually)</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; .Include()</td>
+                    </tr>
+                    <tr>
+                        <td>Team already knows ORM</td>
+                        <td>No &mdash; steeper learning</td>
+                        <td style="color: var(--green); font-weight: 600;">Yes &mdash; faster onboard</td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="code-block code-csharp">
-                <span class="code-label">C# Examples</span>
-                <pre>// Get all customers
-var all = await connection.QueryAsync&lt;Customer&gt;(
-    "SELECT * FROM Customers");
-
-// Get first customer or null
-var one = await connection.QueryFirstOrDefaultAsync&lt;Customer&gt;(
-    "SELECT * FROM Customers WHERE Id = @Id",
-    new { Id = 1 });
-
-// Get a single count value
-var count = await connection.QueryScalarAsync&lt;int&gt;(
-    "SELECT COUNT(*) FROM Customers");</pre>
-            </div>
+            <p style="margin-top: 16px; font-size: 14px; color: var(--ink2);">
+                <strong>Rule of Thumb:</strong> Use Dapper if you write SQL anyway and want speed. Use EF Core if you want framework convenience and automatic migrations. Many teams use <strong>both</strong> &mdash; EF Core for business logic CRUD, Dapper for reporting and high-performance queries.
+            </p>
         </section>
-
-        <!-- SECTION 05: INSERT, UPDATE, DELETE -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">05</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>INSERT, UPDATE, DELETE with Execute</h2>
-
-            <p>Use <code>Execute</code> for INSERT, UPDATE, DELETE. It returns the number of rows affected.</p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">C#</span>
-                <pre>// INSERT
-var insertSql = @"INSERT INTO Customers (Name, Email, CreatedAt)
-                  VALUES (@Name, @Email, GETDATE())";
-int rowsInserted = await connection.ExecuteAsync(insertSql,
-    new { Name = "Alice", Email = "alice@example.com" });
-
-// UPDATE
-var updateSql = "UPDATE Customers SET Email = @Email WHERE Id = @Id";
-int rowsUpdated = await connection.ExecuteAsync(updateSql,
-    new { Email = "newemail@example.com", Id = 1 });
-
-// DELETE
-var deleteSql = "DELETE FROM Customers WHERE Id = @Id";
-int rowsDeleted = await connection.ExecuteAsync(deleteSql, new { Id = 1 });</pre>
-            </div>
-
-            <div class="insight">
-                <span class="insight-title">Transactions:</span> Wrap multiple operations in a transaction for safety.
-            </div>
-        </section>
-
-        <!-- SECTION 06: Async & Transactions -->
-        <section>
-            <div class="section-header">
-                <div class="section-number">06</div>
-                <div class="section-divider"></div>
-            </div>
-            <h2>Async Queries & Transactions</h2>
-
-            <p>Dapper supports async/await. Use <code>QueryAsync</code>, <code>ExecuteAsync</code>, etc. for non-blocking operations.</p>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">Async Query</span>
-                <pre>public async Task&lt;Customer&gt; GetCustomerAsync(int id)
-{
-    await using var connection = new SqlConnection(connectionString);
-    var sql = "SELECT * FROM Customers WHERE Id = @Id";
-    return await connection
-        .QueryFirstOrDefaultAsync&lt;Customer&gt;(sql, new { Id = id });
-}</pre>
-            </div>
-
-            <div class="code-block code-csharp">
-                <span class="code-label">Transaction Example</span>
-                <pre>await using var connection = new SqlConnection(connectionString);
-connection.Open();
-using var transaction = connection.BeginTransaction();
-try
-{
-    await connection.ExecuteAsync("INSERT INTO Customers (Name) VALUES (@Name)",
-        new { Name = "Bob" }, transaction);
-    await connection.ExecuteAsync("INSERT INTO Orders (CustomerId) VALUES (@Id)",
-        new { Id = 1 }, transaction);
-    transaction.Commit();
-}
-catch
-{
-    transaction.Rollback();
-    throw;
-}</pre>
-            </div>
-        </section>
-
-        <!-- Key Takeaways -->
-        <div class="key-takeaways">
-            <h3>Key Takeaways</h3>
-            <ul>
-                <li>Dapper is a lightweight micro-ORM for SQL-first developers.</li>
-                <li>Always use parameterized queries to prevent SQL injection.</li>
-                <li>Choose the right query method: <code>Query</code>, <code>QueryFirst</code>, <code>QuerySingle</code>, etc.</li>
-                <li>Use <code>Execute</code> for INSERT, UPDATE, DELETE operations.</li>
-                <li>Async variants (<code>QueryAsync</code>, <code>ExecuteAsync</code>) support modern async patterns.</li>
-                <li>Wrap multi-step operations in transactions for data consistency.</li>
-            </ul>
-        </div>
 
         <!-- Chapter Navigation -->
         <div class="chapter-nav">
-            <a class="nav-item prev" href="ch17-linq-performance.html">
-                <span class="nav-item-label">&larr; Previous</span>
-                <span class="nav-item-title">LINQ Performance</span>
+            <a href="ch17-ef-performance.html" class="nav-item prev">
+                <span class="nav-item-label">Previous</span>
+                <span class="nav-item-title">EF Performance</span>
             </a>
-            <a class="nav-item" href="ch19-object-mapping.html">
-                <span class="nav-item-label">Next &rarr;</span>
+            <a href="ch19-object-mapping.html" class="nav-item next">
+                <span class="nav-item-label">Next</span>
                 <span class="nav-item-title">Object Mapping</span>
             </a>
         </div>
-    </div>
+    </main>
 
     <footer>
-        <p>SQL to C# &mdash; The Complete Data Access Guide</p>
-        <p>LINQ &middot; Entity Framework &middot; Dapper</p>
+        SQL to C# &mdash; A practical guide to translating database concepts into C# code. Learn how databases and objects map together.
     </footer>
 </body>
 </html>

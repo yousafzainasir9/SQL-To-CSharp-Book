@@ -3,111 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chapter 21: Stored Procedures with Dapper — Call SQL stored procedures from C#, pass parameters, retrieve return values and output parameters.">
-    <title>Chapter 21: Stored Procedures with Dapper | SQL to C#</title>
+    <title>Chapter 21: Stored Procedures with Dapper — SQL to C#</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8f7f3;
-            --bg2: #f0ede6;
-            --bg3: #e8e4db;
-            --white: #ffffff;
-            --ink: #1c1a17;
-            --ink2: #3d3a34;
-            --ink3: #6b6760;
-            --ink4: #a8a49e;
+            --bg: #f8f7f3; --bg2: #f0ede6; --bg3: #e8e4db; --white: #ffffff;
+            --ink: #1c1a17; --ink2: #3d3a34; --ink3: #6b6760; --ink4: #a8a49e;
             --rule: #dedad3;
-            --acc: #c96b1e;
-            --acc-l: #fdf3eb;
-            --acc-b: #f5c99a;
-            --green: #1d6b45;
-            --green-l: #edf8f2;
-            --green-b: #9fd9bc;
-            --blue: #1a4f8a;
-            --blue-l: #edf2fb;
-            --blue-b: #afc8ef;
-            --amber: #7a5200;
-            --amber-l: #fdf8ec;
-            --amber-b: #e8d08a;
+            --acc: #c96b1e; --acc-l: #fdf3eb; --acc-b: #f5c99a;
+            --green: #1d6b45; --green-l: #edf8f2; --green-b: #9fd9bc;
+            --blue: #1a4f8a; --blue-l: #edf2fb; --blue-b: #afc8ef;
+            --amber: #7a5200; --amber-l: #fdf8ec; --amber-b: #e8d08a;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { font-family: 'Source Serif 4', serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
 
-        html, body {
-            font-family: 'Source Serif 4', serif;
-            background-color: var(--bg);
-            color: var(--ink);
-            line-height: 1.6;
-        }
-
-        nav {
-            position: sticky; top: 0; height: 54px;
-            background: rgba(248,247,243,0.96);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--rule);
-            display: flex; align-items: center;
-            padding: 0 2rem; z-index: 1000;
-        }
+        nav { position: sticky; top: 0; height: 54px; background: rgba(248,247,243,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding: 0 2rem; z-index: 1000; }
         nav .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-right: auto; }
         nav .nav-brand-text { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--acc); }
-        nav .nav-pill { background-color: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+        nav .nav-pill { background: var(--acc-l); color: var(--acc); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
         nav .nav-link { font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--ink); text-decoration: none; }
         nav .nav-link:hover { color: var(--acc); }
 
         main { max-width: 960px; margin: 0 auto; padding: 60px 2rem; }
-
         .chapter-header { margin-bottom: 48px; }
         .chapter-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
         h1 { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
         .chapter-intro { font-size: 17px; color: var(--ink2); line-height: 1.7; max-width: 700px; }
 
-        .section { margin-bottom: 64px; }
-        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .section { margin-bottom: 56px; }
+        .section-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
         .sec-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); letter-spacing: 1px; }
-        .sec-rule { flex: 1; height: 1px; background-color: var(--rule); }
-        h2 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 16px; }
-        .section-prose { font-size: 15px; color: var(--ink2); line-height: 1.7; margin-bottom: 20px; }
-        .section-prose p { margin-bottom: 10px; }
+        .sec-rule { flex: 1; height: 1px; background: var(--rule); }
+        h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 12px; }
 
-        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .code-block { border-radius: 10px; padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+        /* Requirement box — the real-world scenario */
+        .requirement {
+            background: var(--amber-l); border: 1px solid var(--amber-b); border-radius: 8px;
+            padding: 14px 18px; margin-bottom: 16px; font-size: 14px; color: var(--ink2); line-height: 1.6;
+        }
+        .requirement strong { color: var(--amber); font-family: 'Outfit', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Thinking boxes — how SQL dev vs C# dev approaches it */
+        .thinking { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .think-sql, .think-csharp {
+            border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+        }
+        .think-sql { background: #1c1a17; color: #d4d0c8; }
+        .think-sql strong { color: var(--acc-b); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .think-csharp { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink2); }
+        .think-csharp strong { color: var(--blue); font-family: 'Outfit', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+
+        /* Code comparison */
+        .code-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .triple-comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .code-block { border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
         .code-block pre { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; }
-        .sql-block { background-color: #1c1a17; color: #d4d0c8; }
-        .csharp-block { background-color: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
-        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .sql-block { background: #1c1a17; color: #d4d0c8; }
+        .csharp-block { background: var(--blue-l); border: 1px solid var(--blue-b); color: var(--ink); }
+        .ef-block { background: var(--green-l); border: 1px solid var(--green-b); color: var(--ink); }
+        .dapper-block { background: var(--amber-l); border: 1px solid var(--amber-b); color: var(--ink); }
+        .code-label { font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .code-full { margin-bottom: 16px; }
 
-        .code-full-width { margin-bottom: 24px; }
+        /* Mapping table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: var(--white); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+        thead { background: var(--bg2); }
+        th { font-family: 'Outfit', sans-serif; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); font-size: 12px; }
+        td { padding: 8px 14px; border-bottom: 1px solid var(--bg3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        td code { background: var(--bg); padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        .sql-type { color: var(--amber); font-weight: 500; }
+        .csharp-type { color: var(--blue); font-weight: 500; }
 
-        .insight {
-            background-color: var(--acc-l); border-left: 4px solid var(--acc);
-            padding: 16px 20px; border-radius: 0 8px 8px 0;
-            margin-bottom: 24px; font-size: 14px; line-height: 1.6; color: var(--ink2);
-        }
-
-        .key-takeaways {
-            background-color: var(--green-l); border-left: 4px solid var(--green);
-            padding: 24px 28px; border-radius: 0 12px 12px 0; margin-bottom: 48px;
-        }
-        .key-takeaways h3 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-        .key-takeaways ul { list-style: none; padding-left: 0; }
-        .key-takeaways li { margin-bottom: 8px; padding-left: 24px; position: relative; font-size: 14px; line-height: 1.6; color: var(--ink2); }
-        .key-takeaways li::before { content: "\2713"; position: absolute; left: 0; color: var(--green); font-weight: bold; }
-
-        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 48px; }
-        .nav-item { background-color: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; text-decoration: none; transition: all 0.2s; }
+        /* Navigation */
+        .chapter-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px; }
+        .nav-item { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; text-decoration: none; transition: all 0.2s; }
         .nav-item:hover { border-color: var(--acc); }
         .nav-item.prev { text-align: right; }
-        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 6px; display: block; }
-        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--ink); }
+        .nav-item-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink4); text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .nav-item-title { font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
         .nav-item:hover .nav-item-title { color: var(--acc); }
 
-        footer { background-color: var(--bg2); border-top: 1px solid var(--rule); padding: 32px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
+        footer { background: var(--bg2); border-top: 1px solid var(--rule); padding: 28px 2rem; text-align: center; color: var(--ink3); font-size: 13px; margin-top: 40px; }
 
         @media (max-width: 768px) {
             h1 { font-size: 32px; }
-            .code-comparison { grid-template-columns: 1fr; }
+            .code-comparison, .thinking, .triple-comparison { grid-template-columns: 1fr; }
             .chapter-nav { grid-template-columns: 1fr; }
             .nav-item.prev { text-align: left; }
             main { padding: 40px 1.5rem; }
@@ -127,308 +111,560 @@
         <div class="chapter-header">
             <div class="chapter-label">Chapter 21</div>
             <h1>Stored Procedures with Dapper</h1>
-            <p class="chapter-intro">Call SQL Server stored procedures from C#, pass input parameters, retrieve output parameters and return values, and handle result sets.</p>
+            <p class="chapter-intro">Call the DBA&rsquo;s stored procedure from C#. Stored procs live in the database. Dapper calls them with <code>CommandType.StoredProcedure</code> and maps results to C# objects &mdash; input params, output params, return values, and multiple result sets.</p>
         </div>
 
-        <!-- SECTION 01: Basic SP Call -->
+        <!-- 01: Basic call -->
         <section class="section">
-            <div class="section-header">
-                <span class="sec-num">01</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Calling a Stored Procedure</h2>
+            <div class="section-header"><span class="sec-num">01</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Get Customer Report from a Stored Procedure"</h2>
 
-            <div class="section-prose">
-                <p>Use <code>QueryAsync</code> or <code>ExecuteAsync</code> with <code>CommandType.StoredProcedure</code> to call a stored procedure.</p>
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The DBA wrote <code>sp_GetCustomerReport</code>. Call it and map the results to a C# class. No parameters needed for this first call.
             </div>
 
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>CREATE PROCEDURE sp_GetCustomer
-    @CustomerId INT
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    I execute the stored procedure by name. EXEC sp_GetCustomerReport returns a result set. The DBA wrote the logic — you just call it.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    I use QueryAsync with <code>commandType: CommandType.StoredProcedure</code>. Tell Dapper the procedure name and the type to map to. Dapper handles the rest.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Stored Procedure Definition</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_GetCustomerReport
 AS
 BEGIN
-    SELECT Id, FirstName, LastName, Email
+    SELECT
+        Id,
+        Name,
+        Email,
+        TotalOrders,
+        TotalSpent,
+        LastOrderDate
     FROM Customers
-    WHERE Id = @CustomerId
-END</pre>
+    WHERE IsActive = 1
+    ORDER BY TotalSpent DESC;
+END;</pre>
+                    </div>
                 </div>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var customer = await connection.QueryFirstOrDefaultAsync&lt;Customer&gt;(
-    "sp_GetCustomer",
-    new { CustomerId = 1 },
-    commandType: CommandType.StoredProcedure);</pre>
-                </div>
-            </div>
-
-            <div class="insight">
-                <strong>Key:</strong> Set <code>commandType: CommandType.StoredProcedure</code>. Procedure name and parameters work the same as inline SQL.
-            </div>
-        </section>
-
-        <!-- SECTION 02: Input Parameters -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">02</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Input Parameters</h2>
-
-            <div class="section-prose">
-                <p>Pass parameters as an anonymous object. Dapper automatically maps property names to procedure parameters.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>CREATE PROCEDURE sp_SearchCustomers
-    @FirstName NVARCHAR(100),
-    @LastName NVARCHAR(100),
-    @City NVARCHAR(100)
-AS
-BEGIN
-    SELECT * FROM Customers
-    WHERE FirstName LIKE '%' + @FirstName + '%'
-      AND LastName LIKE '%' + @LastName + '%'
-      AND City LIKE '%' + @City + '%'
-END</pre>
-                </div>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var results = await connection.QueryAsync&lt;Customer&gt;(
-    "sp_SearchCustomers",
-    new { FirstName = "John", LastName = "Doe", City = "Seattle" },
-    commandType: CommandType.StoredProcedure);</pre>
-                </div>
-            </div>
-
-            <div class="insight">
-                <strong>Matching:</strong> Property names must match procedure parameter names (case-insensitive). Use null for optional parameters.
-            </div>
-        </section>
-
-        <!-- SECTION 03: Output Parameters -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">03</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Output Parameters</h2>
-
-            <div class="section-prose">
-                <p>Use <code>DynamicParameters</code> to pass output parameters. Retrieve values after execution.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>CREATE PROCEDURE sp_CreateCustomer
-    @FirstName NVARCHAR(100),
-    @LastName NVARCHAR(100),
-    @NewCustomerId INT OUTPUT
-AS
-BEGIN
-    INSERT INTO Customers (FirstName, LastName)
-    VALUES (@FirstName, @LastName)
-    SET @NewCustomerId = SCOPE_IDENTITY()
-END</pre>
-                </div>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var parameters = new DynamicParameters();
-parameters.Add("@FirstName", "Alice");
-parameters.Add("@LastName", "Smith");
-parameters.Add("@NewCustomerId", dbType: DbType.Int32, direction: ParameterDirection.Output);
-
-await connection.ExecuteAsync(
-    "sp_CreateCustomer",
-    parameters,
-    commandType: CommandType.StoredProcedure);
-
-int newId = parameters.Get&lt;int&gt;("@NewCustomerId");</pre>
-                </div>
-            </div>
-
-            <div class="insight">
-                <strong>Output flow:</strong> Define parameter with <code>direction: ParameterDirection.Output</code>. After execution, retrieve with <code>Get&lt;T&gt;</code>.
-            </div>
-        </section>
-
-        <!-- SECTION 04: Return Values -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">04</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Return Values</h2>
-
-            <div class="section-prose">
-                <p>Capture a procedure's return value (success/error code) using <code>ParameterDirection.ReturnValue</code>.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>CREATE PROCEDURE sp_DeleteCustomer
-    @CustomerId INT
-AS
-BEGIN
-    IF EXISTS (SELECT 1 FROM Customers WHERE Id = @CustomerId)
-    BEGIN
-        DELETE FROM Customers WHERE Id = @CustomerId
-        RETURN 0  -- Success
-    END
-    ELSE
-    BEGIN
-        RETURN 1  -- Not found
-    END
-END</pre>
-                </div>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>var parameters = new DynamicParameters();
-parameters.Add("@CustomerId", 1);
-parameters.Add("@returnValue", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
-
-await connection.ExecuteAsync(
-    "sp_DeleteCustomer",
-    parameters,
-    commandType: CommandType.StoredProcedure);
-
-int returnValue = parameters.Get&lt;int&gt;("@returnValue");
-if (returnValue is 0)
-    Console.WriteLine("Deleted successfully");
-else
-    Console.WriteLine("Customer not found");</pre>
-                </div>
-            </div>
-
-            <div class="insight">
-                <strong>Return value:</strong> Always an int. Use for error codes or status indicators.
-            </div>
-        </section>
-
-        <!-- SECTION 05: Multiple Result Sets -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">05</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Multiple Result Sets</h2>
-
-            <div class="section-prose">
-                <p>A stored procedure can return multiple SELECT result sets. Use <code>QueryMultiple</code> to retrieve them all.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">SQL</div>
-                <div class="code-block sql-block">
-                    <pre>CREATE PROCEDURE sp_GetCustomerDetails
-    @CustomerId INT
-AS
-BEGIN
-    SELECT * FROM Customers WHERE Id = @CustomerId
-    SELECT * FROM Orders WHERE CustomerId = @CustomerId
-    SELECT * FROM OrderItems WHERE OrderId IN
-        (SELECT Id FROM Orders WHERE CustomerId = @CustomerId)
-END</pre>
-                </div>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>using var multi = await connection.QueryMultipleAsync(
-    "sp_GetCustomerDetails",
-    new { CustomerId = 1 },
-    commandType: CommandType.StoredProcedure);
-var customer = await multi.ReadFirstAsync&lt;Customer&gt;();
-var orders = await multi.ReadAsync&lt;Order&gt;();
-var items = await multi.ReadAsync&lt;OrderItem&gt;();</pre>
-                </div>
-            </div>
-
-            <div class="insight">
-                <strong>Order matters:</strong> Each <code>Read&lt;T&gt;</code> consumes the next SELECT result set in order.
-            </div>
-        </section>
-
-        <!-- SECTION 06: Async Procedures -->
-        <section class="section">
-            <div class="section-header">
-                <span class="sec-num">06</span>
-                <div class="sec-rule"></div>
-            </div>
-            <h2>Async Procedure Calls</h2>
-
-            <div class="section-prose">
-                <p>Use async variants like <code>QueryAsync</code>, <code>ExecuteAsync</code>, and <code>QueryMultipleAsync</code> for non-blocking calls.</p>
-            </div>
-
-            <div class="code-full-width">
-                <div class="code-label">C#</div>
-                <div class="code-block csharp-block">
-                    <pre>public async Task&lt;Customer&gt; GetCustomerAsync(int customerId, CancellationToken cancellationToken = default)
+                <div>
+                    <div class="code-label">C# — Call with Dapper</div>
+                    <div class="code-block dapper-block">
+                        <pre>public class CustomerReportDto
 {
-    await using var connection = new SqlConnection(connectionString);
-    return await connection.QueryFirstOrDefaultAsync&lt;Customer&gt;(
-        "sp_GetCustomer",
-        new { CustomerId = customerId },
-        commandType: CommandType.StoredProcedure);
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public int TotalOrders { get; set; }
+    public decimal TotalSpent { get; set; }
+    public DateTime? LastOrderDate { get; set; }
 }
 
-public async Task&lt;int&gt; CreateCustomerAsync(string firstName, string lastName, CancellationToken cancellationToken = default)
+var customers = await connection.QueryAsync&lt;CustomerReportDto&gt;(
+    "sp_GetCustomerReport",
+    commandType: CommandType.StoredProcedure,
+    commandTimeout: 30);
+
+foreach (var customer in customers)
 {
-    await using var connection = new SqlConnection(connectionString);
-    var parameters = new DynamicParameters();
-    parameters.Add("@FirstName", firstName);
-    parameters.Add("@LastName", lastName);
-    parameters.Add("@NewCustomerId", dbType: DbType.Int32,
-        direction: ParameterDirection.Output);
-
-    await connection.ExecuteAsync(
-        "sp_CreateCustomer",
-        parameters,
-        commandType: CommandType.StoredProcedure);
-
-    return parameters.Get&lt;int&gt;("@NewCustomerId");
+    Console.WriteLine($"{customer.Name}: {customer.TotalSpent:C}");
 }</pre>
+                    </div>
                 </div>
             </div>
 
-            <div class="insight">
-                <strong>Async pattern:</strong> All methods have Async variants. Use for I/O-bound operations to avoid blocking threads.
+            <div class="code-full">
+                <div class="code-label">C# — Same with EF Core (for comparison)</div>
+                <div class="code-block ef-block">
+                    <pre>var customers = await context.Database
+    .SqlQueryRaw&lt;CustomerReportDto&gt;(
+        "EXEC sp_GetCustomerReport")
+    .ToListAsync(cancellationToken);
+
+// Note: EF requires DbContext + manually mapped DTOs
+// Dapper is simpler for proc results</pre>
+                </div>
             </div>
         </section>
 
-        <!-- Key Takeaways -->
-        <div class="key-takeaways">
-            <h3>Key Takeaways</h3>
-            <ul>
-                <li>Set <code>commandType: CommandType.StoredProcedure</code> to call stored procedures.</li>
-                <li>Pass input parameters as an anonymous object. Names match procedure parameters.</li>
-                <li><code>DynamicParameters</code> handles output parameters and return values.</li>
-                <li>Retrieve output with <code>parameters.Get&lt;T&gt;("@ParameterName")</code>.</li>
-                <li><code>QueryMultiple</code> retrieves multiple result sets from one procedure call.</li>
-                <li>Use async variants (<code>QueryAsync</code>, <code>ExecuteAsync</code>) for non-blocking calls.</li>
-            </ul>
-        </div>
+        <!-- 02: Input parameters -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">02</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Pass Search Filters to the Procedure"</h2>
 
-        <!-- Chapter Navigation -->
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The stored procedure accepts <code>@StartDate</code>, <code>@EndDate</code>, and <code>@Status</code> filters. Pass them from C# to narrow the results.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    CREATE PROCEDURE with @Parameters. Use them in the WHERE clause. If null, ignore them (or make them optional with defaults).
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Create an anonymous object or named class with properties that match parameter names. Dapper maps them automatically. Names must match exactly (case-insensitive by default).
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Stored Procedure with Parameters</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_GetOrdersByFilter
+    @StartDate DATETIME2 = NULL,
+    @EndDate DATETIME2 = NULL,
+    @Status NVARCHAR(50) = NULL
+AS
+BEGIN
+    SELECT
+        Id, OrderNumber, OrderDate,
+        CustomerId, TotalAmount, Status
+    FROM Orders
+    WHERE (OrderDate >= @StartDate
+           OR @StartDate IS NULL)
+      AND (OrderDate &lt;= @EndDate
+           OR @EndDate IS NULL)
+      AND (Status = @Status
+           OR @Status IS NULL)
+    ORDER BY OrderDate DESC;
+END;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Anonymous Object Parameters</div>
+                    <div class="code-block dapper-block">
+                        <pre>var orders = await connection.QueryAsync&lt;OrderDto&gt;(
+    "sp_GetOrdersByFilter",
+    new
+    {
+        StartDate = new DateTime(2024, 1, 1),
+        EndDate = new DateTime(2024, 12, 31),
+        Status = "Completed"
+    },
+    commandType: CommandType.StoredProcedure);
+
+// Parameters map by name (case-insensitive)
+// Only required params must be provided
+var pendingOrders = await connection.QueryAsync&lt;OrderDto&gt;(
+    "sp_GetOrdersByFilter",
+    new { Status = "Pending" },
+    commandType: CommandType.StoredProcedure);</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Using DynamicParameters for clarity</div>
+                <div class="code-block dapper-block">
+                    <pre>var parameters = new DynamicParameters();
+parameters.Add("@StartDate", new DateTime(2024, 1, 1));
+parameters.Add("@EndDate", new DateTime(2024, 12, 31));
+parameters.Add("@Status", "Completed");
+
+var orders = await connection.QueryAsync&lt;OrderDto&gt;(
+    "sp_GetOrdersByFilter",
+    parameters,
+    commandType: CommandType.StoredProcedure);
+
+// DynamicParameters is also required for OUTPUT and RETURN values</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03: Output parameters -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">03</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Get the New Customer ID After Insert"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The stored procedure inserts a new customer and returns the new ID via an OUTPUT parameter so we can use it immediately.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Add <code>@NewId INT OUTPUT</code> to the parameter list. After the INSERT, assign the new ID to it: <code>SET @NewId = SCOPE_IDENTITY();</code>
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use DynamicParameters with <code>direction: ParameterDirection.Output</code>. After ExecuteAsync, read the value back: <code>parameters.Get&lt;int&gt;("@NewId")</code>
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — OUTPUT Parameter</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_InsertCustomer
+    @Name NVARCHAR(100),
+    @Email NVARCHAR(255),
+    @NewId INT OUTPUT
+AS
+BEGIN
+    INSERT INTO Customers (Name, Email, IsActive)
+    VALUES (@Name, @Email, 1);
+
+    -- Return the new ID
+    SET @NewId = SCOPE_IDENTITY();
+END;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Read OUTPUT Parameter</div>
+                    <div class="code-block dapper-block">
+                        <pre>var parameters = new DynamicParameters();
+parameters.Add("@Name", "Alice Johnson");
+parameters.Add("@Email", "alice@example.com");
+parameters.Add("@NewId",
+    dbType: DbType.Int32,
+    direction: ParameterDirection.Output);
+
+await connection.ExecuteAsync(
+    "sp_InsertCustomer",
+    parameters,
+    commandType: CommandType.StoredProcedure);
+
+int newCustomerId = parameters.Get&lt;int&gt;("@NewId");
+Console.WriteLine($"New customer ID: {newCustomerId}");</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 04: Return values -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">04</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "Check If the Operation Succeeded"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                The stored procedure returns 0 for success or &minus;1 for failure (e.g., email already exists). Check it in C# to handle errors.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Use RETURN statement. RETURN 0 means success; RETURN -1 means failure. The DBA controls the error codes.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    RETURN statements are captured in a DynamicParameter with <code>direction: ParameterDirection.ReturnValue</code>. Read it after execution.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — RETURN Statement</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_RegisterUser
+    @Email NVARCHAR(255),
+    @Password NVARCHAR(255)
+AS
+BEGIN
+    -- Check if email exists
+    IF EXISTS (SELECT 1 FROM Users
+               WHERE Email = @Email)
+    BEGIN
+        RETURN -1; -- Email already registered
+    END
+
+    INSERT INTO Users (Email, Password, CreatedAt)
+    VALUES (@Email, @Password, GETDATE());
+
+    RETURN 0; -- Success
+END;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — Read RETURN Value</div>
+                    <div class="code-block dapper-block">
+                        <pre>var parameters = new DynamicParameters();
+parameters.Add("@Email", "bob@example.com");
+parameters.Add("@Password", hashedPassword);
+parameters.Add("@ReturnCode",
+    dbType: DbType.Int32,
+    direction: ParameterDirection.ReturnValue);
+
+await connection.ExecuteAsync(
+    "sp_RegisterUser",
+    parameters,
+    commandType: CommandType.StoredProcedure);
+
+int returnCode = parameters.Get&lt;int&gt;("@ReturnCode");
+
+if (returnCode == 0)
+{
+    Console.WriteLine("User registered successfully");
+}
+else if (returnCode == -1)
+{
+    Console.WriteLine("Email already registered");
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05: Multiple result sets -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">05</span><div class="sec-rule"></div></div>
+            <h2>Requirement: "One Procedure Returns Customers AND Their Orders"</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Dashboard needs a summary of one customer and all their orders. Instead of two separate calls, one stored proc returns both result sets.
+            </div>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Two SELECT statements in the proc body. First SELECT returns the customer summary. Second SELECT returns their orders. Dapper reads both.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Use <code>QueryMultipleAsync</code> instead of QueryAsync. It returns an <code>SqlMapper.GridReader</code>. Call <code>ReadAsync&lt;T&gt;</code> for each result set.
+                </div>
+            </div>
+
+            <div class="code-comparison">
+                <div>
+                    <div class="code-label">SQL — Multiple SELECTs</div>
+                    <div class="code-block sql-block">
+                        <pre>CREATE PROCEDURE sp_GetCustomerDashboard
+    @CustomerId INT
+AS
+BEGIN
+    -- First result set: customer summary
+    SELECT
+        Id, Name, Email, Phone,
+        TotalOrders, TotalSpent,
+        LastOrderDate
+    FROM Customers
+    WHERE Id = @CustomerId;
+
+    -- Second result set: their orders
+    SELECT
+        Id, OrderNumber, OrderDate,
+        TotalAmount, Status
+    FROM Orders
+    WHERE CustomerId = @CustomerId
+    ORDER BY OrderDate DESC;
+END;</pre>
+                    </div>
+                </div>
+                <div>
+                    <div class="code-label">C# — QueryMultipleAsync</div>
+                    <div class="code-block dapper-block">
+                        <pre>public class CustomerSummary
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public int TotalOrders { get; set; }
+    public decimal TotalSpent { get; set; }
+    public DateTime? LastOrderDate { get; set; }
+}
+
+public class OrderDto
+{
+    public int Id { get; set; }
+    public string OrderNumber { get; set; } = "";
+    public DateTime OrderDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = "";
+}
+
+// Call the procedure
+var reader = await connection.QueryMultipleAsync(
+    "sp_GetCustomerDashboard",
+    new { CustomerId = 42 },
+    commandType: CommandType.StoredProcedure);
+
+// Read the first result set (customer)
+var customer = await reader.ReadSingleAsync&lt;CustomerSummary&gt;();
+
+// Read the second result set (orders)
+var orders = await reader.ReadAsync&lt;OrderDto&gt;();
+
+Console.WriteLine($"{customer.Name}: {orders.Count()} orders");</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Using the GridReader pattern</div>
+                <div class="code-block dapper-block">
+                    <pre>// If the proc returns 3+ result sets:
+var reader = await connection.QueryMultipleAsync(
+    "sp_GetDashboard",
+    commandType: CommandType.StoredProcedure);
+
+var summaryList = await reader.ReadAsync&lt;Summary&gt;();
+var orderList = await reader.ReadAsync&lt;Order&gt;();
+var invoiceList = await reader.ReadAsync&lt;Invoice&gt;();
+
+// ReadAsync returns IEnumerable&lt;T&gt;
+// ReadSingle returns T (throws if not exactly 1)
+// ReadSingleOrDefault returns T? (null if not found)
+// ReadFirst returns T (takes the first)</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06: When to use them -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">06</span><div class="sec-rule"></div></div>
+            <h2>When to Use Stored Procedures</h2>
+
+            <div class="requirement">
+                <strong>The Question</strong><br>
+                Should I use a stored procedure or inline SQL?
+            </div>
+
+            <table>
+                <thead><tr><th>Use Case</th><th>Stored Procedure</th><th>Inline SQL</th></tr></thead>
+                <tbody>
+                    <tr><td>Complex business logic (many conditions)</td><td>Proc (DBA-owned)</td><td>C# (Dev-owned)</td></tr>
+                    <tr><td>Simple CRUD (select, insert, update, delete)</td><td>&mdash;</td><td>Inline SQL or ORM</td></tr>
+                    <tr><td>Multiple dependent queries</td><td>Proc (atomic)</td><td>Multiple calls</td></tr>
+                    <tr><td>Performance-critical (batching, temp tables)</td><td>Proc (optimized)</td><td>Inline (simple)</td></tr>
+                    <tr><td>Report generation (multiple result sets)</td><td>Proc (clean)</td><td>Multiple calls</td></tr>
+                    <tr><td>DBA manages updates</td><td>Proc (versioned)</td><td>&mdash;</td></tr>
+                    <tr><td>Reused by multiple apps (Java, C++, etc.)</td><td>Proc (shared)</td><td>App-specific</td></tr>
+                    <tr><td>Developer team owns all code</td><td>&mdash;</td><td>Inline (trackable)</td></tr>
+                </tbody>
+            </table>
+
+            <div class="thinking">
+                <div class="think-sql">
+                    <strong>SQL Developer Thinks</strong>
+                    Stored procs live in the database. I version them, test them, and deploy them separately. Multiple apps call the same proc — no duplication.
+                </div>
+                <div class="think-csharp">
+                    <strong>C# Developer Thinks</strong>
+                    Inline SQL stays in C# with my code. Everything is in version control, in the same commit. No surprises from secret proc changes.
+                </div>
+            </div>
+        </section>
+
+        <!-- 07: Full working example -->
+        <section class="section">
+            <div class="section-header"><span class="sec-num">07</span><div class="sec-rule"></div></div>
+            <h2>Complete Example: Customer Reporting Proc</h2>
+
+            <div class="requirement">
+                <strong>Business Requirement</strong><br>
+                Report all orders for a customer in a date range. Return the customer name and all matching orders. Use a stored procedure because the DBA wrote the complex filtering logic.
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">SQL — Stored Procedure</div>
+                <div class="code-block sql-block">
+                    <pre>CREATE PROCEDURE sp_GetCustomerOrderReport
+    @CustomerId INT,
+    @StartDate DATETIME2 = NULL,
+    @EndDate DATETIME2 = NULL,
+    @TotalAmount DECIMAL(10,2) OUTPUT
+AS
+BEGIN
+    -- Get customer name (first result set)
+    SELECT Name
+    FROM Customers
+    WHERE Id = @CustomerId;
+
+    -- Get orders (second result set)
+    SELECT
+        Id, OrderNumber, OrderDate,
+        TotalAmount, Status, ItemCount
+    FROM Orders
+    WHERE CustomerId = @CustomerId
+      AND (OrderDate >= @StartDate OR @StartDate IS NULL)
+      AND (OrderDate <= @EndDate OR @EndDate IS NULL)
+    ORDER BY OrderDate DESC;
+
+    -- Calculate total (OUTPUT param)
+    SELECT @TotalAmount = SUM(TotalAmount)
+    FROM Orders
+    WHERE CustomerId = @CustomerId
+      AND (OrderDate >= @StartDate OR @StartDate IS NULL)
+      AND (OrderDate <= @EndDate OR @EndDate IS NULL);
+END;</pre>
+                </div>
+            </div>
+
+            <div class="code-full">
+                <div class="code-label">C# — Call and Process Results</div>
+                <div class="code-block dapper-block">
+                    <pre>public class OrderReportDto
+{
+    public int Id { get; set; }
+    public string OrderNumber { get; set; } = "";
+    public DateTime OrderDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string Status { get; set; } = "";
+    public int ItemCount { get; set; }
+}
+
+public async Task&lt;(string CustomerName, List&lt;OrderReportDto&gt; Orders, decimal TotalSpent)&gt;
+    GetCustomerOrderReportAsync(
+        int customerId,
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        CancellationToken ct = default)
+{
+    var parameters = new DynamicParameters();
+    parameters.Add("@CustomerId", customerId);
+    parameters.Add("@StartDate", startDate);
+    parameters.Add("@EndDate", endDate);
+    parameters.Add("@TotalAmount",
+        dbType: DbType.Decimal,
+        direction: ParameterDirection.Output,
+        precision: 10,
+        scale: 2);
+
+    var reader = await connection.QueryMultipleAsync(
+        "sp_GetCustomerOrderReport",
+        parameters,
+        commandType: CommandType.StoredProcedure,
+        commandTimeout: 60,
+        cancellationToken: ct);
+
+    // Read customer name
+    var customerName = await reader.ReadSingleAsync&lt;string&gt;();
+
+    // Read orders
+    var orders = (await reader.ReadAsync&lt;OrderReportDto&gt;()).ToList();
+
+    // Read output parameter
+    decimal totalAmount = parameters.Get&lt;decimal&gt;("@TotalAmount");
+
+    return (customerName, orders, totalAmount);
+}
+
+// Usage
+var (name, orders, total) = await GetCustomerOrderReportAsync(
+    customerId: 42,
+    startDate: new DateTime(2024, 1, 1),
+    endDate: new DateTime(2024, 12, 31));
+
+Console.WriteLine($"{name} spent {total:C} on {orders.Count} orders");</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
         <div class="chapter-nav">
             <a class="nav-item prev" href="ch20-multi-mapping.html">
                 <span class="nav-item-label">&larr; Previous</span>
